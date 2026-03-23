@@ -1,0 +1,823 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="theme-color" content="#2563eb">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
+    <title>SAVE - 정부지원사업 맞춤 매칭</title>
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect rx='20' width='100' height='100' fill='%232563eb'/><text y='.88em' x='12' font-size='70' fill='white'>S</text></svg>">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/lucide-static@latest/font/lucide.min.css">
+    <style>
+        :root {
+            --primary: #2563eb; --primary-light: #3b82f6; --primary-lighter: #60a5fa;
+            --primary-bg: #eff6ff; --primary-border: #bfdbfe; --primary-dark: #1d4ed8;
+            --success: #16a34a; --success-bg: #f0fdf4;
+            --warning: #d97706; --warning-bg: #fffbeb;
+            --error: #dc2626; --error-bg: #fef2f2;
+            --heading: #0f172a; --text: #334155; --text-secondary: #64748b; --text-tertiary: #94a3b8;
+            --border: #e2e8f0; --border-light: #f1f5f9;
+            --bg: #f8fafc; --card-bg: #ffffff;
+            --shadow-sm: 0 1px 2px rgba(0,0,0,0.04);
+            --shadow: 0 1px 3px rgba(0,0,0,0.06), 0 1px 2px rgba(0,0,0,0.04);
+            --shadow-md: 0 4px 12px rgba(0,0,0,0.06);
+            --shadow-lg: 0 8px 24px rgba(0,0,0,0.08);
+            --radius: 12px; --radius-lg: 16px; --radius-xl: 20px;
+            --safe-bottom: env(safe-area-inset-bottom, 0px);
+            --nav-height: 64px;
+        }
+        * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+        html { height: 100%; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Noto Sans KR', sans-serif;
+            background: var(--bg); color: var(--text); min-height: 100%;
+            -webkit-font-smoothing: antialiased; overflow-x: hidden;
+        }
+        button, input, select, textarea { font-family: inherit; }
+
+        /* ── Login ── */
+        .login-screen {
+            min-height: 100vh; display: flex; flex-direction: column; align-items: center; justify-content: center;
+            background: linear-gradient(160deg, #fff 0%, var(--primary-bg) 100%);
+            padding: 32px 24px;
+        }
+        .login-logo { width: 64px; height: 64px; background: var(--primary); border-radius: 18px;
+            display: flex; align-items: center; justify-content: center; font-size: 28px; font-weight: 800;
+            color: #fff; margin-bottom: 16px; box-shadow: 0 8px 24px rgba(37,99,235,0.25); }
+        .login-title { font-size: 22px; font-weight: 800; color: var(--heading); margin-bottom: 4px; }
+        .login-subtitle { font-size: 14px; color: var(--text-secondary); margin-bottom: 32px; }
+        .login-card {
+            width: 100%; max-width: 360px; background: #fff; border-radius: var(--radius-xl);
+            padding: 28px 24px; box-shadow: var(--shadow-lg);
+        }
+        .login-card .form-label { font-size: 13px; font-weight: 600; color: var(--heading); margin-bottom: 6px; display: block; }
+        .login-card .form-input {
+            width: 100%; padding: 14px 16px; border: 1.5px solid var(--border); border-radius: var(--radius);
+            font-size: 15px; color: var(--heading); background: var(--bg); outline: none;
+            transition: border-color 0.2s, box-shadow 0.2s;
+        }
+        .login-card .form-input:focus { border-color: var(--primary); box-shadow: 0 0 0 3px rgba(37,99,235,0.1); }
+        .login-card .form-input::placeholder { color: var(--text-tertiary); }
+        .login-btn {
+            width: 100%; padding: 14px; background: var(--primary); color: #fff; border: none;
+            border-radius: var(--radius); font-size: 15px; font-weight: 700; cursor: pointer;
+            margin-top: 16px; transition: background 0.2s, transform 0.1s;
+        }
+        .login-btn:active { transform: scale(0.98); background: var(--primary-dark); }
+        .login-error { color: var(--error); font-size: 12px; margin-top: 8px; display: none; }
+
+        /* ── App Shell ── */
+        .app-shell { display: none; min-height: 100vh; padding-bottom: calc(var(--nav-height) + var(--safe-bottom) + 8px); }
+        .app-shell.active { display: block; }
+
+        /* ── Top Bar ── */
+        .top-bar {
+            position: sticky; top: 0; z-index: 50; background: #fff; padding: 14px 20px;
+            display: flex; align-items: center; justify-content: space-between;
+            border-bottom: 1px solid var(--border-light);
+        }
+        .top-bar-title { font-size: 17px; font-weight: 800; color: var(--heading); display: flex; align-items: center; gap: 8px; }
+        .top-bar-title .logo-sm { width: 28px; height: 28px; background: var(--primary); border-radius: 8px;
+            display: flex; align-items: center; justify-content: center; font-size: 13px; font-weight: 800; color: #fff; }
+        .top-bar-actions { display: flex; align-items: center; gap: 6px; }
+        .top-bar-btn { width: 36px; height: 36px; border-radius: 10px; border: none; background: var(--bg);
+            display: flex; align-items: center; justify-content: center; cursor: pointer; color: var(--text-secondary);
+            transition: all 0.2s; }
+        .top-bar-btn:active { background: var(--primary-bg); color: var(--primary); }
+        .top-bar-btn i { font-size: 18px; }
+
+        /* ── Pages ── */
+        .page { display: none; padding: 16px 20px; animation: fadeIn 0.25s ease; }
+        .page.active { display: block; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+
+        /* ── Bottom Nav ── */
+        .bottom-nav {
+            position: fixed; bottom: 0; left: 0; right: 0; z-index: 100;
+            background: #fff; border-top: 1px solid var(--border-light);
+            padding: 6px 8px calc(6px + var(--safe-bottom));
+            display: flex; justify-content: space-around;
+            box-shadow: 0 -2px 12px rgba(0,0,0,0.04);
+        }
+        .nav-tab {
+            flex: 1; display: flex; flex-direction: column; align-items: center; gap: 2px;
+            padding: 6px 0; cursor: pointer; background: none; border: none;
+            color: var(--text-tertiary); transition: color 0.2s; position: relative;
+        }
+        .nav-tab i { font-size: 22px; transition: transform 0.2s; }
+        .nav-tab span { font-size: 10px; font-weight: 600; letter-spacing: -0.2px; }
+        .nav-tab.active { color: var(--primary); }
+        .nav-tab.active i { transform: scale(1.1); }
+        .nav-tab.active::before { content: ''; position: absolute; top: -7px; left: 50%; transform: translateX(-50%);
+            width: 20px; height: 3px; background: var(--primary); border-radius: 0 0 3px 3px; }
+
+        /* ── Section Title ── */
+        .section-title { font-size: 15px; font-weight: 700; color: var(--heading); margin: 20px 0 12px; display: flex; align-items: center; gap: 6px; }
+        .section-title i { font-size: 16px; color: var(--primary); }
+
+        /* ── Cards ── */
+        .m-card {
+            background: #fff; border-radius: var(--radius-lg); padding: 18px;
+            box-shadow: var(--shadow-sm); border: 1px solid var(--border-light);
+            margin-bottom: 12px; transition: box-shadow 0.2s;
+        }
+        .m-card:active { box-shadow: var(--shadow-md); }
+
+        /* ── Hero Card (맞춤매칭) ── */
+        .hero-card {
+            background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
+            border-radius: var(--radius-xl); padding: 24px 22px; margin-bottom: 16px;
+            color: #fff; position: relative; overflow: hidden;
+        }
+        .hero-card::after { content: ''; position: absolute; top: -40px; right: -40px; width: 160px; height: 160px;
+            background: rgba(255,255,255,0.08); border-radius: 50%; }
+        .hero-card::before { content: ''; position: absolute; bottom: -20px; left: -20px; width: 100px; height: 100px;
+            background: rgba(255,255,255,0.05); border-radius: 50%; }
+        .hero-label { font-size: 12px; font-weight: 600; opacity: 0.8; letter-spacing: 0.5px; text-transform: uppercase; }
+        .hero-title { font-size: 22px; font-weight: 800; margin: 8px 0 4px; position: relative; z-index: 1; }
+        .hero-sub { font-size: 13px; opacity: 0.75; margin-bottom: 18px; position: relative; z-index: 1; }
+        .hero-btn {
+            display: inline-flex; align-items: center; gap: 6px; padding: 12px 22px;
+            background: #fff; color: var(--primary); border: none; border-radius: var(--radius);
+            font-size: 14px; font-weight: 700; cursor: pointer; position: relative; z-index: 1;
+            transition: transform 0.1s;
+        }
+        .hero-btn:active { transform: scale(0.97); }
+        .hero-btn i { font-size: 16px; }
+
+        /* ── KPI ── */
+        .kpi-row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 16px; }
+        .kpi-card { background: #fff; border-radius: var(--radius); padding: 14px 16px;
+            border: 1px solid var(--border-light); box-shadow: var(--shadow-sm); }
+        .kpi-value { font-size: 22px; font-weight: 800; color: var(--heading); }
+        .kpi-value .kpi-unit { font-size: 13px; color: var(--text-tertiary); font-weight: 500; }
+        .kpi-label { font-size: 11px; color: var(--text-secondary); margin-top: 2px; font-weight: 500; }
+
+        /* ── Match Result Card ── */
+        .match-card {
+            background: #fff; border-radius: var(--radius-lg); padding: 16px;
+            border: 1px solid var(--border-light); margin-bottom: 10px; box-shadow: var(--shadow-sm);
+        }
+        .match-header { display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; }
+        .match-title { font-size: 14px; font-weight: 700; color: var(--heading); line-height: 1.4;
+            display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+        .match-prob {
+            min-width: 48px; height: 48px; border-radius: 14px; display: flex; align-items: center; justify-content: center;
+            font-size: 16px; font-weight: 800; flex-shrink: 0;
+        }
+        .match-prob.high { background: var(--success-bg); color: var(--success); }
+        .match-prob.medium { background: var(--warning-bg); color: var(--warning); }
+        .match-prob.low { background: var(--error-bg); color: var(--error); }
+        .match-meta { font-size: 12px; color: var(--text-tertiary); margin-top: 6px; display: flex; flex-wrap: wrap; gap: 4px; }
+        .match-meta-tag { background: var(--bg); padding: 3px 8px; border-radius: 6px; font-size: 11px; color: var(--text-secondary); }
+        .match-scores { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 12px; display: none; }
+        .match-scores.open { display: grid; }
+        .match-score-item { display: flex; align-items: center; gap: 8px; }
+        .match-score-label { font-size: 11px; color: var(--text-secondary); min-width: 70px; }
+        .match-score-bar { flex: 1; height: 6px; background: var(--border-light); border-radius: 3px; overflow: hidden; }
+        .match-score-fill { height: 100%; border-radius: 3px; }
+        .match-expand { width: 100%; padding: 8px; border: none; background: var(--bg); border-radius: 8px;
+            font-size: 12px; font-weight: 600; color: var(--text-secondary); cursor: pointer; margin-top: 10px;
+            display: flex; align-items: center; justify-content: center; gap: 4px; transition: all 0.2s; }
+        .match-expand:active { background: var(--primary-bg); color: var(--primary); }
+
+        /* ── Subsidy List ── */
+        .subsidy-item {
+            padding: 14px 0; border-bottom: 1px solid var(--border-light); cursor: pointer;
+        }
+        .subsidy-item:last-child { border-bottom: none; }
+        .subsidy-item-title { font-size: 14px; font-weight: 600; color: var(--heading); line-height: 1.4;
+            display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+        .subsidy-item-meta { font-size: 12px; color: var(--text-tertiary); margin-top: 4px; }
+        .tag { display: inline-block; padding: 3px 8px; font-size: 10px; border-radius: 6px; font-weight: 600; }
+        .tag-blue { background: var(--primary-bg); color: var(--primary); }
+        .tag-green { background: var(--success-bg); color: var(--success); }
+        .tag-red { background: var(--error-bg); color: var(--error); }
+        .tag-orange { background: var(--warning-bg); color: var(--warning); }
+
+        /* ── Search ── */
+        .search-bar {
+            display: flex; align-items: center; gap: 10px; background: #fff; border-radius: var(--radius);
+            padding: 10px 14px; border: 1.5px solid var(--border); margin-bottom: 12px;
+            transition: border-color 0.2s;
+        }
+        .search-bar:focus-within { border-color: var(--primary); }
+        .search-bar i { font-size: 18px; color: var(--text-tertiary); }
+        .search-bar input { flex: 1; border: none; outline: none; font-size: 14px; background: transparent; color: var(--heading); }
+        .filter-chips { display: flex; gap: 6px; overflow-x: auto; padding: 2px 0 12px; -webkit-overflow-scrolling: touch; }
+        .filter-chips::-webkit-scrollbar { display: none; }
+        .filter-chip {
+            flex-shrink: 0; padding: 7px 14px; border-radius: 20px; font-size: 12px; font-weight: 600;
+            border: 1.5px solid var(--border); background: #fff; color: var(--text-secondary);
+            cursor: pointer; transition: all 0.2s; white-space: nowrap;
+        }
+        .filter-chip.active { background: var(--primary); border-color: var(--primary); color: #fff; }
+
+        /* ── Form Elements ── */
+        .form-group { margin-bottom: 16px; }
+        .form-label { font-size: 13px; font-weight: 600; color: var(--heading); margin-bottom: 6px; display: block; }
+        .form-input, .form-select {
+            width: 100%; padding: 12px 14px; border: 1.5px solid var(--border); border-radius: var(--radius);
+            font-size: 14px; color: var(--heading); background: #fff; outline: none;
+            transition: border-color 0.2s, box-shadow 0.2s; appearance: none;
+        }
+        .form-input:focus, .form-select:focus { border-color: var(--primary); box-shadow: 0 0 0 3px rgba(37,99,235,0.1); }
+        .form-select { background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%2394a3b8' stroke-width='2'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
+            background-repeat: no-repeat; background-position: right 12px center; padding-right: 36px; }
+        .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+        .btn-primary {
+            width: 100%; padding: 14px; background: var(--primary); color: #fff; border: none;
+            border-radius: var(--radius); font-size: 15px; font-weight: 700; cursor: pointer;
+            transition: background 0.2s, transform 0.1s;
+        }
+        .btn-primary:active { transform: scale(0.98); background: var(--primary-dark); }
+        .btn-outline {
+            width: 100%; padding: 12px; background: #fff; color: var(--text-secondary); border: 1.5px solid var(--border);
+            border-radius: var(--radius); font-size: 14px; font-weight: 600; cursor: pointer;
+            transition: all 0.2s; margin-top: 8px;
+        }
+        .btn-outline:active { border-color: var(--primary); color: var(--primary); background: var(--primary-bg); }
+
+        /* ── Stats ── */
+        .stat-bar { display: flex; align-items: center; gap: 8px; margin-bottom: 10px; }
+        .stat-bar-label { min-width: 70px; font-size: 12px; color: var(--text-secondary); text-align: right; }
+        .stat-bar-track { flex: 1; height: 8px; background: var(--border-light); border-radius: 4px; overflow: hidden; }
+        .stat-bar-fill { height: 100%; border-radius: 4px; transition: width 0.5s ease; }
+        .stat-bar-value { min-width: 50px; font-size: 12px; font-weight: 600; color: var(--heading); }
+
+        /* ── Detail Modal ── */
+        .modal-overlay {
+            position: fixed; top: 0; left: 0; right: 0; bottom: 0; z-index: 200;
+            background: rgba(15,23,42,0.5); backdrop-filter: blur(4px);
+            opacity: 0; pointer-events: none; transition: opacity 0.25s;
+        }
+        .modal-overlay.show { opacity: 1; pointer-events: auto; }
+        .modal-sheet {
+            position: fixed; bottom: 0; left: 0; right: 0; z-index: 201;
+            background: #fff; border-radius: 20px 20px 0 0; max-height: 85vh;
+            transform: translateY(100%); transition: transform 0.35s cubic-bezier(0.32,0.72,0,1);
+            overflow-y: auto; padding-bottom: var(--safe-bottom);
+        }
+        .modal-overlay.show .modal-sheet { transform: translateY(0); }
+        .modal-handle { width: 36px; height: 4px; background: #d1d5db; border-radius: 2px; margin: 10px auto 0; }
+        .modal-header { padding: 16px 20px 12px; display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; }
+        .modal-header h3 { font-size: 16px; font-weight: 700; color: var(--heading); line-height: 1.4; }
+        .modal-close-btn { width: 32px; height: 32px; border-radius: 8px; border: none; background: var(--bg);
+            display: flex; align-items: center; justify-content: center; cursor: pointer; flex-shrink: 0;
+            color: var(--text-secondary); font-size: 16px; }
+        .modal-body { padding: 0 20px 24px; }
+        .detail-row { display: flex; padding: 10px 0; border-bottom: 1px solid var(--border-light); }
+        .detail-label { min-width: 80px; font-size: 13px; color: var(--text-secondary); font-weight: 500; }
+        .detail-value { font-size: 13px; color: var(--heading); font-weight: 500; flex: 1; }
+
+        /* ── Empty State ── */
+        .empty-state { text-align: center; padding: 40px 20px; }
+        .empty-state i { font-size: 48px; color: var(--primary-lighter); margin-bottom: 12px; }
+        .empty-state p { font-size: 14px; color: var(--text-secondary); line-height: 1.6; }
+
+        /* ── Loading ── */
+        .spinner { width: 32px; height: 32px; border: 3px solid var(--border); border-top-color: var(--primary);
+            border-radius: 50%; animation: spin 0.7s linear infinite; margin: 0 auto; }
+        @keyframes spin { to { transform: rotate(360deg); } }
+
+        /* ── Toast ── */
+        .toast {
+            position: fixed; bottom: calc(var(--nav-height) + var(--safe-bottom) + 16px); left: 50%;
+            transform: translateX(-50%) translateY(20px); z-index: 300; background: var(--heading);
+            color: #fff; padding: 12px 20px; border-radius: var(--radius); font-size: 13px; font-weight: 600;
+            box-shadow: var(--shadow-lg); opacity: 0; pointer-events: none; transition: all 0.3s ease;
+            white-space: nowrap;
+        }
+        .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+        /* ── Settings section ── */
+        .settings-section { margin-bottom: 24px; }
+        .settings-section h4 { font-size: 13px; font-weight: 700; color: var(--heading); margin-bottom: 12px;
+            display: flex; align-items: center; gap: 6px; }
+        .settings-section h4 i { font-size: 15px; color: var(--primary); }
+    </style>
+</head>
+<body>
+
+    <!-- Login Screen -->
+    <div class="login-screen" id="loginScreen">
+        <div class="login-logo">S</div>
+        <div class="login-title">SAVE</div>
+        <div class="login-subtitle">정부지원사업 맞춤 매칭 서비스</div>
+        <div class="login-card">
+            <form id="loginForm" onsubmit="return handleLogin(event)">
+                <label class="form-label">이메일</label>
+                <input class="form-input" type="email" id="loginEmail" placeholder="이메일 주소를 입력하세요" required autocomplete="email">
+                <div class="login-error" id="loginError">인증에 실패했습니다. 허용된 이메일을 사용해주세요.</div>
+                <button class="login-btn" type="submit">로그인</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- App Shell -->
+    <div class="app-shell" id="appShell">
+        <!-- Top Bar -->
+        <div class="top-bar">
+            <div class="top-bar-title">
+                <span class="logo-sm">S</span> SAVE
+            </div>
+            <div class="top-bar-actions">
+                <button class="top-bar-btn" onclick="navigateTo('settings')"><i class="lucide-user"></i></button>
+                <button class="top-bar-btn" onclick="handleLogout()"><i class="lucide-log-out"></i></button>
+            </div>
+        </div>
+
+        <!-- Pages -->
+        <div class="page active" id="page-matching" data-page="matching"></div>
+        <div class="page" id="page-list" data-page="list"></div>
+        <div class="page" id="page-search" data-page="search"></div>
+        <div class="page" id="page-stats" data-page="stats"></div>
+        <div class="page" id="page-settings" data-page="settings"></div>
+
+        <!-- Bottom Nav -->
+        <div class="bottom-nav">
+            <button class="nav-tab active" data-tab="matching"><i class="lucide-target"></i><span>맞춤매칭</span></button>
+            <button class="nav-tab" data-tab="list"><i class="lucide-list"></i><span>지원사업</span></button>
+            <button class="nav-tab" data-tab="search"><i class="lucide-search"></i><span>검색</span></button>
+            <button class="nav-tab" data-tab="stats"><i class="lucide-bar-chart-3"></i><span>통계</span></button>
+            <button class="nav-tab" data-tab="settings"><i class="lucide-settings"></i><span>설정</span></button>
+        </div>
+    </div>
+
+    <!-- Detail Bottom Sheet -->
+    <div class="modal-overlay" id="detailModal" onclick="if(event.target===this)closeDetail()">
+        <div class="modal-sheet">
+            <div class="modal-handle"></div>
+            <div class="modal-header">
+                <h3 id="detailTitle">상세 정보</h3>
+                <button class="modal-close-btn" onclick="closeDetail()"><i class="lucide-x"></i></button>
+            </div>
+            <div class="modal-body" id="detailBody"></div>
+        </div>
+    </div>
+
+    <!-- Toast -->
+    <div class="toast" id="toast"></div>
+
+    <script src="/m/engine.js"></script>
+    <script>
+// ===== Config =====
+const ALLOWED_DOMAIN = 'unitblack.co.kr';
+const DATA_BASE = '/data/';
+const REGIONS_FULL = ['서울특별시','부산광역시','대구광역시','인천광역시','광주광역시','대전광역시','울산광역시','세종특별자치시','경기도','강원특별자치도','충청북도','충청남도','전북특별자치도','전라남도','경상북도','경상남도','제주특별자치도'];
+
+let subsidies = [], meta = {}, history = [];
+let currentUser = null;
+let currentPage = 'matching';
+let matchResults = [];
+
+// ===== Auth =====
+function checkAuth() {
+    const email = localStorage.getItem('save_mobile_user');
+    if (email && email.endsWith('@' + ALLOWED_DOMAIN)) {
+        currentUser = email;
+        showApp();
+        return true;
+    }
+    document.getElementById('loginScreen').style.display = '';
+    document.getElementById('appShell').classList.remove('active');
+    return false;
+}
+
+function handleLogin(e) {
+    e.preventDefault();
+    const email = document.getElementById('loginEmail').value.trim().toLowerCase();
+    if (!email.endsWith('@' + ALLOWED_DOMAIN)) {
+        document.getElementById('loginError').style.display = 'block';
+        return false;
+    }
+    localStorage.setItem('save_mobile_user', email);
+    currentUser = email;
+    showApp();
+    return false;
+}
+
+function handleLogout() {
+    localStorage.removeItem('save_mobile_user');
+    currentUser = null;
+    document.getElementById('loginScreen').style.display = '';
+    document.getElementById('appShell').classList.remove('active');
+}
+
+function showApp() {
+    document.getElementById('loginScreen').style.display = 'none';
+    document.getElementById('appShell').classList.add('active');
+    loadData();
+}
+
+// ===== Data =====
+async function loadData() {
+    try {
+        const [sRes, mRes, hRes] = await Promise.all([
+            fetch(DATA_BASE + 'subsidies.json'),
+            fetch(DATA_BASE + 'meta.json'),
+            fetch(DATA_BASE + 'history.json')
+        ]);
+        subsidies = await sRes.json();
+        meta = await mRes.json();
+        history = await hRes.json();
+    } catch (e) { console.error('Data load error', e); }
+    renderPage();
+}
+
+// ===== Profile (per-user localStorage) =====
+function profileKey() { return 'save_profile_' + currentUser; }
+function loadProfile() {
+    try { return JSON.parse(localStorage.getItem(profileKey())) || null; } catch { return null; }
+}
+function saveProfile(p) { localStorage.setItem(profileKey(), JSON.stringify(p)); }
+
+// ===== Navigation =====
+function navigateTo(page) {
+    currentPage = page;
+    document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+    document.getElementById('page-' + page).classList.add('active');
+    document.querySelectorAll('.nav-tab').forEach(t => t.classList.toggle('active', t.dataset.tab === page));
+    renderPage();
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+document.querySelectorAll('.nav-tab').forEach(tab => {
+    tab.addEventListener('click', () => navigateTo(tab.dataset.tab));
+});
+
+function renderPage() {
+    switch (currentPage) {
+        case 'matching': renderMatching(); break;
+        case 'list': renderList(); break;
+        case 'search': renderSearch(); break;
+        case 'stats': renderStats(); break;
+        case 'settings': renderSettings(); break;
+    }
+}
+
+// ===== Utils =====
+const today = new Date().toISOString().slice(0, 10);
+function esc(s) { const d = document.createElement('div'); d.textContent = s || ''; return d.innerHTML; }
+function getStatus(endDate) {
+    if (!endDate) return { text: '상시', cls: 'tag-blue' };
+    if (endDate < today) return { text: '마감', cls: 'tag-red' };
+    const diff = Math.ceil((new Date(endDate) - new Date()) / 86400000);
+    if (diff <= 7) return { text: 'D-' + diff, cls: 'tag-orange' };
+    return { text: '접수중', cls: 'tag-green' };
+}
+function showToast(msg) {
+    const t = document.getElementById('toast');
+    t.textContent = msg; t.classList.add('show');
+    setTimeout(() => t.classList.remove('show'), 2200);
+}
+
+// ===== Matching Page =====
+function renderMatching() {
+    const profile = loadProfile();
+    const el = document.getElementById('page-matching');
+
+    let html = `
+        <div class="hero-card">
+            <div class="hero-label"><i class="lucide-target" style="font-size:14px;vertical-align:-2px;"></i> AI 맞춤 매칭</div>
+            <div class="hero-title">나에게 맞는<br>지원사업 찾기</div>
+            <div class="hero-sub">${profile ? esc(profile.profile_name || '프로필') + ' 기준으로 분석합니다' : '프로필을 설정하면 맞춤 매칭을 받을 수 있어요'}</div>
+            <button class="hero-btn" onclick="${profile ? 'runMatching()' : 'navigateTo(\'settings\')'}">
+                <i class="lucide-${profile ? 'zap' : 'settings'}"></i>
+                ${profile ? '매칭 시작' : '프로필 설정하기'}
+            </button>
+        </div>
+    `;
+
+    // KPI
+    const active = subsidies.filter(s => !s.apply_end_date || s.apply_end_date >= today).length;
+    const urgent = subsidies.filter(s => {
+        if (!s.apply_end_date) return false;
+        const d = Math.ceil((new Date(s.apply_end_date) - new Date()) / 86400000);
+        return d >= 0 && d <= 7;
+    }).length;
+    html += `
+        <div class="kpi-row">
+            <div class="kpi-card"><div class="kpi-value">${subsidies.length.toLocaleString()}<span class="kpi-unit">건</span></div><div class="kpi-label">전체 지원사업</div></div>
+            <div class="kpi-card"><div class="kpi-value">${active.toLocaleString()}<span class="kpi-unit">건</span></div><div class="kpi-label">접수중</div></div>
+            <div class="kpi-card"><div class="kpi-value">${urgent}<span class="kpi-unit">건</span></div><div class="kpi-label">7일 내 마감</div></div>
+            <div class="kpi-card"><div class="kpi-value">${matchResults.length}<span class="kpi-unit">건</span></div><div class="kpi-label">매칭 결과</div></div>
+        </div>
+    `;
+
+    // Match results
+    if (matchResults.length > 0) {
+        const probs = matchResults.map(r => r.final_probability);
+        const avg = probs.reduce((a, b) => a + b, 0) / probs.length;
+        html += `<div class="section-title"><i class="lucide-sparkles"></i> 매칭 결과 (평균 ${avg.toFixed(0)}%)</div>`;
+        html += '<div id="matchList">';
+        matchResults.slice(0, 50).forEach((r, i) => {
+            const level = r.final_probability >= 70 ? 'high' : r.final_probability >= 40 ? 'medium' : 'low';
+            html += `
+            <div class="match-card" onclick="showSubsidyDetail('${r.subsidy_id}')">
+                <div class="match-header">
+                    <div>
+                        <div class="match-title">${esc(r.subsidy_title)}</div>
+                        <div class="match-meta">
+                            <span class="match-meta-tag">${esc(r.category)}</span>
+                            <span class="match-meta-tag">${esc(r.organization)}</span>
+                            <span class="match-meta-tag">${r.apply_end_date || '상시'}</span>
+                        </div>
+                    </div>
+                    <div class="match-prob ${level}">${r.final_probability.toFixed(0)}%</div>
+                </div>
+                <div class="match-scores" id="ms_${i}">
+                    ${[['자격요건', r.eligibility_score, 'var(--primary)'],['조건매칭', r.matching_score, 'var(--success)'],['경쟁률', r.competition_score, 'var(--warning)'],['이력보정', r.historical_score, '#7c3aed']]
+                        .map(([l,v,c]) => `<div class="match-score-item"><span class="match-score-label">${l}</span><div class="match-score-bar"><div class="match-score-fill" style="width:${v}%;background:${c};"></div></div></div>`).join('')}
+                </div>
+                <button class="match-expand" onclick="event.stopPropagation();this.previousElementSibling.classList.toggle('open');this.innerHTML=this.previousElementSibling.classList.contains('open')?'<i class=\\'lucide-chevron-up\\'></i> 접기':'<i class=\\'lucide-chevron-down\\'></i> 상세 점수'">
+                    <i class="lucide-chevron-down"></i> 상세 점수
+                </button>
+            </div>`;
+        });
+        html += '</div>';
+    } else if (profile) {
+        html += `
+            <div class="m-card" style="text-align:center;padding:28px;">
+                <i class="lucide-target" style="font-size:36px;color:var(--primary-lighter);display:block;margin-bottom:8px;"></i>
+                <p style="font-size:14px;color:var(--text-secondary);">상단 버튼을 눌러 매칭을 시작하세요</p>
+            </div>`;
+    }
+
+    // 마감 임박
+    const urgentList = subsidies.filter(s => {
+        if (!s.apply_end_date) return false;
+        const d = Math.ceil((new Date(s.apply_end_date) - new Date()) / 86400000);
+        return d >= 0 && d <= 14;
+    }).sort((a, b) => new Date(a.apply_end_date) - new Date(b.apply_end_date)).slice(0, 5);
+
+    if (urgentList.length > 0) {
+        html += `<div class="section-title"><i class="lucide-clock"></i> 마감 임박</div>`;
+        urgentList.forEach(s => {
+            const st = getStatus(s.apply_end_date);
+            html += `<div class="subsidy-item" onclick="showSubsidyDetail('${s.id}')">
+                <div style="display:flex;justify-content:space-between;align-items:center;">
+                    <div class="subsidy-item-title" style="flex:1;">${esc(s.title)}</div>
+                    <span class="tag ${st.cls}" style="flex-shrink:0;margin-left:8px;">${st.text}</span>
+                </div>
+                <div class="subsidy-item-meta">${esc(s.organization)} · ${esc(s.category)}</div>
+            </div>`;
+        });
+    }
+
+    el.innerHTML = html;
+}
+
+function runMatching() {
+    const profile = loadProfile();
+    if (!profile) { navigateTo('settings'); return; }
+    const el = document.getElementById('page-matching');
+    const heroEnd = el.querySelector('.kpi-row');
+    if (heroEnd) heroEnd.insertAdjacentHTML('afterend', '<div style="text-align:center;padding:32px;"><div class="spinner"></div><p style="font-size:13px;color:var(--text-secondary);margin-top:8px;">선정확률 계산 중...</p></div>');
+    setTimeout(() => {
+        const engine = new ProbabilityEngine(history);
+        const target = subsidies.filter(s => !s.apply_end_date || s.apply_end_date >= today);
+        matchResults = engine.calculateAll(target, profile, 5);
+        renderMatching();
+        showToast(matchResults.length + '건 매칭 완료');
+    }, 300);
+}
+
+// ===== List Page =====
+function renderList() {
+    const el = document.getElementById('page-list');
+    const cats = [...new Set(subsidies.map(s => s.category).filter(Boolean))].sort();
+
+    let html = `
+        <div class="section-title"><i class="lucide-list"></i> 지원사업 목록</div>
+        <div class="filter-chips" id="listFilters">
+            <div class="filter-chip active" data-cat="">전체</div>
+            ${cats.map(c => `<div class="filter-chip" data-cat="${esc(c)}">${esc(c)}</div>`).join('')}
+        </div>
+        <div id="listContainer"></div>
+    `;
+    el.innerHTML = html;
+
+    document.querySelectorAll('#listFilters .filter-chip').forEach(chip => {
+        chip.addEventListener('click', () => {
+            document.querySelectorAll('#listFilters .filter-chip').forEach(c => c.classList.remove('active'));
+            chip.classList.add('active');
+            renderListItems(chip.dataset.cat);
+        });
+    });
+    renderListItems('');
+}
+
+function renderListItems(catFilter) {
+    let items = subsidies;
+    if (catFilter) items = items.filter(s => s.category === catFilter);
+    items = items.slice(0, 100);
+    const con = document.getElementById('listContainer');
+    if (!items.length) { con.innerHTML = '<div class="empty-state"><i class="lucide-inbox" style="display:block;"></i><p>해당 분야의 사업이 없습니다.</p></div>'; return; }
+    con.innerHTML = '<div class="m-card">' + items.map(s => {
+        const st = getStatus(s.apply_end_date);
+        return `<div class="subsidy-item" onclick="showSubsidyDetail('${s.id}')">
+            <div style="display:flex;justify-content:space-between;align-items:center;">
+                <div class="subsidy-item-title" style="flex:1;">${esc(s.title)}</div>
+                <span class="tag ${st.cls}" style="flex-shrink:0;margin-left:8px;">${st.text}</span>
+            </div>
+            <div class="subsidy-item-meta">${esc(s.organization)} · ${esc(s.category)}</div>
+        </div>`;
+    }).join('') + '</div>';
+}
+
+// ===== Search Page =====
+function renderSearch() {
+    const el = document.getElementById('page-search');
+    el.innerHTML = `
+        <div class="section-title"><i class="lucide-search"></i> 상세 검색</div>
+        <div class="search-bar">
+            <i class="lucide-search"></i>
+            <input type="text" id="searchInput" placeholder="제목, 기관, 키워드로 검색" oninput="doSearch()">
+        </div>
+        <div id="searchResults"><div class="empty-state"><i class="lucide-search" style="display:block;"></i><p>검색어를 입력하세요</p></div></div>
+    `;
+}
+
+function doSearch() {
+    const q = document.getElementById('searchInput').value.trim().toLowerCase();
+    const con = document.getElementById('searchResults');
+    if (q.length < 2) { con.innerHTML = '<div class="empty-state"><i class="lucide-search" style="display:block;"></i><p>2글자 이상 입력하세요</p></div>'; return; }
+    const results = subsidies.filter(s =>
+        (s.title || '').toLowerCase().includes(q) ||
+        (s.organization || '').toLowerCase().includes(q) ||
+        (s.category || '').toLowerCase().includes(q) ||
+        (s.detail_content || '').toLowerCase().includes(q)
+    ).slice(0, 50);
+    if (!results.length) { con.innerHTML = '<div class="empty-state"><i class="lucide-inbox" style="display:block;"></i><p>검색 결과가 없습니다.</p></div>'; return; }
+    con.innerHTML = '<p style="font-size:12px;color:var(--text-tertiary);margin-bottom:8px;">'+results.length+'건 검색됨</p><div class="m-card">' +
+        results.map(s => {
+            const st = getStatus(s.apply_end_date);
+            return `<div class="subsidy-item" onclick="showSubsidyDetail('${s.id}')">
+                <div style="display:flex;justify-content:space-between;align-items:center;">
+                    <div class="subsidy-item-title" style="flex:1;">${esc(s.title)}</div>
+                    <span class="tag ${st.cls}" style="flex-shrink:0;margin-left:8px;">${st.text}</span>
+                </div>
+                <div class="subsidy-item-meta">${esc(s.organization)} · ${esc(s.category)}</div>
+            </div>`;
+        }).join('') + '</div>';
+}
+
+// ===== Stats Page =====
+function renderStats() {
+    const el = document.getElementById('page-stats');
+    const catCounts = {};
+    subsidies.forEach(s => { catCounts[s.category] = (catCounts[s.category] || 0) + 1; });
+    const cats = Object.entries(catCounts).sort((a, b) => b[1] - a[1]);
+    const maxCat = cats[0] ? cats[0][1] : 1;
+    const orgCounts = {};
+    subsidies.forEach(s => { orgCounts[s.organization || '기타'] = (orgCounts[s.organization || '기타'] || 0) + 1; });
+    const topOrgs = Object.entries(orgCounts).sort((a, b) => b[1] - a[1]).slice(0, 10);
+    const maxOrg = topOrgs[0] ? topOrgs[0][1] : 1;
+    const active = subsidies.filter(s => !s.apply_end_date || s.apply_end_date >= today).length;
+
+    let html = `
+        <div class="section-title"><i class="lucide-bar-chart-3"></i> 통계 분석</div>
+        <div class="kpi-row">
+            <div class="kpi-card"><div class="kpi-value">${subsidies.length.toLocaleString()}<span class="kpi-unit">건</span></div><div class="kpi-label">전체 사업</div></div>
+            <div class="kpi-card"><div class="kpi-value">${active}<span class="kpi-unit">건</span></div><div class="kpi-label">접수 중</div></div>
+        </div>
+        <div class="m-card">
+            <div style="font-size:13px;font-weight:700;color:var(--heading);margin-bottom:14px;display:flex;align-items:center;gap:6px;"><i class="lucide-pie-chart" style="font-size:15px;color:var(--primary);"></i> 분야별 현황</div>
+            ${cats.map(([c, n]) => `<div class="stat-bar">
+                <div class="stat-bar-label">${esc(c)}</div>
+                <div class="stat-bar-track"><div class="stat-bar-fill" style="width:${(n/maxCat*100).toFixed(0)}%;background:var(--primary);"></div></div>
+                <div class="stat-bar-value">${n}건</div>
+            </div>`).join('')}
+        </div>
+        <div class="m-card">
+            <div style="font-size:13px;font-weight:700;color:var(--heading);margin-bottom:14px;display:flex;align-items:center;gap:6px;"><i class="lucide-building-2" style="font-size:15px;color:var(--primary);"></i> 주요 기관 (상위 10)</div>
+            ${topOrgs.map(([o, n]) => `<div class="stat-bar">
+                <div class="stat-bar-label" style="min-width:90px;">${esc(o).substring(0,10)}</div>
+                <div class="stat-bar-track"><div class="stat-bar-fill" style="width:${(n/maxOrg*100).toFixed(0)}%;background:var(--success);"></div></div>
+                <div class="stat-bar-value">${n}건</div>
+            </div>`).join('')}
+        </div>
+    `;
+    el.innerHTML = html;
+}
+
+// ===== Settings Page =====
+function renderSettings() {
+    const el = document.getElementById('page-settings');
+    const p = loadProfile() || {};
+
+    el.innerHTML = `
+        <div class="section-title"><i class="lucide-settings"></i> 프로필 설정</div>
+        <p style="font-size:13px;color:var(--text-secondary);margin-bottom:16px;">사업자 정보를 등록하면 맞춤형 지원사업 매칭을 받을 수 있습니다.</p>
+
+        <div class="settings-section">
+            <h4><i class="lucide-clipboard-list"></i> 기본 정보</h4>
+            <div class="form-group">
+                <label class="form-label">프로필명</label>
+                <input class="form-input" id="sName" value="${esc(p.profile_name || '')}" placeholder="예: 내 음식점">
+            </div>
+            <div class="form-row">
+                <div class="form-group">
+                    <label class="form-label">사업자 유형</label>
+                    <select class="form-select" id="sBizType">
+                        ${['개인사업자','법인사업자','예비창업자'].map(t => `<option value="${t}" ${p.business_type===t?'selected':''}>${t}</option>`).join('')}
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">업종명</label>
+                    <input class="form-input" id="sIndustry" value="${esc(p.industry_name || '')}" placeholder="예: 음식점업">
+                </div>
+            </div>
+            <div class="form-row">
+                <div class="form-group">
+                    <label class="form-label">시/도</label>
+                    <select class="form-select" id="sRegion">
+                        ${REGIONS_FULL.map(r => `<option value="${r}" ${p.region_sido===r?'selected':''}>${r}</option>`).join('')}
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">시/군/구</label>
+                    <input class="form-input" id="sSigungu" value="${esc(p.region_sigungu || '')}">
+                </div>
+            </div>
+        </div>
+
+        <div class="settings-section">
+            <h4><i class="lucide-bar-chart-2"></i> 규모 정보</h4>
+            <div class="form-row">
+                <div class="form-group">
+                    <label class="form-label">연매출 (만원)</label>
+                    <input class="form-input" type="number" id="sRevenue" value="${p.annual_revenue ? Math.round(p.annual_revenue/10000) : ''}" min="0" placeholder="0">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">종업원 수</label>
+                    <input class="form-input" type="number" id="sEmpCount" value="${p.employee_count != null ? p.employee_count : ''}" min="0">
+                </div>
+            </div>
+            <div class="form-row">
+                <div class="form-group">
+                    <label class="form-label">업력 (년)</label>
+                    <input class="form-input" type="number" id="sBizAge" value="${p.business_age_years != null ? p.business_age_years : ''}" min="0" step="0.5">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">대표자 연령</label>
+                    <input class="form-input" type="number" id="sAge" value="${p.representative_age != null ? p.representative_age : ''}" min="15" max="100">
+                </div>
+            </div>
+        </div>
+
+        <button class="btn-primary" onclick="doSaveProfile()"><i class="lucide-save" style="font-size:16px;vertical-align:-2px;"></i> 프로필 저장</button>
+        <button class="btn-outline" style="margin-top:12px;" onclick="handleLogout()"><i class="lucide-log-out" style="font-size:14px;vertical-align:-2px;"></i> 로그아웃</button>
+        <p style="font-size:11px;color:var(--text-tertiary);text-align:center;margin-top:20px;">${currentUser}</p>
+    `;
+}
+
+function doSaveProfile() {
+    const val = (id) => document.getElementById(id).value.trim();
+    const numVal = (id) => { const v = document.getElementById(id).value.trim(); return v !== '' ? Number(v) : null; };
+    const p = {
+        profile_name: val('sName'),
+        business_type: val('sBizType'),
+        industry_name: val('sIndustry'),
+        region_sido: val('sRegion'),
+        region_sigungu: val('sSigungu'),
+        annual_revenue: numVal('sRevenue') !== null ? numVal('sRevenue') * 10000 : null,
+        employee_count: numVal('sEmpCount'),
+        business_age_years: numVal('sBizAge'),
+        representative_age: numVal('sAge'),
+    };
+    saveProfile(p);
+    showToast('프로필이 저장되었습니다');
+    matchResults = []; // reset match on profile change
+}
+
+// ===== Detail =====
+function showSubsidyDetail(id) {
+    const s = subsidies.find(x => x.id === id);
+    if (!s) return;
+    document.getElementById('detailTitle').textContent = s.title;
+    const st = getStatus(s.apply_end_date);
+    let html = `
+        <div class="detail-row"><div class="detail-label">상태</div><div class="detail-value"><span class="tag ${st.cls}">${st.text}</span></div></div>
+        <div class="detail-row"><div class="detail-label">분야</div><div class="detail-value">${esc(s.category)}</div></div>
+        <div class="detail-row"><div class="detail-label">소관기관</div><div class="detail-value">${esc(s.organization)}</div></div>
+        <div class="detail-row"><div class="detail-label">수행기관</div><div class="detail-value">${esc(s.executor || '-')}</div></div>
+        <div class="detail-row"><div class="detail-label">신청기간</div><div class="detail-value">${s.apply_start_date || '-'} ~ ${s.apply_end_date || '-'}</div></div>
+    `;
+    if (s.target) html += `<div class="detail-row"><div class="detail-label">지원대상</div><div class="detail-value">${esc(s.target).slice(0,300)}</div></div>`;
+    if (s.region) html += `<div class="detail-row"><div class="detail-label">지역</div><div class="detail-value">${esc(s.region)}</div></div>`;
+    if (s.detail_url) html += `<div style="margin-top:16px;"><a href="${esc(s.detail_url)}" target="_blank" style="display:block;text-align:center;padding:12px;background:var(--primary);color:#fff;border-radius:var(--radius);font-size:14px;font-weight:700;text-decoration:none;">상세 페이지 바로가기</a></div>`;
+    document.getElementById('detailBody').innerHTML = html;
+    document.getElementById('detailModal').classList.add('show');
+}
+
+function closeDetail() { document.getElementById('detailModal').classList.remove('show'); }
+document.addEventListener('keydown', e => { if (e.key === 'Escape') closeDetail(); });
+
+// ===== Init =====
+checkAuth();
+    </script>
+</body>
+</html>
