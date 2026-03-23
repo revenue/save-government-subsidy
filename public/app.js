@@ -108,7 +108,7 @@ async function loadData() {
         navigateTo('dashboard');
     } catch (e) {
         document.getElementById('page-content').innerHTML =
-            `<div class="empty-state"><div class="icon">⚠️</div><p>데이터 로드 실패: ${e.message}</p></div>`;
+            `<div class="empty-state"><div class="icon"><i class="lucide-alert-circle" style="font-size:48px;color:var(--primary);"></i></div><p>데이터 로드 실패: ${e.message}</p></div>`;
     }
 }
 
@@ -128,7 +128,7 @@ async function triggerCollection() {
 
     // 상태 배너 업데이트
     const statusEl = document.getElementById('collectStatus');
-    if (statusEl) statusEl.innerHTML = '<span style="color:var(--ant-primary);">수집 진행 중... (약 30초 소요)</span>';
+    if (statusEl) statusEl.innerHTML = '<span style="color:var(--primary);">수집 진행 중... (약 30초 소요)</span>';
 
     try {
         const resp = await fetch('/api/collect', {
@@ -169,13 +169,13 @@ async function triggerCollection() {
         } else if (data.success) {
             if (statusEl) statusEl.innerHTML = '<span style="color:var(--ant-warning);">수집 완료 — 새로운 데이터 없음</span>';
         } else {
-            if (statusEl) statusEl.innerHTML = `<span style="color:var(--ant-error);">수집 실패: ${data.error || '알 수 없는 오류'}</span>`;
+            if (statusEl) statusEl.innerHTML = `<span style="color:var(--error);">수집 실패: ${data.error || '알 수 없는 오류'}</span>`;
         }
     } catch (e) {
-        if (statusEl) statusEl.innerHTML = `<span style="color:var(--ant-error);">수집 요청 실패: ${e.message}</span>`;
+        if (statusEl) statusEl.innerHTML = `<span style="color:var(--error);">수집 요청 실패: ${e.message}</span>`;
     } finally {
         isCollecting = false;
-        if (btn) { btn.disabled = false; btn.textContent = '🔄 수집하기'; }
+        if (btn) { btn.disabled = false; btn.innerHTML = '<i class="lucide-refresh-cw"></i> 수집하기'; }
     }
 }
 
@@ -234,14 +234,14 @@ function renderDashboard() {
 
     document.getElementById('page-content').innerHTML = `
         <div class="page-header">
-            <h1>📊 대시보드</h1>
+            <h1><i class="lucide-layout-dashboard"></i> 대시보드</h1>
         </div>
         <!-- 수집 정보 배너 -->
         <div class="card" style="background:linear-gradient(135deg,#e6f7ff,#f0f7ff);border-color:#91d5ff;padding:16px 24px;margin-bottom:16px;">
             <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px;">
                 <div>
-                    <div style="font-size:14px;color:var(--ant-heading);font-weight:500;">📡 데이터 수집 현황</div>
-                    <div style="font-size:13px;color:var(--ant-text-secondary);margin-top:4px;">
+                    <div style="font-size:14px;color:var(--heading);font-weight:500;"><i class="lucide-radio-tower"></i> 데이터 수집 현황</div>
+                    <div style="font-size:13px;color:var(--text-secondary);margin-top:4px;">
                         마지막 수집: <strong>${escHtml(lastCollected)}</strong> ·
                         마지막 갱신: <strong>${escHtml(lastUpdated)}</strong> ·
                         출처 ${Object.keys(meta.sources || {}).length}개 (기업마당 · 중소벤처기업부 · K-스타트업 · 부처 · 지자체)
@@ -251,7 +251,7 @@ function renderDashboard() {
                     <label style="font-size:13px;display:flex;align-items:center;gap:4px;cursor:pointer;">
                         <input type="checkbox" ${showExpired?'checked':''} onchange="toggleExpired()"> 마감 포함 (${expiredCount}건)
                     </label>
-                    <button class="btn btn-primary" id="collectBtn" onclick="triggerCollection()">🔄 수집하기</button>
+                    <button class="btn btn-primary" id="collectBtn" onclick="triggerCollection()"><i class="lucide-refresh-cw"></i> 수집하기</button>
                 </div>
             </div>
             <div id="collectStatus" style="font-size:13px;margin-top:8px;min-height:18px;"></div>
@@ -311,7 +311,7 @@ function renderDashboard() {
 function renderList() {
     const cats = [...new Set(subsidies.map(s => s.category).filter(Boolean))].sort();
     document.getElementById('page-content').innerHTML = `
-        <div class="page-header"><h1>📋 지원사업 목록</h1></div>
+        <div class="page-header"><h1><i class="lucide-list"></i> 지원사업 목록</h1></div>
         <div class="search-box">
             <select class="form-control" id="listCat" onchange="filterList()">
                 <option value="">전체 분야</option>
@@ -324,7 +324,7 @@ function renderList() {
             </select>
             <input class="form-control" id="listKeyword" placeholder="사업명, 기관명 검색..." onkeyup="filterList()" style="flex:1;max-width:400px;">
         </div>
-        <div id="listCount" style="margin-bottom:8px;font-size:14px;color:var(--ant-text-secondary);"></div>
+        <div id="listCount" style="margin-bottom:8px;font-size:14px;color:var(--text-secondary);"></div>
         <div class="table-container" id="listTable"></div>
     `;
     filterList();
@@ -424,11 +424,11 @@ document.addEventListener('keydown', e => { if (e.key === 'Escape') closeModal()
 function renderMatching() {
     if (!savedProfile) {
         document.getElementById('page-content').innerHTML = `
-            <div class="page-header"><h1>🎯 맞춤 매칭 - 선정확률 분석</h1></div>
+            <div class="page-header"><h1><i class="lucide-target"></i> 맞춤 매칭 - 선정확률 분석</h1></div>
             <div class="empty-state">
-                <div class="icon">⚙️</div>
+                <div class="icon"><i class="lucide-settings" style="font-size:48px;color:var(--primary);"></i></div>
                 <p>사업자 프로필이 없습니다.</p>
-                <p style="margin-top:8px;">먼저 <strong>⚙️ 설정</strong> 메뉴에서 '지원대상 조건 설정'을 등록해주세요.</p>
+                <p style="margin-top:8px;">먼저 <strong><i class="lucide-settings"></i> 설정</strong> 메뉴에서 '지원대상 조건 설정'을 등록해주세요.</p>
                 <button class="btn btn-primary" style="margin-top:16px;" onclick="navigateTo('settings')">설정으로 이동</button>
             </div>`;
         return;
@@ -439,9 +439,9 @@ function renderMatching() {
     const rev = p.annual_revenue ? `${(p.annual_revenue / 10000).toLocaleString()}만원` : '-';
 
     document.getElementById('page-content').innerHTML = `
-        <div class="page-header"><h1>🎯 맞춤 매칭 - 선정확률 분석</h1></div>
+        <div class="page-header"><h1><i class="lucide-target"></i> 맞춤 매칭 - 선정확률 분석</h1></div>
         <div class="card">
-            <div class="card-title">📋 선택된 프로필: ${escHtml(p.profile_name || '기본 프로필')}</div>
+            <div class="card-title"><i class="lucide-clipboard-list"></i> 선택된 프로필: ${escHtml(p.profile_name || '기본 프로필')}</div>
             <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;font-size:14px;margin-top:8px;">
                 <div><strong>유형:</strong> ${escHtml(p.business_type)}</div>
                 <div><strong>업종:</strong> ${escHtml(p.industry_name)}</div>
@@ -460,7 +460,7 @@ function renderMatching() {
             <input type="range" id="matchMin" min="0" max="50" value="10" style="width:120px;"
                    oninput="document.getElementById('matchMinVal').textContent=this.value+'%'">
             <span id="matchMinVal" style="font-size:14px;">10%</span>
-            <button class="btn btn-primary btn-lg" onclick="runMatching()">🎯 맞춤 매칭 실행</button>
+            <button class="btn btn-primary btn-lg" onclick="runMatching()"><i class="lucide-target"></i> 맞춤 매칭 실행</button>
         </div>
         <div id="matchResults"></div>
     `;
@@ -487,7 +487,7 @@ function runMatching() {
 
 function renderMatchResults() {
     if (!matchResults.length) {
-        document.getElementById('matchResults').innerHTML = '<div class="empty-state"><div class="icon">📋</div><p>매칭 결과가 없습니다.</p></div>';
+        document.getElementById('matchResults').innerHTML = '<div class="empty-state"><div class="icon"><i class="lucide-clipboard" style="font-size:48px;color:var(--primary);"></i></div><p>매칭 결과가 없습니다.</p></div>';
         return;
     }
     const probs = matchResults.map(r => r.final_probability);
@@ -555,7 +555,7 @@ function renderMatchResults() {
 function renderSearch() {
     const cats = [...new Set(subsidies.map(s => s.category).filter(Boolean))].sort();
     document.getElementById('page-content').innerHTML = `
-        <div class="page-header"><h1>🔍 상세 검색</h1></div>
+        <div class="page-header"><h1><i class="lucide-search"></i> 상세 검색</h1></div>
         <div class="card">
             <div class="form-row">
                 <div class="form-group">
@@ -789,8 +789,8 @@ function renderStats() {
 
     // ── Render ──
     document.getElementById('page-content').innerHTML = `
-        <div class="page-header"><h1>📈 심화 통계 분석</h1>
-            <p style="color:var(--ant-text-secondary);font-size:13px;margin-top:4px;">
+        <div class="page-header"><h1><i class="lucide-bar-chart-3"></i> 심화 통계 분석</h1>
+            <p style="color:var(--text-secondary);font-size:13px;margin-top:4px;">
                 총 <strong>${totalSub.toLocaleString()}</strong>건 지원사업 데이터 기반 · 최종 수집: ${meta.last_collected || '-'}
             </p>
         </div>
@@ -806,7 +806,7 @@ function renderStats() {
 
         <!-- 핵심 인사이트 -->
         <div class="card" style="margin-bottom:16px;background:linear-gradient(135deg,#f0f5ff,#e6fffb);border:1px solid #d6e4ff;">
-            <div class="card-title">💡 핵심 인사이트</div>
+            <div class="card-title"><i class="lucide-lightbulb"></i> 핵심 인사이트</div>
             <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px;font-size:13px;line-height:1.7;">
                 <div>
                     <strong style="color:#1890ff;">시장 집중도</strong><br>
@@ -829,20 +829,20 @@ function renderStats() {
         <!-- Row 1: 도넛 + 트리맵 -->
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px;">
             <div class="card">
-                <div class="card-title">🍩 분야별 구성비 (도넛 차트)</div>
+                <div class="card-title"><i class="lucide-pie-chart"></i> 분야별 구성비 (도넛 차트)</div>
                 ${svgDonut(cats, 200, 180, '분야별')}
             </div>
             <div class="card">
-                <div class="card-title">🗺️ 분야별 비중 (트리맵)</div>
+                <div class="card-title"><i class="lucide-map"></i> 분야별 비중 (트리맵)</div>
                 ${svgTreemap(cats, 500, 120)}
-                <p style="font-size:11px;color:var(--ant-text-secondary);margin-top:8px;">면적이 넓을수록 해당 분야의 지원사업이 많습니다. 마우스를 올리면 상세 정보를 볼 수 있습니다.</p>
+                <p style="font-size:11px;color:var(--text-secondary);margin-top:8px;">면적이 넓을수록 해당 분야의 지원사업이 많습니다. 마우스를 올리면 상세 정보를 볼 수 있습니다.</p>
             </div>
         </div>
 
         <!-- Row 2: 기관별 수평바 + 출처별 도넛 -->
         <div style="display:grid;grid-template-columns:2fr 1fr;gap:16px;margin-bottom:16px;">
             <div class="card">
-                <div class="card-title">🏛️ 소관기관별 사업 현황 (상위 15)</div>
+                <div class="card-title"><i class="lucide-building-2"></i> 소관기관별 사업 현황 (상위 15)</div>
                 ${topOrgs.map(([o, n], i) => {
                     const pct = (n / totalSub * 100).toFixed(1);
                     const barColor = i === 0 ? '#1890ff' : i < 3 ? '#40a9ff' : i < 7 ? '#69c0ff' : '#91d5ff';
@@ -850,28 +850,28 @@ function renderStats() {
                 }).join('')}
             </div>
             <div class="card">
-                <div class="card-title">📡 데이터 출처별 구성</div>
+                <div class="card-title"><i class="lucide-database"></i> 데이터 출처별 구성</div>
                 ${svgDonut(srcs.map(([s, n]) => [srcNames[s] || s, n]), 160, 170, '출처별')}
             </div>
         </div>
 
         <!-- Row 3: 히트맵 -->
         <div class="card" style="margin-bottom:16px;">
-            <div class="card-title">🔥 기관 × 분야 교차 히트맵</div>
-            <p style="font-size:12px;color:var(--ant-text-secondary);margin-bottom:8px;">상위 8개 기관의 분야별 지원사업 분포를 보여줍니다. 색상이 진할수록 해당 교차 영역의 사업 수가 많습니다.</p>
+            <div class="card-title"><i class="lucide-grid-3x3"></i> 기관 × 분야 교차 히트맵</div>
+            <p style="font-size:12px;color:var(--text-secondary);margin-bottom:8px;">상위 8개 기관의 분야별 지원사업 분포를 보여줍니다. 색상이 진할수록 해당 교차 영역의 사업 수가 많습니다.</p>
             ${svgHeatmap(ctOrgs, ctCats, hmMatrix, 700, 230)}
         </div>
 
         <!-- Row 4: 키워드 클라우드 + 수행기관 -->
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px;">
             <div class="card">
-                <div class="card-title">☁️ 키워드 클라우드</div>
-                <p style="font-size:12px;color:var(--ant-text-secondary);margin-bottom:4px;">지원사업 제목에서 추출한 핵심 키워드 빈도</p>
+                <div class="card-title"><i class="lucide-cloud"></i> 키워드 클라우드</div>
+                <p style="font-size:12px;color:var(--text-secondary);margin-bottom:4px;">지원사업 제목에서 추출한 핵심 키워드 빈도</p>
                 ${svgWordCloud(topKw, 440, 200)}
             </div>
             <div class="card">
-                <div class="card-title">🔗 주요 수행기관 네트워크</div>
-                <p style="font-size:12px;color:var(--ant-text-secondary);margin-bottom:8px;">사업을 실제로 집행하는 수행기관 현황</p>
+                <div class="card-title"><i class="lucide-network"></i> 주요 수행기관 네트워크</div>
+                <p style="font-size:12px;color:var(--text-secondary);margin-bottom:8px;">사업을 실제로 집행하는 수행기관 현황</p>
                 ${topExecs.map(([e, n]) => {
                     const size = 40 + (n / maxExec) * 60;
                     return '<div style="display:inline-flex;align-items:center;margin:4px 6px;padding:4px 12px;background:linear-gradient(135deg,#f0f5ff,#e6f7ff);border:1px solid #91d5ff;border-radius:20px;font-size:12px;"><span style="display:inline-block;width:' + Math.round(8 + n/maxExec*12) + 'px;height:' + Math.round(8 + n/maxExec*12) + 'px;border-radius:50%;background:#1890ff;margin-right:6px;opacity:' + (0.4 + n/maxExec*0.6).toFixed(2) + ';"></span>' + escHtml(e).substring(0, 15) + ' <strong style="margin-left:4px;">' + n + '</strong></div>';
@@ -881,7 +881,7 @@ function renderStats() {
 
         <!-- Row 5: 마감 임박 타임라인 -->
         <div class="card" style="margin-bottom:16px;">
-            <div class="card-title">⏰ 마감 임박 사업 타임라인 (30일 내)</div>
+            <div class="card-title"><i class="lucide-clock"></i> 마감 임박 사업 타임라인 (30일 내)</div>
             ${urgentSubs.length ? `
             <div style="position:relative;padding:8px 0 8px 24px;border-left:3px solid #e8e8e8;margin-left:12px;">
                 ${urgentSubs.map(s => {
@@ -889,12 +889,12 @@ function renderStats() {
                     return '<div style="position:relative;margin-bottom:12px;padding-left:16px;"><div style="position:absolute;left:-31px;top:4px;width:14px;height:14px;border-radius:50%;background:' + urgency + ';border:2px solid #fff;box-shadow:0 0 0 2px ' + urgency + ';"></div><div style="font-size:13px;"><strong style="color:' + urgency + ';">D-' + s.daysLeft + '</strong> <span style="color:#262626;">' + escHtml(s.title).substring(0, 55) + '</span><br><span style="font-size:11px;color:#8c8c8c;">' + escHtml(s.organization) + ' · ' + escHtml(s.category) + ' · 마감: ' + s.apply_end_date + '</span></div></div>';
                 }).join('')}
             </div>
-            ` : '<div style="text-align:center;color:var(--ant-text-secondary);padding:20px;">현재 30일 내 마감 예정 사업이 없습니다.</div>'}
+            ` : '<div style="text-align:center;color:var(--text-secondary);padding:20px;">현재 30일 내 마감 예정 사업이 없습니다.</div>'}
         </div>
 
         <!-- Row 6: 기관별 상세 테이블 -->
         <div class="card">
-            <div class="card-title">📊 기관별 지원사업 상세 분석</div>
+            <div class="card-title"><i class="lucide-table-2"></i> 기관별 지원사업 상세 분석</div>
             <div class="table-container">
                 <table class="data-table">
                     <thead><tr><th>기관</th><th>사업수</th><th>점유율</th><th>주력 분야</th><th>분야 다양성</th><th>마감임박</th></tr></thead>
@@ -907,27 +907,253 @@ function renderStats() {
                                 const diversity = oCatArr.length;
                                 const urgCnt = deadlineSubs.filter(s => s.organization === org && s.daysLeft <= 7).length;
                                 const share = (cnt / totalSub * 100).toFixed(1);
-                                return '<tr><td><strong>' + escHtml(org) + '</strong></td><td>' + cnt + '건</td><td><div style="display:flex;align-items:center;gap:6px;"><div style="width:60px;background:#f0f0f0;border-radius:3px;height:8px;overflow:hidden;"><div style="height:100%;width:' + share + '%;background:#1890ff;border-radius:3px;"></div></div>' + share + '%</div></td><td>' + topC + '</td><td>' + diversity + '개 분야</td><td>' + (urgCnt > 0 ? '<span style="color:#ff4d4f;font-weight:bold;">' + urgCnt + '건</span>' : '-') + '</td></tr>';
+                                return '<tr><td><strong>' + escHtml(org) + '</strong></td><td>' + cnt + '건</td><td><div style="display:flex;align-items:center;gap:6px;"><div style="width:60px;background:var(--border-light);border-radius:20px;height:6px;overflow:hidden;"><div style="height:100%;width:' + share + '%;background:var(--primary);border-radius:20px;"></div></div>' + share + '%</div></td><td>' + topC + '</td><td>' + diversity + '개 분야</td><td>' + (urgCnt > 0 ? '<span style="color:var(--error);font-weight:bold;">' + urgCnt + '건</span>' : '-') + '</td></tr>';
                             }).join('');
                         })()}
                     </tbody>
                 </table>
             </div>
         </div>
+
+        <!-- ═══ 심화 통계 분석 섹션 ═══ -->
+
+        <!-- 로렌츠 곡선 & 지니계수 + 파레토 분석 -->
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px;">
+            <div class="card">
+                <div class="card-title"><i class="lucide-trending-up"></i> 로렌츠 곡선 & 지니계수 (기관 집중도)</div>
+                <div class="chart-wrap">
+                ${(() => {
+                    // 로렌츠 곡선: 기관별 사업 수 분포의 불균등도
+                    const sorted = orgs.map(o => o[1]).sort((a, b) => a - b);
+                    const n = sorted.length;
+                    const cumPop = [0], cumShare = [0];
+                    let runSum = 0;
+                    sorted.forEach((v, i) => {
+                        runSum += v;
+                        cumPop.push((i + 1) / n);
+                        cumShare.push(runSum / totalSub);
+                    });
+                    // 지니계수
+                    let giniArea = 0;
+                    for (let i = 1; i < cumPop.length; i++) {
+                        giniArea += (cumPop[i] - cumPop[i-1]) * (cumShare[i] + cumShare[i-1]) / 2;
+                    }
+                    const gini = (0.5 - giniArea) / 0.5;
+
+                    const w = 360, h = 240, pad = 45;
+                    const pw = w - pad * 2, ph = h - pad * 2;
+                    let lorenzPath = 'M' + pad + ',' + (pad + ph);
+                    cumPop.forEach((p, i) => {
+                        lorenzPath += ' L' + (pad + p * pw) + ',' + (pad + ph - cumShare[i] * ph);
+                    });
+                    // 축, 그리드, 대각선
+                    let gridLines = '';
+                    for (let g = 0.25; g <= 0.75; g += 0.25) {
+                        const gx = pad + g * pw, gy = pad + ph - g * ph;
+                        gridLines += '<line x1="' + pad + '" y1="' + gy + '" x2="' + (pad+pw) + '" y2="' + gy + '" stroke="#e2e8f0" stroke-width="0.5"/>';
+                        gridLines += '<line x1="' + gx + '" y1="' + pad + '" x2="' + gx + '" y2="' + (pad+ph) + '" stroke="#e2e8f0" stroke-width="0.5"/>';
+                        gridLines += '<text x="' + (pad-6) + '" y="' + (gy+3) + '" text-anchor="end" font-size="9" fill="#94a3b8">' + (g*100).toFixed(0) + '%</text>';
+                        gridLines += '<text x="' + gx + '" y="' + (pad+ph+14) + '" text-anchor="middle" font-size="9" fill="#94a3b8">' + (g*100).toFixed(0) + '%</text>';
+                    }
+
+                    return '<svg viewBox="0 0 ' + w + ' ' + (h+20) + '" style="width:100%;max-height:260px;">' +
+                        gridLines +
+                        '<line x1="' + pad + '" y1="' + (pad+ph) + '" x2="' + (pad+pw) + '" y2="' + pad + '" stroke="#cbd5e1" stroke-width="1" stroke-dasharray="4,4"/>' +
+                        '<path d="' + lorenzPath + '" fill="rgba(37,99,235,0.12)" stroke="var(--primary)" stroke-width="2.5" fill-opacity="0.3"/>' +
+                        '<text x="' + (pad+pw/2) + '" y="' + (pad+ph+30) + '" text-anchor="middle" font-size="10" fill="#64748b">기관 누적 비율 (%)</text>' +
+                        '<text x="' + (pad-32) + '" y="' + (pad+ph/2) + '" text-anchor="middle" font-size="10" fill="#64748b" transform="rotate(-90,' + (pad-32) + ',' + (pad+ph/2) + ')">사업 누적 비율 (%)</text>' +
+                        '<rect x="' + (pad+pw-140) + '" y="' + (pad+5) + '" width="135" height="40" rx="6" fill="white" stroke="var(--border)" stroke-width="1"/>' +
+                        '<text x="' + (pad+pw-130) + '" y="' + (pad+22) + '" font-size="11" fill="var(--heading)" font-weight="700">지니계수: ' + gini.toFixed(3) + '</text>' +
+                        '<text x="' + (pad+pw-130) + '" y="' + (pad+37) + '" font-size="9" fill="' + (gini > 0.6 ? 'var(--error)' : gini > 0.4 ? 'var(--warning)' : 'var(--success)') + '">' + (gini > 0.6 ? '매우 불균등 (상위 기관 과도 집중)' : gini > 0.4 ? '보통 수준의 불균등' : '비교적 균등한 분포') + '</text>' +
+                    '</svg>';
+                })()}
+                </div>
+                <p style="font-size:11px;color:var(--text-tertiary);margin-top:8px;">로렌츠 곡선이 대각선에서 멀수록, 지니계수가 1에 가까울수록 소수 기관에 사업이 편중되어 있음을 나타냅니다.</p>
+            </div>
+
+            <div class="card">
+                <div class="card-title"><i class="lucide-bar-chart-horizontal"></i> 파레토 분석 (80/20 법칙)</div>
+                <div class="chart-wrap">
+                ${(() => {
+                    // 파레토: 상위 몇 % 기관이 전체 80%를 차지하는가
+                    const sortedDesc = orgs.map(o => o[1]).sort((a, b) => b - a);
+                    const w = 360, h = 240, pad = 45;
+                    const pw = w - pad * 2, ph = h - pad * 2;
+                    const barW = Math.max(4, Math.min(20, pw / Math.min(sortedDesc.length, 25)));
+                    const maxBar = sortedDesc[0];
+                    let bars = '', cumLine = 'M';
+                    let cumSum = 0, pareto80 = -1;
+                    const showN = Math.min(sortedDesc.length, 25);
+
+                    for (let i = 0; i < showN; i++) {
+                        const bh = (sortedDesc[i] / maxBar) * ph;
+                        const bx = pad + (i / showN) * pw + (pw/showN - barW) / 2;
+                        bars += '<rect x="' + bx + '" y="' + (pad + ph - bh) + '" width="' + barW + '" height="' + bh + '" fill="var(--primary)" rx="2" opacity="0.7"><title>#' + (i+1) + '위: ' + sortedDesc[i] + '건</title></rect>';
+                        cumSum += sortedDesc[i];
+                        const cumPct = cumSum / totalSub;
+                        const cx = pad + ((i + 0.5) / showN) * pw;
+                        const cy = pad + ph - cumPct * ph;
+                        cumLine += (i === 0 ? '' : ' L') + cx + ',' + cy;
+                        if (pareto80 < 0 && cumPct >= 0.8) pareto80 = i + 1;
+                    }
+
+                    const p80y = pad + ph * 0.2;
+                    return '<svg viewBox="0 0 ' + w + ' ' + (h+20) + '" style="width:100%;max-height:260px;">' +
+                        '<line x1="' + pad + '" y1="' + p80y + '" x2="' + (pad+pw) + '" y2="' + p80y + '" stroke="var(--error)" stroke-width="1" stroke-dasharray="4,3" opacity="0.6"/>' +
+                        '<text x="' + (pad+pw+2) + '" y="' + (p80y+3) + '" font-size="9" fill="var(--error)">80%</text>' +
+                        bars +
+                        '<path d="' + cumLine + '" fill="none" stroke="var(--warning)" stroke-width="2.5" stroke-linecap="round"/>' +
+                        '<rect x="' + (pad+8) + '" y="' + (pad+5) + '" width="170" height="40" rx="6" fill="white" stroke="var(--border)" stroke-width="1"/>' +
+                        '<text x="' + (pad+16) + '" y="' + (pad+22) + '" font-size="11" fill="var(--heading)" font-weight="700">상위 ' + pareto80 + '개 기관 = 80% 점유</text>' +
+                        '<text x="' + (pad+16) + '" y="' + (pad+37) + '" font-size="9" fill="var(--text-secondary)">전체 ' + orgs.length + '개 기관 중 ' + (pareto80/orgs.length*100).toFixed(1) + '%</text>' +
+                        '<text x="' + (pad+pw/2) + '" y="' + (pad+ph+16) + '" text-anchor="middle" font-size="10" fill="#64748b">기관 순위 (사업수 내림차순)</text>' +
+                    '</svg>';
+                })()}
+                </div>
+                <p style="font-size:11px;color:var(--text-tertiary);margin-top:8px;">파레토 법칙에 따라 소수 기관이 대다수 사업을 관리합니다. 파란 막대는 개별 사업 수, 주황 선은 누적 비율입니다.</p>
+            </div>
+        </div>
+
+        <!-- 분야 다양성 레이더 + 출처 신뢰도 -->
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px;">
+            <div class="card">
+                <div class="card-title"><i class="lucide-radar"></i> 분야별 다양성 레이더 차트</div>
+                <div class="chart-wrap" style="display:flex;justify-content:center;">
+                ${(() => {
+                    // 레이더 차트
+                    const w = 340, h = 280;
+                    const cx = w/2, cy = h/2 + 5, r = 100;
+                    const n = cats.length;
+                    const maxVal = cats[0][1];
+                    const angleStep = (Math.PI * 2) / n;
+
+                    // 그리드 링
+                    let grid = '';
+                    [0.25, 0.5, 0.75, 1.0].forEach(pct => {
+                        const rr = r * pct;
+                        let poly = '';
+                        for (let i = 0; i < n; i++) {
+                            const a = -Math.PI/2 + i * angleStep;
+                            poly += (i===0?'M':' L') + (cx + rr*Math.cos(a)) + ',' + (cy + rr*Math.sin(a));
+                        }
+                        grid += '<polygon points="' + poly.replace(/M|L/g, '') + '" fill="none" stroke="#e2e8f0" stroke-width="0.5"/>';
+                    });
+                    // 축선 + 라벨
+                    let axes = '';
+                    cats.forEach(([cat], i) => {
+                        const a = -Math.PI/2 + i * angleStep;
+                        const lx = cx + (r + 20) * Math.cos(a);
+                        const ly = cy + (r + 20) * Math.sin(a);
+                        axes += '<line x1="' + cx + '" y1="' + cy + '" x2="' + (cx + r*Math.cos(a)) + '" y2="' + (cy + r*Math.sin(a)) + '" stroke="#e2e8f0" stroke-width="0.5"/>';
+                        axes += '<text x="' + lx + '" y="' + (ly+3) + '" text-anchor="middle" font-size="10" fill="#64748b" font-weight="500">' + cat + '</text>';
+                    });
+                    // 데이터 다각형
+                    let dataPath = '';
+                    let dots = '';
+                    cats.forEach(([, val], i) => {
+                        const a = -Math.PI/2 + i * angleStep;
+                        const pr = (val / maxVal) * r;
+                        const px = cx + pr * Math.cos(a);
+                        const py = cy + pr * Math.sin(a);
+                        dataPath += (i===0?'M':' L') + px + ',' + py;
+                        dots += '<circle cx="' + px + '" cy="' + py + '" r="3.5" fill="var(--primary)" stroke="white" stroke-width="1.5"><title>' + cats[i][0] + ': ' + val + '건</title></circle>';
+                    });
+
+                    return '<svg viewBox="0 0 ' + w + ' ' + h + '" style="width:100%;max-height:280px;">' +
+                        grid + axes +
+                        '<polygon points="' + dataPath.replace(/M|L/g, '') + '" fill="rgba(37,99,235,0.15)" stroke="var(--primary)" stroke-width="2"/>' +
+                        dots +
+                    '</svg>';
+                })()}
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="card-title"><i class="lucide-shield-check"></i> 데이터 품질 & 출처 신뢰도 분석</div>
+                ${(() => {
+                    // 각 출처별 데이터 품질 점수 계산
+                    const srcQuality = {};
+                    subsidies.forEach(s => {
+                        const src = s.source || 'unknown';
+                        if (!srcQuality[src]) srcQuality[src] = { total: 0, hasUrl: 0, hasDate: 0, hasExec: 0, hasOrg: 0 };
+                        srcQuality[src].total++;
+                        if (s.detail_url) srcQuality[src].hasUrl++;
+                        if (s.apply_start_date || s.apply_end_date) srcQuality[src].hasDate++;
+                        if (s.executor) srcQuality[src].hasExec++;
+                        if (s.organization) srcQuality[src].hasOrg++;
+                    });
+                    const srcNames2 = { bizinfo: '기업마당', mss: '중소벤처기업부', kstartup: 'K-스타트업', smes: '중소벤처24' };
+                    return Object.entries(srcQuality).sort((a,b) => b[1].total - a[1].total).map(([src, q]) => {
+                        const urlPct = (q.hasUrl / q.total * 100).toFixed(0);
+                        const datePct = (q.hasDate / q.total * 100).toFixed(0);
+                        const execPct = (q.hasExec / q.total * 100).toFixed(0);
+                        const avgScore = ((parseInt(urlPct) + parseInt(datePct) + parseInt(execPct)) / 3).toFixed(0);
+                        const color = avgScore >= 70 ? 'var(--success)' : avgScore >= 40 ? 'var(--warning)' : 'var(--error)';
+                        return '<div style="margin-bottom:14px;"><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px;"><span style="font-size:13px;font-weight:600;color:var(--heading);">' + (srcNames2[src]||src) + ' <span style="color:var(--text-tertiary);font-weight:400;">(' + q.total + '건)</span></span><span style="font-size:13px;font-weight:700;color:' + color + ';">' + avgScore + '점</span></div>' +
+                        '<div style="display:flex;gap:4px;height:8px;">' +
+                        '<div style="flex:1;background:var(--border-light);border-radius:20px;overflow:hidden;" title="URL 보유율 ' + urlPct + '%"><div style="height:100%;width:' + urlPct + '%;background:var(--primary);border-radius:20px;"></div></div>' +
+                        '<div style="flex:1;background:var(--border-light);border-radius:20px;overflow:hidden;" title="일정 보유율 ' + datePct + '%"><div style="height:100%;width:' + datePct + '%;background:var(--success);border-radius:20px;"></div></div>' +
+                        '<div style="flex:1;background:var(--border-light);border-radius:20px;overflow:hidden;" title="수행기관 보유율 ' + execPct + '%"><div style="height:100%;width:' + execPct + '%;background:var(--warning);border-radius:20px;"></div></div>' +
+                        '</div><div style="display:flex;gap:4px;margin-top:3px;font-size:9px;color:var(--text-tertiary);"><span style="flex:1;">URL ' + urlPct + '%</span><span style="flex:1;">일정 ' + datePct + '%</span><span style="flex:1;">수행기관 ' + execPct + '%</span></div></div>';
+                    }).join('');
+                })()}
+            </div>
+        </div>
+
+        <!-- 엔트로피 기반 분야 복잡도 + 분포 요약 -->
+        <div class="card" style="margin-bottom:16px;">
+            <div class="card-title"><i class="lucide-brain"></i> 정보 엔트로피 기반 복잡도 분석</div>
+            <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:16px;">
+                ${(() => {
+                    // 분야별 엔트로피
+                    const catEntropy = -cats.reduce((s, [, n]) => { const p = n/totalSub; return s + (p > 0 ? p * Math.log2(p) : 0); }, 0);
+                    const catMaxEntropy = Math.log2(cats.length);
+                    const catNormEntropy = (catEntropy / catMaxEntropy * 100).toFixed(1);
+                    // 기관별 엔트로피
+                    const orgEntropy = -orgs.reduce((s, [, n]) => { const p = n/totalSub; return s + (p > 0 ? p * Math.log2(p) : 0); }, 0);
+                    const orgMaxEntropy = Math.log2(orgs.length);
+                    const orgNormEntropy = (orgEntropy / orgMaxEntropy * 100).toFixed(1);
+                    // 출처별 엔트로피
+                    const srcEntropy = -srcs.reduce((s, [, n]) => { const p = n/totalSrc; return s + (p > 0 ? p * Math.log2(p) : 0); }, 0);
+                    const srcMaxEntropy = Math.log2(srcs.length);
+                    const srcNormEntropy = (srcEntropy / srcMaxEntropy * 100).toFixed(1);
+                    // CR4 (상위 4개 기관 집중률)
+                    const cr4 = orgs.slice(0,4).reduce((s,[,n]) => s+n, 0) / totalSub * 100;
+
+                    function makeGauge(label, value, desc, color) {
+                        const angle = (value / 100) * 180;
+                        const rad = angle * Math.PI / 180;
+                        const ex = 60 + 45 * Math.cos(Math.PI - rad);
+                        const ey = 62 - 45 * Math.sin(Math.PI - rad);
+                        return '<div style="text-align:center;"><svg viewBox="0 0 120 75" style="width:100%;max-width:140px;"><path d="M15,62 A45,45 0 0,1 105,62" fill="none" stroke="var(--border-light)" stroke-width="8" stroke-linecap="round"/><path d="M15,62 A45,45 0 0,1 ' + ex + ',' + ey + '" fill="none" stroke="' + color + '" stroke-width="8" stroke-linecap="round"/><text x="60" y="58" text-anchor="middle" font-size="16" font-weight="800" fill="var(--heading)">' + value + '</text><text x="60" y="70" text-anchor="middle" font-size="8" fill="var(--text-tertiary)">/ 100</text></svg><div style="font-size:12px;font-weight:600;color:var(--heading);margin-top:2px;">' + label + '</div><div style="font-size:10px;color:var(--text-tertiary);margin-top:2px;">' + desc + '</div></div>';
+                    }
+
+                    return makeGauge('분야 다양성', catNormEntropy, '분야 엔트로피 균등도', 'var(--primary)') +
+                           makeGauge('기관 다양성', orgNormEntropy, '기관 엔트로피 균등도', 'var(--success)') +
+                           makeGauge('출처 균형도', srcNormEntropy, '출처 엔트로피 균등도', 'var(--warning)') +
+                           makeGauge('CR4 집중률', cr4.toFixed(1), '상위 4개 기관 점유율', cr4 > 80 ? 'var(--error)' : 'var(--primary)');
+                })()}
+            </div>
+        </div>
     `;
+
+    // ── 인터랙티브: 매칭 카드 토글, 차트 호버 ──
+    document.querySelectorAll('.chart-wrap svg').forEach(svg => {
+        svg.style.cursor = 'default';
+    });
 }
 
 // ===== Settings =====
 function renderSettings() {
     const p = savedProfile || {};
     document.getElementById('page-content').innerHTML = `
-        <div class="page-header"><h1>⚙️ 설정 - 지원대상 조건 설정</h1></div>
+        <div class="page-header"><h1><i class="lucide-settings"></i> 설정 - 지원대상 조건 설정</h1></div>
         <div class="card">
-            <p style="color:var(--ant-text-secondary);margin-bottom:16px;">
+            <p style="color:var(--text-secondary);margin-bottom:16px;">
                 소상공인 사업자 정보를 입력하여 맞춤형 지원사업 매칭을 받으세요.
             </p>
             <div class="profile-section">
-                <h4>📋 기본 정보</h4>
+                <h4><i class="lucide-clipboard-list"></i> 기본 정보</h4>
                 <div class="form-row">
                     <div class="form-group">
                         <label class="form-label">프로필명 *</label>
@@ -976,7 +1202,7 @@ function renderSettings() {
                 </div>
             </div>
             <div class="profile-section">
-                <h4>📊 규모 정보</h4>
+                <h4><i class="lucide-bar-chart-2"></i> 규모 정보</h4>
                 <div class="form-row">
                     <div class="form-group">
                         <label class="form-label">연매출 (만원)</label>
@@ -993,7 +1219,7 @@ function renderSettings() {
                 </div>
             </div>
             <div class="profile-section">
-                <h4>🔧 확장 정보</h4>
+                <h4><i class="lucide-wrench"></i> 확장 정보</h4>
                 <div class="form-row">
                     <div class="form-group">
                         <label class="form-label">신용등급</label>
@@ -1027,12 +1253,12 @@ function renderSettings() {
                     </div>
                 </div>
             </div>
-            <button class="btn btn-primary btn-lg btn-block" onclick="saveProfile()">💾 프로필 저장</button>
+            <button class="btn btn-primary btn-lg btn-block" onclick="saveProfile()"><i class="lucide-save"></i> 프로필 저장</button>
         </div>
         <div class="card" style="margin-top:16px;">
             <div class="profile-section">
-                <h4>📡 수집 설정</h4>
-                <p style="font-size:13px;color:var(--ant-text-secondary);margin-bottom:12px;">
+                <h4><i class="lucide-radio-tower"></i> 수집 설정</h4>
+                <p style="font-size:13px;color:var(--text-secondary);margin-bottom:12px;">
                     대시보드의 <strong>수집하기</strong> 버튼을 클릭하면 주요 출처(기업마당, K-스타트업, 중소벤처24, 보조금24)에서 실시간으로 최신 데이터를 수집합니다.<br>
                     전체 37개 출처(부처·지자체 포함) 수집은 매일 오전 9시 자동으로 실행됩니다.
                 </p>
