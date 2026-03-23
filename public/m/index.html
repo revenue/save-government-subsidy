@@ -272,28 +272,38 @@
 
         /* Detail Modal */
         .modal-overlay {
-            position: fixed; top: 0; left: 0; right: 0; bottom: 0; z-index: 200;
+            position: absolute; top: 0; left: 0; right: 0; bottom: 0; z-index: 200;
             background: rgba(15,23,42,0.5); backdrop-filter: blur(4px);
             opacity: 0; pointer-events: none; transition: opacity 0.25s;
         }
         .modal-overlay.show { opacity: 1; pointer-events: auto; }
         .modal-sheet {
-            position: fixed; bottom: 0; left: 0; right: 0; z-index: 201;
-            background: #fff; border-radius: 20px 20px 0 0; max-height: 85vh;
+            position: absolute; bottom: 0; left: 0; right: 0; z-index: 201;
+            background: #fff; border-radius: 20px 20px 0 0; max-height: 90%;
             transform: translateY(100%); transition: transform 0.35s cubic-bezier(0.32,0.72,0,1);
             overflow-y: auto; padding-bottom: var(--safe-bottom);
         }
         .modal-overlay.show .modal-sheet { transform: translateY(0); }
         .modal-handle { width: 36px; height: 4px; background: #d1d5db; border-radius: 2px; margin: 10px auto 0; }
-        .modal-header { padding: 16px 20px 12px; display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; }
-        .modal-header h3 { font-size: 16px; font-weight: 700; color: var(--heading); line-height: 1.4; }
+        .modal-header { padding: 16px 20px 12px; display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; position: sticky; top: 0; background: #fff; z-index: 1; border-radius: 20px 20px 0 0; }
+        .modal-header h3 { font-size: 16px; font-weight: 700; color: var(--heading); line-height: 1.4; word-break: keep-all; }
         .modal-close-btn { width: 32px; height: 32px; border-radius: 8px; border: none; background: var(--bg);
             display: flex; align-items: center; justify-content: center; cursor: pointer; flex-shrink: 0;
             color: var(--text-secondary); font-size: 16px; }
         .modal-body { padding: 0 20px 24px; }
-        .detail-row { display: flex; padding: 10px 0; border-bottom: 1px solid var(--border-light); }
-        .detail-label { min-width: 80px; font-size: 13px; color: var(--text-secondary); font-weight: 500; }
-        .detail-value { font-size: 13px; color: var(--heading); font-weight: 500; flex: 1; }
+        .detail-section { margin-bottom: 16px; }
+        .detail-section-title { font-size: 12px; font-weight: 700; color: var(--primary); margin-bottom: 8px; padding-bottom: 6px; border-bottom: 2px solid var(--primary-bg); display: flex; align-items: center; gap: 4px; text-transform: uppercase; letter-spacing: 0.5px; }
+        .detail-section-title i { font-size: 14px; }
+        .detail-row { display: flex; padding: 8px 0; border-bottom: 1px solid var(--border-light); }
+        .detail-label { min-width: 80px; font-size: 12px; color: var(--text-secondary); font-weight: 600; }
+        .detail-value { font-size: 13px; color: var(--heading); font-weight: 500; flex: 1; line-height: 1.5; word-break: break-all; }
+        .detail-link-btn { display: flex; align-items: center; justify-content: center; gap: 6px; width: 100%; padding: 12px; border-radius: var(--radius); border: none; font-size: 14px; font-weight: 700; cursor: pointer; transition: all 0.2s; }
+        .detail-link-btn.primary { background: var(--primary); color: #fff; }
+        .detail-link-btn.primary:active { background: var(--primary-dark); }
+        .detail-link-btn.outline { background: #fff; color: var(--primary); border: 1.5px solid var(--primary-border); margin-top: 8px; }
+        .detail-link-btn.outline:active { background: var(--primary-bg); }
+        .detail-tags { display: flex; flex-wrap: wrap; gap: 4px; }
+        .detail-tags .tag { font-size: 11px; }
 
         /* Empty State */
         .empty-state { text-align: center; padding: 40px 20px; }
@@ -391,7 +401,6 @@
                 <!-- Pages -->
                 <div class="page active" id="page-matching" data-page="matching"></div>
                 <div class="page" id="page-list" data-page="list"></div>
-                <div class="page" id="page-search" data-page="search"></div>
                 <div class="page" id="page-stats" data-page="stats"></div>
                 <div class="page" id="page-settings" data-page="settings"></div>
             </div>
@@ -401,26 +410,25 @@
         <div class="bottom-nav">
             <button class="nav-tab active" data-tab="matching"><i class="lucide-target"></i><span>맞춤매칭</span></button>
             <button class="nav-tab" data-tab="list"><i class="lucide-list"></i><span>지원사업</span></button>
-            <button class="nav-tab" data-tab="search"><i class="lucide-search"></i><span>검색</span></button>
             <button class="nav-tab" data-tab="stats"><i class="lucide-bar-chart-3"></i><span>통계</span></button>
             <button class="nav-tab" data-tab="settings"><i class="lucide-settings"></i><span>설정</span></button>
         </div>
-    </div>
 
-    <!-- Detail Bottom Sheet -->
-    <div class="modal-overlay" id="detailModal" onclick="if(event.target===this)closeDetail()">
-        <div class="modal-sheet">
-            <div class="modal-handle"></div>
-            <div class="modal-header">
-                <h3 id="detailTitle">상세 정보</h3>
-                <button class="modal-close-btn" onclick="closeDetail()"><i class="lucide-x"></i></button>
+        <!-- Detail Bottom Sheet (inside desktop-wrapper) -->
+        <div class="modal-overlay" id="detailModal" onclick="if(event.target===this)closeDetail()">
+            <div class="modal-sheet">
+                <div class="modal-handle"></div>
+                <div class="modal-header">
+                    <h3 id="detailTitle">상세 정보</h3>
+                    <button class="modal-close-btn" onclick="closeDetail()"><i class="lucide-x"></i></button>
+                </div>
+                <div class="modal-body" id="detailBody"></div>
             </div>
-            <div class="modal-body" id="detailBody"></div>
         </div>
-    </div>
 
-    <!-- Toast -->
-    <div class="toast" id="toast"></div>
+        <!-- Toast -->
+        <div class="toast" id="toast"></div>
+    </div>
 
     <script src="/m/engine.js"></script>
     <script>
@@ -513,7 +521,6 @@ function renderPage() {
     switch (currentPage) {
         case 'matching': renderMatching(); break;
         case 'list': renderList(); break;
-        case 'search': renderSearch(); break;
         case 'stats': renderStats(); break;
         case 'settings': renderSettings(); break;
     }
@@ -521,12 +528,30 @@ function renderPage() {
 
 // ===== Utils =====
 const today = new Date().toISOString().slice(0, 10);
-function esc(s) { const d = document.createElement('div'); d.textContent = s || ''; return d.innerHTML; }
-function getStatus(endDate) {
-    if (!endDate) return { text: '상시', cls: 'tag-blue' };
-    if (endDate < today) return { text: '마감', cls: 'tag-red' };
-    const diff = Math.ceil((new Date(endDate) - new Date()) / 86400000);
+function esc(s) {
+    if (!s) return '';
+    // Fix HTML entities like &amp; → &, then escape for display
+    const tmp = document.createElement('textarea');
+    tmp.innerHTML = s;
+    const decoded = tmp.value;
+    const d = document.createElement('div');
+    d.textContent = decoded;
+    return d.innerHTML;
+}
+function getStatus(endDate, startDate) {
+    if (!endDate || !endDate.trim()) {
+        // Check if start date exists but no end date - likely ongoing
+        if (startDate && startDate.trim()) {
+            return { text: '접수중', cls: 'tag-green' };
+        }
+        return { text: '상시', cls: 'tag-blue' };
+    }
+    const end = new Date(endDate);
+    const now = new Date();
+    if (end < now) return { text: '마감', cls: 'tag-red' };
+    const diff = Math.ceil((end - now) / 86400000);
     if (diff <= 7) return { text: 'D-' + diff, cls: 'tag-orange' };
+    if (diff <= 30) return { text: 'D-' + diff, cls: 'tag-blue' };
     return { text: '접수중', cls: 'tag-green' };
 }
 function showToast(msg) {
@@ -685,97 +710,136 @@ function runMatching() {
 }
 
 // ===== List Page =====
+// ===== List sort/filter state =====
+let listSort = 'deadline'; // deadline, probability, posted, recent
+let listFilterCat = '';
+let listFilterStatus = '';
+let listFilterOrg = '';
+let listFilterRegion = '';
+let listQuery = '';
+
 function renderList() {
     const el = document.getElementById('page-list');
     const cats = [...new Set(subsidies.map(s => s.category))].sort();
-    let selected = new Set();
+    const orgsAll = [...new Set(subsidies.map(s => s.organization))].sort();
+    const regions = [...new Set(subsidies.map(s => s.region).filter(Boolean))].sort();
+    const srcNames = { bizinfo:'기업마당', mss:'중소벤처기업부', kstartup:'K-스타트업', smes:'중소벤처24' };
 
-    let html = `<div class="search-bar">
-        <i class="lucide-filter"></i>
-        <input type="text" id="listSearch" placeholder="검색" style="flex:1;border:none;outline:none;font-size:14px;">
-    </div>
-    <div class="filter-chips">`;
-    cats.forEach(c => {
-        html += `<button class="filter-chip" onclick="toggleCat(this,'${esc(c)}')">${esc(c)}</button>`;
-    });
-    html += `</div><div id="listResults"></div>`;
-    el.innerHTML = html;
+    el.innerHTML = `
+        <div class="search-bar" style="margin-bottom:8px;">
+            <i class="lucide-search"></i>
+            <input type="text" id="listSearch" placeholder="사업명, 기관, 대상 검색" style="flex:1;border:none;outline:none;font-size:14px;" value="${esc(listQuery)}">
+        </div>
+        <div style="display:flex;gap:6px;margin-bottom:8px;overflow-x:auto;-webkit-overflow-scrolling:touch;padding-bottom:2px;">
+            <select id="listSortSel" style="font-size:12px;padding:6px 10px;border:1.5px solid var(--border);border-radius:8px;background:#fff;color:var(--heading);font-weight:600;min-width:max-content;">
+                <option value="deadline" ${listSort==='deadline'?'selected':''}>마감임박순</option>
+                <option value="probability" ${listSort==='probability'?'selected':''}>선정확률 높은순</option>
+                <option value="posted" ${listSort==='posted'?'selected':''}>공고게시일순</option>
+                <option value="recent" ${listSort==='recent'?'selected':''}>최근 등록순</option>
+            </select>
+            <select id="listFilterStatus" style="font-size:12px;padding:6px 10px;border:1.5px solid var(--border);border-radius:8px;background:#fff;color:var(--heading);font-weight:600;min-width:max-content;">
+                <option value="">상태 전체</option>
+                <option value="open" ${listFilterStatus==='open'?'selected':''}>접수중</option>
+                <option value="deadline" ${listFilterStatus==='deadline'?'selected':''}>마감임박</option>
+                <option value="always" ${listFilterStatus==='always'?'selected':''}>상시</option>
+                <option value="closed" ${listFilterStatus==='closed'?'selected':''}>마감</option>
+            </select>
+        </div>
+        <div style="display:flex;gap:6px;margin-bottom:10px;overflow-x:auto;-webkit-overflow-scrolling:touch;padding-bottom:2px;">
+            <select id="listFilterCat" style="font-size:12px;padding:6px 10px;border:1.5px solid var(--border);border-radius:8px;background:#fff;color:var(--heading);font-weight:600;min-width:max-content;">
+                <option value="">분야 전체</option>
+                ${cats.map(c => '<option value="'+esc(c)+'" '+(listFilterCat===c?'selected':'')+'>'+esc(c)+'</option>').join('')}
+            </select>
+            <select id="listFilterOrg" style="font-size:12px;padding:6px 10px;border:1.5px solid var(--border);border-radius:8px;background:#fff;color:var(--heading);font-weight:600;min-width:max-content;">
+                <option value="">기관 전체</option>
+                ${orgsAll.map(o => '<option value="'+esc(o)+'" '+(listFilterOrg===o?'selected':'')+'>'+esc(o)+'</option>').join('')}
+            </select>
+            ${regions.length ? '<select id="listFilterRegion" style="font-size:12px;padding:6px 10px;border:1.5px solid var(--border);border-radius:8px;background:#fff;color:var(--heading);font-weight:600;min-width:max-content;"><option value="">지역 전체</option>'+regions.map(r=>'<option value="'+esc(r)+'" '+(listFilterRegion===r?'selected':'')+'>'+esc(r)+'</option>').join('')+'</select>' : ''}
+        </div>
+        <div id="listCount" style="font-size:12px;color:var(--text-secondary);margin-bottom:8px;"></div>
+        <div id="listResults"></div>
+    `;
 
-    document.getElementById('listSearch').addEventListener('input', (e) => {
-        const q = e.target.value.toLowerCase();
-        const filtered = subsidies.filter(s => {
-            const matchCat = selected.size === 0 || selected.has(s.category);
-            const matchText = !q || s.title.toLowerCase().includes(q) || s.organization.toLowerCase().includes(q);
-            return matchCat && matchText;
+    const applyListFilter = () => {
+        listQuery = document.getElementById('listSearch').value;
+        listSort = document.getElementById('listSortSel').value;
+        listFilterStatus = document.getElementById('listFilterStatus').value;
+        listFilterCat = document.getElementById('listFilterCat').value;
+        listFilterOrg = document.getElementById('listFilterOrg').value;
+        const regionEl = document.getElementById('listFilterRegion');
+        listFilterRegion = regionEl ? regionEl.value : '';
+        const q = listQuery.toLowerCase();
+
+        let filtered = subsidies.filter(s => {
+            // Text search
+            if (q && q.length >= 1) {
+                const text = (s.title + ' ' + s.organization + ' ' + (s.target || '') + ' ' + (s.executor || '')).toLowerCase();
+                if (!text.includes(q)) return false;
+            }
+            // Category filter
+            if (listFilterCat && s.category !== listFilterCat) return false;
+            // Org filter
+            if (listFilterOrg && s.organization !== listFilterOrg) return false;
+            // Region filter
+            if (listFilterRegion && s.region !== listFilterRegion) return false;
+            // Status filter
+            if (listFilterStatus) {
+                const st = getStatus(s.apply_end_date, s.apply_start_date);
+                if (listFilterStatus === 'open' && st.text !== '접수중' && !st.text.startsWith('D-')) return false;
+                if (listFilterStatus === 'deadline' && !st.text.startsWith('D-')) return false;
+                if (listFilterStatus === 'always' && st.text !== '상시') return false;
+                if (listFilterStatus === 'closed' && st.text !== '마감') return false;
+            }
+            return true;
         });
-        let res = '<div>';
-        filtered.forEach(s => {
-            const st = getStatus(s.apply_end_date);
-            res += `
-                <div class="subsidy-item" onclick="showDetail(${s.id})">
-                    <div class="subsidy-item-title">${esc(s.title)}</div>
-                    <div class="subsidy-item-meta">${esc(s.organization)} · <span class="tag ${st.cls}">${st.text}</span></div>
-                </div>
-            `;
-        });
-        res += '</div>';
-        document.getElementById('listResults').innerHTML = res;
-    });
-}
 
-function toggleCat(el, cat) {
-    const selected = new Set();
-    document.querySelectorAll('.filter-chip').forEach(c => {
-        if (c.classList.contains('active')) selected.add(c.textContent);
-    });
-    el.classList.toggle('active');
-    const filtered = subsidies.filter(s => selected.size === 0 || selected.has(s.category));
-    let res = '<div>';
-    filtered.forEach(s => {
-        const st = getStatus(s.apply_end_date);
-        res += `
-            <div class="subsidy-item" onclick="showDetail(${s.id})">
-                <div class="subsidy-item-title">${esc(s.title)}</div>
-                <div class="subsidy-item-meta">${esc(s.organization)} · <span class="tag ${st.cls}">${st.text}</span></div>
-            </div>
-        `;
-    });
-    res += '</div>';
-    document.getElementById('listResults').innerHTML = res;
-}
-
-// ===== Search Page =====
-function renderSearch() {
-    const el = document.getElementById('page-search');
-    let html = `<div class="search-bar">
-        <i class="lucide-search"></i>
-        <input type="text" id="searchInput" placeholder="사업명, 기관, 대상 검색" style="flex:1;border:none;outline:none;font-size:14px;">
-    </div><div id="searchResults"></div>`;
-    el.innerHTML = html;
-
-    document.getElementById('searchInput').addEventListener('input', (e) => {
-        const q = e.target.value.toLowerCase();
-        if (q.length < 2) {
-            document.getElementById('searchResults').innerHTML = '';
-            return;
+        // Sort
+        const profile = loadProfile();
+        if (listSort === 'probability' && profile && matchResults.length > 0) {
+            const probMap = {};
+            matchResults.forEach(r => { probMap[r.id] = r.final_probability; });
+            filtered.sort((a,b) => (probMap[b.id]||0) - (probMap[a.id]||0));
+        } else if (listSort === 'deadline') {
+            filtered.sort((a,b) => {
+                const aEnd = a.apply_end_date || '9999-12-31';
+                const bEnd = b.apply_end_date || '9999-12-31';
+                return aEnd.localeCompare(bEnd);
+            });
+        } else if (listSort === 'posted') {
+            filtered.sort((a,b) => {
+                const aStart = a.apply_start_date || '0000-01-01';
+                const bStart = b.apply_start_date || '0000-01-01';
+                return bStart.localeCompare(aStart);
+            });
+        } else if (listSort === 'recent') {
+            filtered.sort((a,b) => (b.created_at||'').localeCompare(a.created_at||''));
         }
-        const results = subsidies.filter(s => {
-            const text = (s.title + ' ' + s.organization + ' ' + (s.target || '')).toLowerCase();
-            return text.includes(q);
-        }).slice(0, 50);
-        let res = '<div>';
-        results.forEach(s => {
-            const st = getStatus(s.apply_end_date);
-            res += `
-                <div class="subsidy-item" onclick="showDetail(${s.id})">
-                    <div class="subsidy-item-title">${esc(s.title)}</div>
-                    <div class="subsidy-item-meta">${esc(s.organization)} · <span class="tag ${st.cls}">${st.text}</span></div>
-                </div>
-            `;
+
+        document.getElementById('listCount').textContent = '총 ' + filtered.length + '건';
+
+        const probMap = {};
+        if (matchResults.length > 0) matchResults.forEach(r => { probMap[r.id] = r.final_probability; });
+
+        let res = '';
+        filtered.slice(0, 100).forEach(s => {
+            const st = getStatus(s.apply_end_date, s.apply_start_date);
+            const prob = probMap[s.id];
+            const probHtml = prob !== undefined ? '<span style="font-size:11px;font-weight:700;color:#1d4ed8;background:#dbeafe;padding:2px 6px;border-radius:4px;">'+prob.toFixed(0)+'%</span>' : '';
+            res += '<div class="subsidy-item" onclick="showDetail('+s.id+')"><div class="subsidy-item-title">'+esc(s.title)+'</div><div class="subsidy-item-meta">'+esc(s.organization)+' · <span class="tag '+st.cls+'">'+st.text+'</span> '+probHtml+'</div></div>';
         });
-        res += '</div>';
-        document.getElementById('searchResults').innerHTML = res || '<div class="empty-state"><i class="lucide-search"></i><p>검색 결과가 없습니다</p></div>';
-    });
+        if (!res) res = '<div class="empty-state"><i class="lucide-search"></i><p>검색 결과가 없습니다</p></div>';
+        document.getElementById('listResults').innerHTML = res;
+    };
+
+    document.getElementById('listSearch').addEventListener('input', applyListFilter);
+    document.getElementById('listSortSel').addEventListener('change', applyListFilter);
+    document.getElementById('listFilterStatus').addEventListener('change', applyListFilter);
+    document.getElementById('listFilterCat').addEventListener('change', applyListFilter);
+    document.getElementById('listFilterOrg').addEventListener('change', applyListFilter);
+    const regionEl = document.getElementById('listFilterRegion');
+    if (regionEl) regionEl.addEventListener('change', applyListFilter);
+
+    applyListFilter();
 }
 
 // ===== Stats Page =====
@@ -1161,19 +1225,128 @@ function doSaveProfile() {
 
 // ===== Detail Modal =====
 function showSubsidyDetail(id) {
-    const s = subsidies.find(x => x.id === id);
+    const numId = typeof id === 'string' ? parseInt(id, 10) : id;
+    const s = subsidies.find(x => x.id === numId || x.id === id);
     if (!s) return;
-    const st = getStatus(s.apply_end_date);
-    let html = `
-        <div class="detail-row"><div class="detail-label">상태</div><div class="detail-value"><span class="tag ${st.cls}">${st.text}</span></div></div>
-        <div class="detail-row"><div class="detail-label">사업명</div><div class="detail-value">${esc(s.title)}</div></div>
-        <div class="detail-row"><div class="detail-label">분야</div><div class="detail-value">${esc(s.category)}</div></div>
-        <div class="detail-row"><div class="detail-label">소관기관</div><div class="detail-value">${esc(s.organization)}</div></div>
-        <div class="detail-row"><div class="detail-label">지원대상</div><div class="detail-value">${esc(s.target || '-')}</div></div>
-        ${s.apply_end_date ? `<div class="detail-row"><div class="detail-label">마감일</div><div class="detail-value">${s.apply_end_date}</div></div>` : ''}
-        ${s.description ? `<div class="detail-row"><div class="detail-label">설명</div><div class="detail-value">${esc(s.description).slice(0, 200)}</div></div>` : ''}
-    `;
-    document.getElementById('detailTitle').textContent = esc(s.title).slice(0, 40);
+    const st = getStatus(s.apply_end_date, s.apply_start_date);
+    const srcNames = { bizinfo:'기업마당', mss:'중소벤처기업부', kstartup:'K-스타트업', smes:'중소벤처24' };
+
+    // Match probability if available
+    const mr = matchResults.find(r => r.id === id);
+    const probHtml = mr ? '<div style="display:flex;align-items:center;gap:8px;margin-bottom:12px;padding:10px 14px;background:#dbeafe;border-radius:var(--radius);"><i class="lucide-target" style="font-size:18px;color:#1d4ed8;"></i><div><div style="font-size:20px;font-weight:800;color:#1d4ed8;">'+mr.final_probability.toFixed(1)+'%</div><div style="font-size:11px;color:#3b82f6;">나의 선정 확률</div></div></div>' : '';
+
+    // Date info
+    let dateInfo = '';
+    if (s.apply_start_date && s.apply_end_date) {
+        dateInfo = s.apply_start_date + ' ~ ' + s.apply_end_date;
+    } else if (s.apply_end_date) {
+        dateInfo = '~ ' + s.apply_end_date;
+    } else if (s.apply_start_date) {
+        dateInfo = s.apply_start_date + ' ~';
+    } else {
+        dateInfo = '상시 모집';
+    }
+
+    let html = probHtml;
+
+    // Basic Info Section
+    html += '<div class="detail-section"><div class="detail-section-title"><i class="lucide-info"></i> 기본 정보</div>';
+    html += '<div class="detail-row"><div class="detail-label">상태</div><div class="detail-value"><span class="tag '+st.cls+'">'+st.text+'</span></div></div>';
+    html += '<div class="detail-row"><div class="detail-label">사업명</div><div class="detail-value" style="font-weight:700;">'+esc(s.title)+'</div></div>';
+    html += '<div class="detail-row"><div class="detail-label">분야</div><div class="detail-value"><span class="tag tag-blue">'+esc(s.category)+'</span></div></div>';
+    html += '<div class="detail-row"><div class="detail-label">소관기관</div><div class="detail-value">'+esc(s.organization)+'</div></div>';
+    if (s.executor) html += '<div class="detail-row"><div class="detail-label">수행기관</div><div class="detail-value">'+esc(s.executor)+'</div></div>';
+    html += '<div class="detail-row"><div class="detail-label">출처</div><div class="detail-value">'+(srcNames[s.source]||esc(s.source))+'</div></div>';
+    html += '</div>';
+
+    // Schedule Section
+    html += '<div class="detail-section"><div class="detail-section-title"><i class="lucide-calendar"></i> 일정 정보</div>';
+    html += '<div class="detail-row"><div class="detail-label">접수기간</div><div class="detail-value">'+dateInfo+'</div></div>';
+    if (s.apply_end_date) {
+        const diff = Math.ceil((new Date(s.apply_end_date) - new Date()) / 86400000);
+        const dColor = diff <= 0 ? '#dc2626' : diff <= 7 ? '#1e3a5f' : '#2563eb';
+        html += '<div class="detail-row"><div class="detail-label">남은 기간</div><div class="detail-value" style="font-weight:700;color:'+dColor+';">'+(diff<=0?'마감':'D-'+diff)+'</div></div>';
+    }
+    html += '<div class="detail-row"><div class="detail-label">등록일</div><div class="detail-value">'+(s.created_at||'-').slice(0,10)+'</div></div>';
+    html += '</div>';
+
+    // Target & Conditions
+    if (s.target || s.region || s.business_type_required || s.industry_required || s.employee_range || s.revenue_range || s.business_age_range || s.region_required || s.special_conditions) {
+        html += '<div class="detail-section"><div class="detail-section-title"><i class="lucide-users"></i> 지원 대상 및 조건</div>';
+        if (s.target) {
+            html += '<div class="detail-row"><div class="detail-label">지원대상</div><div class="detail-value"><div class="detail-tags">'+s.target.split(',').map(t=>'<span class="tag tag-blue">'+esc(t.trim())+'</span>').join('')+'</div></div></div>';
+        }
+        if (s.region) html += '<div class="detail-row"><div class="detail-label">지역</div><div class="detail-value">'+esc(s.region)+'</div></div>';
+        if (s.business_type_required) html += '<div class="detail-row"><div class="detail-label">사업자유형</div><div class="detail-value">'+esc(s.business_type_required)+'</div></div>';
+        if (s.industry_required) html += '<div class="detail-row"><div class="detail-label">업종 조건</div><div class="detail-value">'+esc(s.industry_required)+'</div></div>';
+        if (s.employee_range) html += '<div class="detail-row"><div class="detail-label">종업원 수</div><div class="detail-value">'+esc(s.employee_range)+'</div></div>';
+        if (s.revenue_range) html += '<div class="detail-row"><div class="detail-label">매출 범위</div><div class="detail-value">'+esc(s.revenue_range)+'</div></div>';
+        if (s.business_age_range) html += '<div class="detail-row"><div class="detail-label">업력</div><div class="detail-value">'+esc(s.business_age_range)+'</div></div>';
+        if (s.region_required) html += '<div class="detail-row"><div class="detail-label">지역 제한</div><div class="detail-value">'+esc(s.region_required)+'</div></div>';
+        if (s.special_conditions) html += '<div class="detail-row"><div class="detail-label">특별 조건</div><div class="detail-value">'+esc(s.special_conditions)+'</div></div>';
+        html += '</div>';
+    }
+
+    // Support Details
+    if (s.support_amount || s.competition_rate || s.selection_count || s.application_count) {
+        html += '<div class="detail-section"><div class="detail-section-title"><i class="lucide-banknote"></i> 지원 내용</div>';
+        if (s.support_amount) html += '<div class="detail-row"><div class="detail-label">지원금액</div><div class="detail-value" style="font-weight:700;color:var(--primary);">'+esc(s.support_amount)+'</div></div>';
+        if (s.competition_rate) html += '<div class="detail-row"><div class="detail-label">경쟁률</div><div class="detail-value">'+s.competition_rate+'</div></div>';
+        if (s.selection_count) html += '<div class="detail-row"><div class="detail-label">선정 인원</div><div class="detail-value">'+s.selection_count+'</div></div>';
+        if (s.application_count) html += '<div class="detail-row"><div class="detail-label">신청 건수</div><div class="detail-value">'+s.application_count+'</div></div>';
+        html += '</div>';
+    }
+
+    // Description / Content
+    if (s.description || s.detail_content || s.hwp_content || s.eligibility_keywords) {
+        html += '<div class="detail-section"><div class="detail-section-title"><i class="lucide-file-text"></i> 상세 내용</div>';
+        if (s.description) html += '<div style="font-size:13px;line-height:1.7;color:var(--text);padding:8px 0;">'+esc(s.description)+'</div>';
+        if (s.detail_content) html += '<div style="font-size:13px;line-height:1.7;color:var(--text);padding:8px 0;">'+esc(s.detail_content).substring(0,1000)+'</div>';
+        if (s.hwp_content) html += '<div style="font-size:13px;line-height:1.7;color:var(--text);padding:8px 0;border-top:1px solid var(--border-light);margin-top:8px;">'+esc(s.hwp_content).substring(0,1000)+'</div>';
+        if (s.eligibility_keywords) html += '<div class="detail-row"><div class="detail-label">키워드</div><div class="detail-value"><div class="detail-tags">'+esc(s.eligibility_keywords).split(',').map(k=>'<span class="tag tag-blue">'+k.trim()+'</span>').join('')+'</div></div></div>';
+        html += '</div>';
+    }
+
+    // Match Score Breakdown (if available)
+    if (mr) {
+        html += '<div class="detail-section"><div class="detail-section-title"><i class="lucide-bar-chart"></i> 매칭 분석</div>';
+        const scores = [
+            ['자격요건 적합도', mr.eligibility_score, '#1e3a5f'],
+            ['조건 매칭도', mr.matching_score, '#1d4ed8'],
+            ['경쟁률 점수', mr.competition_score, '#3b82f6'],
+            ['이력 보정', mr.historical_score, '#93bbfd']
+        ];
+        scores.forEach(([label, val, color]) => {
+            html += '<div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;"><span style="min-width:90px;font-size:11px;color:var(--text-secondary);">'+label+'</span><div style="flex:1;height:8px;background:var(--border-light);border-radius:4px;overflow:hidden;"><div style="height:100%;width:'+val.toFixed(0)+'%;background:'+color+';border-radius:4px;"></div></div><span style="min-width:30px;font-size:12px;font-weight:700;color:var(--heading);text-align:right;">'+val.toFixed(0)+'</span></div>';
+        });
+        html += '</div>';
+    }
+
+    // Action Buttons
+    html += '<div style="padding-top:8px;">';
+    if (s.detail_url) {
+        html += '<a href="'+esc(s.detail_url)+'" target="_blank" rel="noopener" class="detail-link-btn primary"><i class="lucide-external-link" style="font-size:16px;"></i> 공고 원문 보기</a>';
+        html += '<a href="'+esc(s.detail_url)+'" target="_blank" rel="noopener" class="detail-link-btn outline"><i class="lucide-download" style="font-size:16px;"></i> 첨부파일 확인 (원문 페이지)</a>';
+    } else {
+        // Build search URL based on source
+        let searchUrl = '';
+        if (s.source === 'bizinfo') searchUrl = 'https://www.bizinfo.go.kr/web/lay1/bbs/S1T122C128/AS/74/view.do?pblancId=' + (s.external_id||'');
+        else if (s.source === 'kstartup') searchUrl = 'https://www.k-startup.go.kr/web/contents/bizpbanc-ongoing.do';
+        else if (s.source === 'smes') searchUrl = 'https://www.smes.go.kr/main/sportsBsnsPolicy';
+        else if (s.source === 'mss') searchUrl = 'https://www.mss.go.kr/site/smba/main.do';
+        if (searchUrl) {
+            html += '<a href="'+searchUrl+'" target="_blank" rel="noopener" class="detail-link-btn primary"><i class="lucide-external-link" style="font-size:16px;"></i> 출처 사이트에서 확인</a>';
+        }
+    }
+    html += '</div>';
+
+    // Set title (decode entities)
+    const titleEl = document.getElementById('detailTitle');
+    titleEl.textContent = '';
+    const tmpTitle = document.createElement('textarea');
+    tmpTitle.innerHTML = s.title || '상세 정보';
+    titleEl.textContent = tmpTitle.value;
+
     document.getElementById('detailBody').innerHTML = html;
     document.getElementById('detailModal').classList.add('show');
 }
