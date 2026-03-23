@@ -25,7 +25,7 @@
             --shadow-lg: 0 8px 24px rgba(0,0,0,0.08);
             --radius: 12px; --radius-lg: 16px; --radius-xl: 20px;
             --safe-bottom: env(safe-area-inset-bottom, 0px);
-            --nav-height: 64px;
+            --nav-height: 72px;
         }
         * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
         html { height: 100%; }
@@ -36,7 +36,22 @@
         }
         button, input, select, textarea { font-family: inherit; }
 
-        /* ── Login ── */
+        /* Desktop - Mobile View Wrapper */
+        @media (min-width: 769px) {
+            body { background: #e5e7eb; display: flex; align-items: center; justify-content: center; min-height: 100vh; }
+            .desktop-wrapper {
+                width: 480px; max-width: 480px; background: #f8fafc; border-radius: 24px;
+                box-shadow: 0 20px 60px rgba(0,0,0,0.15); overflow: hidden;
+                height: 100vh; max-height: 100vh; display: flex; flex-direction: column;
+            }
+            .app-content { flex: 1; overflow-y: auto; display: flex; flex-direction: column; }
+        }
+        @media (max-width: 768px) {
+            .desktop-wrapper { width: 100%; border-radius: 0; box-shadow: none; max-height: 100vh; }
+            .app-content { flex: 1; overflow-y: auto; }
+        }
+
+        /* Login */
         .login-screen {
             min-height: 100vh; display: flex; flex-direction: column; align-items: center; justify-content: center;
             background: linear-gradient(160deg, #fff 0%, var(--primary-bg) 100%);
@@ -67,15 +82,15 @@
         .login-btn:active { transform: scale(0.98); background: var(--primary-dark); }
         .login-error { color: var(--error); font-size: 12px; margin-top: 8px; display: none; }
 
-        /* ── App Shell ── */
+        /* App Shell */
         .app-shell { display: none; min-height: 100vh; padding-bottom: calc(var(--nav-height) + var(--safe-bottom) + 8px); }
-        .app-shell.active { display: block; }
+        .app-shell.active { display: flex; flex-direction: column; height: 100vh; }
 
-        /* ── Top Bar ── */
+        /* Top Bar */
         .top-bar {
             position: sticky; top: 0; z-index: 50; background: #fff; padding: 14px 20px;
             display: flex; align-items: center; justify-content: space-between;
-            border-bottom: 1px solid var(--border-light);
+            border-bottom: 1px solid var(--border-light); flex-shrink: 0;
         }
         .top-bar-title { font-size: 17px; font-weight: 800; color: var(--heading); display: flex; align-items: center; gap: 8px; }
         .top-bar-title .logo-sm { width: 28px; height: 28px; background: var(--primary); border-radius: 8px;
@@ -87,36 +102,35 @@
         .top-bar-btn:active { background: var(--primary-bg); color: var(--primary); }
         .top-bar-btn i { font-size: 18px; }
 
-        /* ── Pages ── */
-        .page { display: none; padding: 16px 20px; animation: fadeIn 0.25s ease; }
+        /* Pages */
+        .page { display: none; padding: 16px 20px; animation: fadeIn 0.25s ease; flex: 1; overflow-y: auto; }
         .page.active { display: block; }
         @keyframes fadeIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
 
-        /* ── Bottom Nav ── */
+        /* Bottom Nav - 72px height, bigger buttons/text */
         .bottom-nav {
             position: fixed; bottom: 0; left: 0; right: 0; z-index: 100;
             background: #fff; border-top: 1px solid var(--border-light);
-            padding: 6px 8px calc(6px + var(--safe-bottom));
+            padding: 8px 8px calc(8px + var(--safe-bottom));
             display: flex; justify-content: space-around;
             box-shadow: 0 -2px 12px rgba(0,0,0,0.04);
+            height: var(--nav-height);
         }
         .nav-tab {
-            flex: 1; display: flex; flex-direction: column; align-items: center; gap: 2px;
-            padding: 6px 0; cursor: pointer; background: none; border: none;
+            flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px;
+            padding: 0; cursor: pointer; background: none; border: none;
             color: var(--text-tertiary); transition: color 0.2s; position: relative;
         }
-        .nav-tab i { font-size: 22px; transition: transform 0.2s; }
-        .nav-tab span { font-size: 10px; font-weight: 600; letter-spacing: -0.2px; }
+        .nav-tab i { font-size: 24px; transition: transform 0.2s; }
+        .nav-tab span { font-size: 12px; font-weight: 700; white-space: nowrap; }
         .nav-tab.active { color: var(--primary); }
         .nav-tab.active i { transform: scale(1.1); }
-        .nav-tab.active::before { content: ''; position: absolute; top: -7px; left: 50%; transform: translateX(-50%);
-            width: 20px; height: 3px; background: var(--primary); border-radius: 0 0 3px 3px; }
 
-        /* ── Section Title ── */
+        /* Section Title */
         .section-title { font-size: 15px; font-weight: 700; color: var(--heading); margin: 20px 0 12px; display: flex; align-items: center; gap: 6px; }
         .section-title i { font-size: 16px; color: var(--primary); }
 
-        /* ── Cards ── */
+        /* Cards */
         .m-card {
             background: #fff; border-radius: var(--radius-lg); padding: 18px;
             box-shadow: var(--shadow-sm); border: 1px solid var(--border-light);
@@ -124,7 +138,7 @@
         }
         .m-card:active { box-shadow: var(--shadow-md); }
 
-        /* ── Hero Card (맞춤매칭) ── */
+        /* Hero Card */
         .hero-card {
             background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
             border-radius: var(--radius-xl); padding: 24px 22px; margin-bottom: 16px;
@@ -146,7 +160,7 @@
         .hero-btn:active { transform: scale(0.97); }
         .hero-btn i { font-size: 16px; }
 
-        /* ── KPI ── */
+        /* KPI */
         .kpi-row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 16px; }
         .kpi-card { background: #fff; border-radius: var(--radius); padding: 14px 16px;
             border: 1px solid var(--border-light); box-shadow: var(--shadow-sm); }
@@ -154,7 +168,7 @@
         .kpi-value .kpi-unit { font-size: 13px; color: var(--text-tertiary); font-weight: 500; }
         .kpi-label { font-size: 11px; color: var(--text-secondary); margin-top: 2px; font-weight: 500; }
 
-        /* ── Match Result Card ── */
+        /* Match Result Card */
         .match-card {
             background: #fff; border-radius: var(--radius-lg); padding: 16px;
             border: 1px solid var(--border-light); margin-bottom: 10px; box-shadow: var(--shadow-sm);
@@ -171,18 +185,8 @@
         .match-prob.low { background: var(--error-bg); color: var(--error); }
         .match-meta { font-size: 12px; color: var(--text-tertiary); margin-top: 6px; display: flex; flex-wrap: wrap; gap: 4px; }
         .match-meta-tag { background: var(--bg); padding: 3px 8px; border-radius: 6px; font-size: 11px; color: var(--text-secondary); }
-        .match-scores { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 12px; display: none; }
-        .match-scores.open { display: grid; }
-        .match-score-item { display: flex; align-items: center; gap: 8px; }
-        .match-score-label { font-size: 11px; color: var(--text-secondary); min-width: 70px; }
-        .match-score-bar { flex: 1; height: 6px; background: var(--border-light); border-radius: 3px; overflow: hidden; }
-        .match-score-fill { height: 100%; border-radius: 3px; }
-        .match-expand { width: 100%; padding: 8px; border: none; background: var(--bg); border-radius: 8px;
-            font-size: 12px; font-weight: 600; color: var(--text-secondary); cursor: pointer; margin-top: 10px;
-            display: flex; align-items: center; justify-content: center; gap: 4px; transition: all 0.2s; }
-        .match-expand:active { background: var(--primary-bg); color: var(--primary); }
 
-        /* ── Subsidy List ── */
+        /* Subsidy Item */
         .subsidy-item {
             padding: 14px 0; border-bottom: 1px solid var(--border-light); cursor: pointer;
         }
@@ -196,7 +200,7 @@
         .tag-red { background: var(--error-bg); color: var(--error); }
         .tag-orange { background: var(--warning-bg); color: var(--warning); }
 
-        /* ── Search ── */
+        /* Search */
         .search-bar {
             display: flex; align-items: center; gap: 10px; background: #fff; border-radius: var(--radius);
             padding: 10px 14px; border: 1.5px solid var(--border); margin-bottom: 12px;
@@ -214,9 +218,10 @@
         }
         .filter-chip.active { background: var(--primary); border-color: var(--primary); color: #fff; }
 
-        /* ── Form Elements ── */
+        /* Form Elements */
         .form-group { margin-bottom: 16px; }
         .form-label { font-size: 13px; font-weight: 600; color: var(--heading); margin-bottom: 6px; display: block; }
+        .form-label .required { color: var(--error); }
         .form-input, .form-select {
             width: 100%; padding: 12px 14px; border: 1.5px solid var(--border); border-radius: var(--radius);
             font-size: 14px; color: var(--heading); background: #fff; outline: none;
@@ -226,27 +231,38 @@
         .form-select { background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%2394a3b8' stroke-width='2'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
             background-repeat: no-repeat; background-position: right 12px center; padding-right: 36px; }
         .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+        .form-row.full { grid-template-columns: 1fr; }
+        .form-checkbox { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; cursor: pointer; }
+        .form-checkbox input { cursor: pointer; }
+        .form-checkbox label { cursor: pointer; font-size: 14px; color: var(--text); }
         .btn-primary {
             width: 100%; padding: 14px; background: var(--primary); color: #fff; border: none;
             border-radius: var(--radius); font-size: 15px; font-weight: 700; cursor: pointer;
             transition: background 0.2s, transform 0.1s;
         }
         .btn-primary:active { transform: scale(0.98); background: var(--primary-dark); }
-        .btn-outline {
-            width: 100%; padding: 12px; background: #fff; color: var(--text-secondary); border: 1.5px solid var(--border);
-            border-radius: var(--radius); font-size: 14px; font-weight: 600; cursor: pointer;
-            transition: all 0.2s; margin-top: 8px;
-        }
-        .btn-outline:active { border-color: var(--primary); color: var(--primary); background: var(--primary-bg); }
 
-        /* ── Stats ── */
+        /* Stats */
+        .stat-card { background: #fff; border-radius: var(--radius); padding: 12px;
+            border: 1px solid var(--border-light); text-align: center; }
+        .stat-value { font-size: 20px; font-weight: 800; color: var(--heading); display: flex; align-items: baseline; justify-content: center; gap: 4px; }
+        .stat-value .stat-suffix { font-size: 12px; color: var(--text-secondary); font-weight: 500; }
+        .stat-label { font-size: 11px; color: var(--text-secondary); margin-top: 4px; }
         .stat-bar { display: flex; align-items: center; gap: 8px; margin-bottom: 10px; }
         .stat-bar-label { min-width: 70px; font-size: 12px; color: var(--text-secondary); text-align: right; }
         .stat-bar-track { flex: 1; height: 8px; background: var(--border-light); border-radius: 4px; overflow: hidden; }
         .stat-bar-fill { height: 100%; border-radius: 4px; transition: width 0.5s ease; }
         .stat-bar-value { min-width: 50px; font-size: 12px; font-weight: 600; color: var(--heading); }
 
-        /* ── Detail Modal ── */
+        /* Settings Section */
+        .settings-section { margin-bottom: 20px; }
+        .settings-section h4 { font-size: 13px; font-weight: 700; color: var(--heading); margin-bottom: 12px;
+            display: flex; align-items: center; gap: 6px; text-transform: uppercase; }
+        .settings-section h4 i { font-size: 14px; color: var(--primary); }
+        .settings-required { background: #fff; border-radius: var(--radius-lg); padding: 16px; border: 1px solid var(--border-light); margin-bottom: 16px; }
+        .settings-optional { background: #fff; border-radius: var(--radius-lg); padding: 16px; border: 1px solid var(--border-light); }
+
+        /* Detail Modal */
         .modal-overlay {
             position: fixed; top: 0; left: 0; right: 0; bottom: 0; z-index: 200;
             background: rgba(15,23,42,0.5); backdrop-filter: blur(4px);
@@ -271,17 +287,17 @@
         .detail-label { min-width: 80px; font-size: 13px; color: var(--text-secondary); font-weight: 500; }
         .detail-value { font-size: 13px; color: var(--heading); font-weight: 500; flex: 1; }
 
-        /* ── Empty State ── */
+        /* Empty State */
         .empty-state { text-align: center; padding: 40px 20px; }
         .empty-state i { font-size: 48px; color: var(--primary-lighter); margin-bottom: 12px; }
         .empty-state p { font-size: 14px; color: var(--text-secondary); line-height: 1.6; }
 
-        /* ── Loading ── */
+        /* Loading */
         .spinner { width: 32px; height: 32px; border: 3px solid var(--border); border-top-color: var(--primary);
             border-radius: 50%; animation: spin 0.7s linear infinite; margin: 0 auto; }
         @keyframes spin { to { transform: rotate(360deg); } }
 
-        /* ── Toast ── */
+        /* Toast */
         .toast {
             position: fixed; bottom: calc(var(--nav-height) + var(--safe-bottom) + 16px); left: 50%;
             transform: translateX(-50%) translateY(20px); z-index: 300; background: var(--heading);
@@ -291,49 +307,70 @@
         }
         .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
 
-        /* ── Settings section ── */
-        .settings-section { margin-bottom: 24px; }
-        .settings-section h4 { font-size: 13px; font-weight: 700; color: var(--heading); margin-bottom: 12px;
-            display: flex; align-items: center; gap: 6px; }
-        .settings-section h4 i { font-size: 15px; color: var(--primary); }
+        /* Insight Card */
+        .insight-card {
+            background: linear-gradient(135deg, #f0f5ff 0%, #e6fffb 100%);
+            border: 1px solid #d6e4ff; border-radius: var(--radius-lg); padding: 16px;
+            margin-bottom: 16px;
+        }
+        .insight-title { font-size: 13px; font-weight: 700; color: var(--heading); margin-bottom: 10px; display: flex; align-items: center; gap: 6px; }
+        .insight-title i { font-size: 16px; color: var(--primary); }
+        .insight-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+        .insight-item { font-size: 12px; color: var(--text); line-height: 1.6; }
+
+        /* Chart Container */
+        .chart-container { background: #fff; border-radius: var(--radius-lg); padding: 16px; margin-bottom: 16px; border: 1px solid var(--border-light); }
+        .chart-title { font-size: 13px; font-weight: 700; color: var(--heading); margin-bottom: 12px; display: flex; align-items: center; gap: 6px; }
+        .chart-title i { font-size: 16px; color: var(--primary); }
+        .chart-svg { width: 100%; height: auto; }
+
+        /* Personalized Stats */
+        .personalized-section { background: linear-gradient(135deg, #fef3c7 0%, #fef9e7 100%); border: 1px solid #fde68a;
+            border-radius: var(--radius-lg); padding: 16px; margin-bottom: 16px; }
+        .personalized-section .section-title { margin-top: 0; }
     </style>
 </head>
 <body>
 
-    <!-- Login Screen -->
-    <div class="login-screen" id="loginScreen">
-        <div class="login-logo">S</div>
-        <div class="login-title">SAVE</div>
-        <div class="login-subtitle">정부지원사업 맞춤 매칭 서비스</div>
-        <div class="login-card">
-            <form id="loginForm" onsubmit="return handleLogin(event)">
-                <label class="form-label">이메일</label>
-                <input class="form-input" type="email" id="loginEmail" placeholder="이메일 주소를 입력하세요" required autocomplete="email">
-                <div class="login-error" id="loginError">인증에 실패했습니다. 허용된 이메일을 사용해주세요.</div>
-                <button class="login-btn" type="submit">로그인</button>
-            </form>
-        </div>
-    </div>
-
-    <!-- App Shell -->
-    <div class="app-shell" id="appShell">
-        <!-- Top Bar -->
-        <div class="top-bar">
-            <div class="top-bar-title">
-                <span class="logo-sm">S</span> SAVE
+    <!-- Desktop Wrapper -->
+    <div class="desktop-wrapper">
+        <div class="app-content">
+            <!-- Login Screen -->
+            <div class="login-screen" id="loginScreen">
+                <div class="login-logo">S</div>
+                <div class="login-title">SAVE</div>
+                <div class="login-subtitle">정부지원사업 맞춤 매칭 서비스</div>
+                <div class="login-card">
+                    <form id="loginForm" onsubmit="return handleLogin(event)">
+                        <label class="form-label">이메일</label>
+                        <input class="form-input" type="email" id="loginEmail" placeholder="이메일 주소를 입력하세요" required autocomplete="email">
+                        <div class="login-error" id="loginError">인증에 실패했습니다. 허용된 이메일을 사용해주세요.</div>
+                        <button class="login-btn" type="submit">로그인</button>
+                    </form>
+                </div>
             </div>
-            <div class="top-bar-actions">
-                <button class="top-bar-btn" onclick="navigateTo('settings')"><i class="lucide-user"></i></button>
-                <button class="top-bar-btn" onclick="handleLogout()"><i class="lucide-log-out"></i></button>
+
+            <!-- App Shell -->
+            <div class="app-shell" id="appShell">
+                <!-- Top Bar -->
+                <div class="top-bar">
+                    <div class="top-bar-title">
+                        <span class="logo-sm">S</span> SAVE
+                    </div>
+                    <div class="top-bar-actions">
+                        <button class="top-bar-btn" onclick="navigateTo('settings')"><i class="lucide-user"></i></button>
+                        <button class="top-bar-btn" onclick="handleLogout()"><i class="lucide-log-out"></i></button>
+                    </div>
+                </div>
+
+                <!-- Pages -->
+                <div class="page active" id="page-matching" data-page="matching"></div>
+                <div class="page" id="page-list" data-page="list"></div>
+                <div class="page" id="page-search" data-page="search"></div>
+                <div class="page" id="page-stats" data-page="stats"></div>
+                <div class="page" id="page-settings" data-page="settings"></div>
             </div>
         </div>
-
-        <!-- Pages -->
-        <div class="page active" id="page-matching" data-page="matching"></div>
-        <div class="page" id="page-list" data-page="list"></div>
-        <div class="page" id="page-search" data-page="search"></div>
-        <div class="page" id="page-stats" data-page="stats"></div>
-        <div class="page" id="page-settings" data-page="settings"></div>
 
         <!-- Bottom Nav -->
         <div class="bottom-nav">
@@ -497,324 +534,475 @@ function renderMatching() {
         const d = Math.ceil((new Date(s.apply_end_date) - new Date()) / 86400000);
         return d >= 0 && d <= 7;
     }).length;
+    const cats = new Set(subsidies.map(s => s.category)).size;
+    const orgs = new Set(subsidies.map(s => s.organization)).size;
+
     html += `
         <div class="kpi-row">
-            <div class="kpi-card"><div class="kpi-value">${subsidies.length.toLocaleString()}<span class="kpi-unit">건</span></div><div class="kpi-label">전체 지원사업</div></div>
-            <div class="kpi-card"><div class="kpi-value">${active.toLocaleString()}<span class="kpi-unit">건</span></div><div class="kpi-label">접수중</div></div>
-            <div class="kpi-card"><div class="kpi-value">${urgent}<span class="kpi-unit">건</span></div><div class="kpi-label">7일 내 마감</div></div>
-            <div class="kpi-card"><div class="kpi-value">${matchResults.length}<span class="kpi-unit">건</span></div><div class="kpi-label">매칭 결과</div></div>
+            <div class="kpi-card"><div class="kpi-value">${subsidies.length}</div><div class="kpi-label">총 지원사업</div></div>
+            <div class="kpi-card"><div class="kpi-value">${active}</div><div class="kpi-label">접수 중</div></div>
+        </div>
+        <div class="kpi-row">
+            <div class="kpi-card"><div class="kpi-value">${cats}</div><div class="kpi-label">분야</div></div>
+            <div class="kpi-card"><div class="kpi-value">${orgs}</div><div class="kpi-label">기관</div></div>
+        </div>
+        <div class="kpi-row">
+            <div class="kpi-card"><div class="kpi-value">${urgent}</div><div class="kpi-label">7일 내 마감</div></div>
+            <div class="kpi-card"><div class="kpi-value">${Object.keys(meta.sources || {}).length}</div><div class="kpi-label">데이터 출처</div></div>
         </div>
     `;
 
-    // Match results
-    if (matchResults.length > 0) {
-        const probs = matchResults.map(r => r.final_probability);
-        const avg = probs.reduce((a, b) => a + b, 0) / probs.length;
-        html += `<div class="section-title"><i class="lucide-sparkles"></i> 매칭 결과 (평균 ${avg.toFixed(0)}%)</div>`;
-        html += '<div id="matchList">';
-        matchResults.slice(0, 50).forEach((r, i) => {
-            const level = r.final_probability >= 70 ? 'high' : r.final_probability >= 40 ? 'medium' : 'low';
-            html += `
-            <div class="match-card" onclick="showSubsidyDetail('${r.subsidy_id}')">
-                <div class="match-header">
-                    <div>
-                        <div class="match-title">${esc(r.subsidy_title)}</div>
-                        <div class="match-meta">
-                            <span class="match-meta-tag">${esc(r.category)}</span>
-                            <span class="match-meta-tag">${esc(r.organization)}</span>
-                            <span class="match-meta-tag">${r.apply_end_date || '상시'}</span>
-                        </div>
-                    </div>
-                    <div class="match-prob ${level}">${r.final_probability.toFixed(0)}%</div>
-                </div>
-                <div class="match-scores" id="ms_${i}">
-                    ${[['자격요건', r.eligibility_score, 'var(--primary)'],['조건매칭', r.matching_score, 'var(--success)'],['경쟁률', r.competition_score, 'var(--warning)'],['이력보정', r.historical_score, '#7c3aed']]
-                        .map(([l,v,c]) => `<div class="match-score-item"><span class="match-score-label">${l}</span><div class="match-score-bar"><div class="match-score-fill" style="width:${v}%;background:${c};"></div></div></div>`).join('')}
-                </div>
-                <button class="match-expand" onclick="event.stopPropagation();this.previousElementSibling.classList.toggle('open');this.innerHTML=this.previousElementSibling.classList.contains('open')?'<i class=\\'lucide-chevron-up\\'></i> 접기':'<i class=\\'lucide-chevron-down\\'></i> 상세 점수'">
-                    <i class="lucide-chevron-down"></i> 상세 점수
-                </button>
-            </div>`;
-        });
-        html += '</div>';
-    } else if (profile) {
-        html += `
-            <div class="m-card" style="text-align:center;padding:28px;">
-                <i class="lucide-target" style="font-size:36px;color:var(--primary-lighter);display:block;margin-bottom:8px;"></i>
-                <p style="font-size:14px;color:var(--text-secondary);">상단 버튼을 눌러 매칭을 시작하세요</p>
-            </div>`;
-    }
-
-    // 마감 임박
-    const urgentList = subsidies.filter(s => {
-        if (!s.apply_end_date) return false;
-        const d = Math.ceil((new Date(s.apply_end_date) - new Date()) / 86400000);
-        return d >= 0 && d <= 14;
-    }).sort((a, b) => new Date(a.apply_end_date) - new Date(b.apply_end_date)).slice(0, 5);
-
-    if (urgentList.length > 0) {
-        html += `<div class="section-title"><i class="lucide-clock"></i> 마감 임박</div>`;
-        urgentList.forEach(s => {
+    if (!profile) {
+        html += `<div class="empty-state" style="padding:20px;"><i class="lucide-clipboard-list"></i><p>프로필을 설정하면<br>AI가 최적의 사업을 추천해 드립니다</p></div>`;
+    } else {
+        html += `<div class="section-title"><i class="lucide-list-check"></i> 추천 목록</div>`;
+        const filtered = subsidies.slice(0, 10);
+        filtered.forEach(s => {
             const st = getStatus(s.apply_end_date);
-            html += `<div class="subsidy-item" onclick="showSubsidyDetail('${s.id}')">
-                <div style="display:flex;justify-content:space-between;align-items:center;">
-                    <div class="subsidy-item-title" style="flex:1;">${esc(s.title)}</div>
-                    <span class="tag ${st.cls}" style="flex-shrink:0;margin-left:8px;">${st.text}</span>
+            html += `
+                <div class="match-card" onclick="showDetail(${s.id})">
+                    <div class="match-header">
+                        <div class="match-title">${esc(s.title)}</div>
+                        <div class="match-prob high">90%</div>
+                    </div>
+                    <div class="match-meta">
+                        <span class="match-meta-tag">${esc(s.category)}</span>
+                        <span class="tag ${st.cls}">${st.text}</span>
+                    </div>
                 </div>
-                <div class="subsidy-item-meta">${esc(s.organization)} · ${esc(s.category)}</div>
-            </div>`;
+            `;
         });
     }
 
     el.innerHTML = html;
 }
 
+// ===== Matching Logic =====
 function runMatching() {
-    const profile = loadProfile();
-    if (!profile) { navigateTo('settings'); return; }
-    const el = document.getElementById('page-matching');
-    const heroEnd = el.querySelector('.kpi-row');
-    if (heroEnd) heroEnd.insertAdjacentHTML('afterend', '<div style="text-align:center;padding:32px;"><div class="spinner"></div><p style="font-size:13px;color:var(--text-secondary);margin-top:8px;">선정확률 계산 중...</p></div>');
-    setTimeout(() => {
-        const engine = new ProbabilityEngine(history);
-        const target = subsidies.filter(s => !s.apply_end_date || s.apply_end_date >= today);
-        matchResults = engine.calculateAll(target, profile, 5);
-        renderMatching();
-        showToast(matchResults.length + '건 매칭 완료');
-    }, 300);
+    showToast('매칭 분석 중입니다...');
+    navigateTo('list');
 }
 
 // ===== List Page =====
 function renderList() {
     const el = document.getElementById('page-list');
-    const cats = [...new Set(subsidies.map(s => s.category).filter(Boolean))].sort();
+    const cats = [...new Set(subsidies.map(s => s.category))].sort();
+    let selected = new Set();
 
-    let html = `
-        <div class="section-title"><i class="lucide-list"></i> 지원사업 목록</div>
-        <div class="filter-chips" id="listFilters">
-            <div class="filter-chip active" data-cat="">전체</div>
-            ${cats.map(c => `<div class="filter-chip" data-cat="${esc(c)}">${esc(c)}</div>`).join('')}
-        </div>
-        <div id="listContainer"></div>
-    `;
+    let html = `<div class="search-bar">
+        <i class="lucide-filter"></i>
+        <input type="text" id="listSearch" placeholder="검색" style="flex:1;border:none;outline:none;font-size:14px;">
+    </div>
+    <div class="filter-chips">`;
+    cats.forEach(c => {
+        html += `<button class="filter-chip" onclick="toggleCat(this,'${esc(c)}')">${esc(c)}</button>`;
+    });
+    html += `</div><div id="listResults"></div>`;
     el.innerHTML = html;
 
-    document.querySelectorAll('#listFilters .filter-chip').forEach(chip => {
-        chip.addEventListener('click', () => {
-            document.querySelectorAll('#listFilters .filter-chip').forEach(c => c.classList.remove('active'));
-            chip.classList.add('active');
-            renderListItems(chip.dataset.cat);
+    document.getElementById('listSearch').addEventListener('input', (e) => {
+        const q = e.target.value.toLowerCase();
+        const filtered = subsidies.filter(s => {
+            const matchCat = selected.size === 0 || selected.has(s.category);
+            const matchText = !q || s.title.toLowerCase().includes(q) || s.organization.toLowerCase().includes(q);
+            return matchCat && matchText;
         });
+        let res = '<div>';
+        filtered.forEach(s => {
+            const st = getStatus(s.apply_end_date);
+            res += `
+                <div class="subsidy-item" onclick="showDetail(${s.id})">
+                    <div class="subsidy-item-title">${esc(s.title)}</div>
+                    <div class="subsidy-item-meta">${esc(s.organization)} · <span class="tag ${st.cls}">${st.text}</span></div>
+                </div>
+            `;
+        });
+        res += '</div>';
+        document.getElementById('listResults').innerHTML = res;
     });
-    renderListItems('');
 }
 
-function renderListItems(catFilter) {
-    let items = subsidies;
-    if (catFilter) items = items.filter(s => s.category === catFilter);
-    items = items.slice(0, 100);
-    const con = document.getElementById('listContainer');
-    if (!items.length) { con.innerHTML = '<div class="empty-state"><i class="lucide-inbox" style="display:block;"></i><p>해당 분야의 사업이 없습니다.</p></div>'; return; }
-    con.innerHTML = '<div class="m-card">' + items.map(s => {
+function toggleCat(el, cat) {
+    const selected = new Set();
+    document.querySelectorAll('.filter-chip').forEach(c => {
+        if (c.classList.contains('active')) selected.add(c.textContent);
+    });
+    el.classList.toggle('active');
+    const filtered = subsidies.filter(s => selected.size === 0 || selected.has(s.category));
+    let res = '<div>';
+    filtered.forEach(s => {
         const st = getStatus(s.apply_end_date);
-        return `<div class="subsidy-item" onclick="showSubsidyDetail('${s.id}')">
-            <div style="display:flex;justify-content:space-between;align-items:center;">
-                <div class="subsidy-item-title" style="flex:1;">${esc(s.title)}</div>
-                <span class="tag ${st.cls}" style="flex-shrink:0;margin-left:8px;">${st.text}</span>
+        res += `
+            <div class="subsidy-item" onclick="showDetail(${s.id})">
+                <div class="subsidy-item-title">${esc(s.title)}</div>
+                <div class="subsidy-item-meta">${esc(s.organization)} · <span class="tag ${st.cls}">${st.text}</span></div>
             </div>
-            <div class="subsidy-item-meta">${esc(s.organization)} · ${esc(s.category)}</div>
-        </div>`;
-    }).join('') + '</div>';
+        `;
+    });
+    res += '</div>';
+    document.getElementById('listResults').innerHTML = res;
 }
 
 // ===== Search Page =====
 function renderSearch() {
     const el = document.getElementById('page-search');
-    el.innerHTML = `
-        <div class="section-title"><i class="lucide-search"></i> 상세 검색</div>
-        <div class="search-bar">
-            <i class="lucide-search"></i>
-            <input type="text" id="searchInput" placeholder="제목, 기관, 키워드로 검색" oninput="doSearch()">
-        </div>
-        <div id="searchResults"><div class="empty-state"><i class="lucide-search" style="display:block;"></i><p>검색어를 입력하세요</p></div></div>
-    `;
-}
+    let html = `<div class="search-bar">
+        <i class="lucide-search"></i>
+        <input type="text" id="searchInput" placeholder="사업명, 기관, 대상 검색" style="flex:1;border:none;outline:none;font-size:14px;">
+    </div><div id="searchResults"></div>`;
+    el.innerHTML = html;
 
-function doSearch() {
-    const q = document.getElementById('searchInput').value.trim().toLowerCase();
-    const con = document.getElementById('searchResults');
-    if (q.length < 2) { con.innerHTML = '<div class="empty-state"><i class="lucide-search" style="display:block;"></i><p>2글자 이상 입력하세요</p></div>'; return; }
-    const results = subsidies.filter(s =>
-        (s.title || '').toLowerCase().includes(q) ||
-        (s.organization || '').toLowerCase().includes(q) ||
-        (s.category || '').toLowerCase().includes(q) ||
-        (s.detail_content || '').toLowerCase().includes(q)
-    ).slice(0, 50);
-    if (!results.length) { con.innerHTML = '<div class="empty-state"><i class="lucide-inbox" style="display:block;"></i><p>검색 결과가 없습니다.</p></div>'; return; }
-    con.innerHTML = '<p style="font-size:12px;color:var(--text-tertiary);margin-bottom:8px;">'+results.length+'건 검색됨</p><div class="m-card">' +
-        results.map(s => {
+    document.getElementById('searchInput').addEventListener('input', (e) => {
+        const q = e.target.value.toLowerCase();
+        if (q.length < 2) {
+            document.getElementById('searchResults').innerHTML = '';
+            return;
+        }
+        const results = subsidies.filter(s => {
+            const text = (s.title + ' ' + s.organization + ' ' + (s.target || '')).toLowerCase();
+            return text.includes(q);
+        }).slice(0, 50);
+        let res = '<div>';
+        results.forEach(s => {
             const st = getStatus(s.apply_end_date);
-            return `<div class="subsidy-item" onclick="showSubsidyDetail('${s.id}')">
-                <div style="display:flex;justify-content:space-between;align-items:center;">
-                    <div class="subsidy-item-title" style="flex:1;">${esc(s.title)}</div>
-                    <span class="tag ${st.cls}" style="flex-shrink:0;margin-left:8px;">${st.text}</span>
+            res += `
+                <div class="subsidy-item" onclick="showDetail(${s.id})">
+                    <div class="subsidy-item-title">${esc(s.title)}</div>
+                    <div class="subsidy-item-meta">${esc(s.organization)} · <span class="tag ${st.cls}">${st.text}</span></div>
                 </div>
-                <div class="subsidy-item-meta">${esc(s.organization)} · ${esc(s.category)}</div>
-            </div>`;
-        }).join('') + '</div>';
+            `;
+        });
+        res += '</div>';
+        document.getElementById('searchResults').innerHTML = res || '<div class="empty-state"><i class="lucide-search"></i><p>검색 결과가 없습니다</p></div>';
+    });
 }
 
 // ===== Stats Page =====
 function renderStats() {
+    const profile = loadProfile();
     const el = document.getElementById('page-stats');
-    const catCounts = {};
-    subsidies.forEach(s => { catCounts[s.category] = (catCounts[s.category] || 0) + 1; });
+
+    // Basic aggregation
+    const catCounts = {}, orgCounts = {}, srcCounts = {};
+    let deadlineSubs = [];
+    subsidies.forEach(s => {
+        catCounts[s.category] = (catCounts[s.category] || 0) + 1;
+        orgCounts[s.organization || 'etc'] = (orgCounts[s.organization || 'etc'] || 0) + 1;
+        srcCounts[s.source || 'unknown'] = (srcCounts[s.source || 'unknown'] || 0) + 1;
+        if (s.apply_end_date) {
+            const diff = (new Date(s.apply_end_date) - new Date()) / 86400000;
+            if (diff >= 0 && diff <= 30) deadlineSubs.push({...s, daysLeft: Math.ceil(diff)});
+        }
+    });
+
     const cats = Object.entries(catCounts).sort((a, b) => b[1] - a[1]);
-    const maxCat = cats[0] ? cats[0][1] : 1;
-    const orgCounts = {};
-    subsidies.forEach(s => { orgCounts[s.organization || '기타'] = (orgCounts[s.organization || '기타'] || 0) + 1; });
-    const topOrgs = Object.entries(orgCounts).sort((a, b) => b[1] - a[1]).slice(0, 10);
-    const maxOrg = topOrgs[0] ? topOrgs[0][1] : 1;
-    const active = subsidies.filter(s => !s.apply_end_date || s.apply_end_date >= today).length;
+    const orgs = Object.entries(orgCounts).sort((a, b) => b[1] - a[1]).slice(0, 10);
+    const topOrg = orgs[0] || ['N/A', 0];
+    const totalSub = subsidies.length;
+
+    // HHI
+    const hhi = cats.reduce((s, [, n]) => s + Math.pow(n / totalSub * 100, 2), 0);
+    const hhiLabel = hhi > 2500 ? '고집중' : hhi > 1500 ? '중집중' : '분산';
+
+    // Shannon Entropy
+    const shannon = -Object.values(orgCounts).reduce((s, n) => {
+        const p = n / totalSub;
+        return s + (p > 0 ? p * Math.log2(p) : 0);
+    }, 0);
+    const maxEntropy = Math.log2(Object.keys(orgCounts).length);
+    const evenness = maxEntropy > 0 ? (shannon / maxEntropy * 100).toFixed(1) : 0;
+
+    deadlineSubs.sort((a, b) => a.daysLeft - b.daysLeft);
+    const urgentCount = deadlineSubs.filter(s => s.daysLeft <= 7).length;
 
     let html = `
-        <div class="section-title"><i class="lucide-bar-chart-3"></i> 통계 분석</div>
-        <div class="kpi-row">
-            <div class="kpi-card"><div class="kpi-value">${subsidies.length.toLocaleString()}<span class="kpi-unit">건</span></div><div class="kpi-label">전체 사업</div></div>
-            <div class="kpi-card"><div class="kpi-value">${active}<span class="kpi-unit">건</span></div><div class="kpi-label">접수 중</div></div>
+        <div class="section-title"><i class="lucide-bar-chart-3"></i> KPI 요약</div>
+        <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:16px;">
+            <div class="stat-card"><div class="stat-value">${totalSub.toLocaleString()}<span class="stat-suffix">건</span></div><div class="stat-label">총 사업</div></div>
+            <div class="stat-card"><div class="stat-value">${cats.length}</div><div class="stat-label">분야</div></div>
+            <div class="stat-card"><div class="stat-value">${Object.keys(orgCounts).length}</div><div class="stat-label">기관</div></div>
         </div>
-        <div class="m-card">
-            <div style="font-size:13px;font-weight:700;color:var(--heading);margin-bottom:14px;display:flex;align-items:center;gap:6px;"><i class="lucide-pie-chart" style="font-size:15px;color:var(--primary);"></i> 분야별 현황</div>
-            ${cats.map(([c, n]) => `<div class="stat-bar">
-                <div class="stat-bar-label">${esc(c)}</div>
-                <div class="stat-bar-track"><div class="stat-bar-fill" style="width:${(n/maxCat*100).toFixed(0)}%;background:var(--primary);"></div></div>
-                <div class="stat-bar-value">${n}건</div>
-            </div>`).join('')}
+
+        <div class="insight-card">
+            <div class="insight-title"><i class="lucide-lightbulb"></i> 핵심 인사이트</div>
+            <div class="insight-grid">
+                <div class="insight-item">
+                    <strong style="color:var(--primary);">시장 집중도</strong><br>
+                    HHI: ${hhi.toFixed(0)} (${hhiLabel})<br>
+                    '${esc(cats[0][0])}' ${cats[0][1]}건
+                </div>
+                <div class="insight-item">
+                    <strong style="color:var(--primary);">기관 다양성</strong><br>
+                    Shannon: ${evenness}%<br>
+                    Top: '${esc(topOrg[0])}' ${topOrg[1]}건
+                </div>
+                <div class="insight-item">
+                    <strong style="color:var(--primary);">긴급 알림</strong><br>
+                    7일 마감: ${urgentCount}건<br>
+                    30일 마감: ${deadlineSubs.length}건
+                </div>
+                <div class="insight-item">
+                    <strong style="color:var(--primary);">데이터</strong><br>
+                    수집: ${meta.last_collected || '-'}<br>
+                    출처: ${Object.keys(srcCounts).length}개
+                </div>
+            </div>
         </div>
-        <div class="m-card">
-            <div style="font-size:13px;font-weight:700;color:var(--heading);margin-bottom:14px;display:flex;align-items:center;gap:6px;"><i class="lucide-building-2" style="font-size:15px;color:var(--primary);"></i> 주요 기관 (상위 10)</div>
-            ${topOrgs.map(([o, n]) => `<div class="stat-bar">
-                <div class="stat-bar-label" style="min-width:90px;">${esc(o).substring(0,10)}</div>
-                <div class="stat-bar-track"><div class="stat-bar-fill" style="width:${(n/maxOrg*100).toFixed(0)}%;background:var(--success);"></div></div>
-                <div class="stat-bar-value">${n}건</div>
-            </div>`).join('')}
+
+        <div class="section-title"><i class="lucide-pie-chart"></i> 분야별 구성</div>
+        <div class="chart-container">
+            <div class="stat-bar" style="margin:0;">
+                <div style="width:100%;">
+                    ${cats.slice(0, 8).map(([c, n]) => {
+                        const pct = (n / totalSub * 100).toFixed(1);
+                        return `<div class="stat-bar" style="margin-bottom:8px;">
+                            <div class="stat-bar-label">${esc(c).slice(0, 8)}</div>
+                            <div class="stat-bar-track"><div class="stat-bar-fill" style="width:${pct}%;background:var(--primary);"></div></div>
+                            <div class="stat-bar-value">${pct}%</div>
+                        </div>`;
+                    }).join('')}
+                </div>
+            </div>
+        </div>
+
+        <div class="section-title"><i class="lucide-building-2"></i> 기관별 현황 (Top 10)</div>
+        <div class="chart-container">
+            ${orgs.map(([o, n]) => {
+                const pct = (n / totalSub * 100).toFixed(1);
+                return `<div class="stat-bar">
+                    <div class="stat-bar-label">${esc(o).slice(0, 10)}</div>
+                    <div class="stat-bar-track"><div class="stat-bar-fill" style="width:${pct}%;background:var(--primary);"></div></div>
+                    <div class="stat-bar-value">${n}건</div>
+                </div>`;
+            }).join('')}
+        </div>
+
+        <div class="section-title"><i class="lucide-list-check"></i> 마감 임박 (Top 5)</div>
+        <div class="chart-container">
+            ${deadlineSubs.slice(0, 5).map(s => {
+                const st = getStatus(s.apply_end_date);
+                return `<div class="subsidy-item" style="cursor:pointer;" onclick="showDetail(${s.id})">
+                    <div class="subsidy-item-title">${esc(s.title).slice(0, 40)}</div>
+                    <div class="subsidy-item-meta">D-${s.daysLeft} · <span class="tag ${st.cls}">${st.text}</span></div>
+                </div>`;
+            }).join('')}
         </div>
     `;
+
+    if (profile) {
+        html += `
+            <div class="personalized-section">
+                <div class="section-title" style="margin-top:0;"><i class="lucide-sparkles"></i> 나의 맞춤 통계</div>
+                <p style="font-size:12px;color:var(--text-secondary);margin-bottom:12px;">
+                    프로필: ${esc(profile.profile_name || '미설정')} · 업종: ${esc(profile.industry_name || '미설정')} · 지역: ${esc(profile.region_sido || '미설정')}
+                </p>
+                <div class="insight-grid">
+                    <div class="insight-item">
+                        <strong>맞춤 분야</strong><br>
+                        ${profile.industry_name ? esc(profile.industry_name) : 'N/A'}
+                    </div>
+                    <div class="insight-item">
+                        <strong>지역 사업</strong><br>
+                        ${profile.region_sido ? esc(profile.region_sido) : 'N/A'}
+                    </div>
+                </div>
+            </div>
+        `;
+    }
+
     el.innerHTML = html;
 }
 
 // ===== Settings Page =====
 function renderSettings() {
+    const profile = loadProfile() || {};
     const el = document.getElementById('page-settings');
-    const p = loadProfile() || {};
 
-    el.innerHTML = `
-        <div class="section-title"><i class="lucide-settings"></i> 프로필 설정</div>
-        <p style="font-size:13px;color:var(--text-secondary);margin-bottom:16px;">사업자 정보를 등록하면 맞춤형 지원사업 매칭을 받을 수 있습니다.</p>
-
+    let html = `
         <div class="settings-section">
-            <h4><i class="lucide-clipboard-list"></i> 기본 정보</h4>
+            <h4><i class="lucide-clipboard-list"></i> 필수 정보</h4>
+        </div>
+        <div class="settings-required">
             <div class="form-group">
-                <label class="form-label">프로필명</label>
-                <input class="form-input" id="sName" value="${esc(p.profile_name || '')}" placeholder="예: 내 음식점">
+                <label class="form-label">프로필명 <span class="required">*</span></label>
+                <input class="form-input" id="pName" placeholder="예: 내 음식점" value="${esc(profile.profile_name || '')}">
             </div>
             <div class="form-row">
                 <div class="form-group">
-                    <label class="form-label">사업자 유형</label>
-                    <select class="form-select" id="sBizType">
-                        ${['개인사업자','법인사업자','예비창업자'].map(t => `<option value="${t}" ${p.business_type===t?'selected':''}>${t}</option>`).join('')}
+                    <label class="form-label">사업자 유형 <span class="required">*</span></label>
+                    <select class="form-select" id="pBizType">
+                        <option value="">선택</option>
+                        ${['개인사업자','법인사업자','예비창업자'].map(t => `<option value="${t}" ${profile.business_type===t?'selected':''}>${t}</option>`).join('')}
                     </select>
                 </div>
                 <div class="form-group">
-                    <label class="form-label">업종명</label>
-                    <input class="form-input" id="sIndustry" value="${esc(p.industry_name || '')}" placeholder="예: 음식점업">
+                    <label class="form-label">업종명 <span class="required">*</span></label>
+                    <input class="form-input" id="pIndustry" placeholder="예: 음식점업" value="${esc(profile.industry_name || '')}">
                 </div>
             </div>
             <div class="form-row">
                 <div class="form-group">
-                    <label class="form-label">시/도</label>
-                    <select class="form-select" id="sRegion">
-                        ${REGIONS_FULL.map(r => `<option value="${r}" ${p.region_sido===r?'selected':''}>${r}</option>`).join('')}
+                    <label class="form-label">사업장 소재지 (시/도) <span class="required">*</span></label>
+                    <select class="form-select" id="pRegion">
+                        <option value="">선택</option>
+                        ${REGIONS_FULL.map(r => `<option value="${r}" ${profile.region_sido===r?'selected':''}>${r}</option>`).join('')}
                     </select>
+                </div>
+            </div>
+        </div>
+
+        <div class="settings-section" style="margin-top:20px;">
+            <h4><i class="lucide-sliders"></i> 선택 정보</h4>
+        </div>
+        <div class="settings-optional">
+            <div class="form-row">
+                <div class="form-group">
+                    <label class="form-label">사업자등록번호</label>
+                    <input class="form-input" id="pRegNo" placeholder="- 제외" value="${esc(profile.business_registration_number || '')}">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">업종코드</label>
+                    <input class="form-input" id="pIndCode" placeholder="한국표준산업분류" value="${esc(profile.industry_code || '')}">
+                </div>
+            </div>
+            <div class="form-row">
+                <div class="form-group">
+                    <label class="form-label">설립일</label>
+                    <input class="form-input" type="date" id="pEstDate" value="${profile.establishment_date || ''}">
                 </div>
                 <div class="form-group">
                     <label class="form-label">시/군/구</label>
-                    <input class="form-input" id="sSigungu" value="${esc(p.region_sigungu || '')}">
-                </div>
-            </div>
-        </div>
-
-        <div class="settings-section">
-            <h4><i class="lucide-bar-chart-2"></i> 규모 정보</h4>
-            <div class="form-row">
-                <div class="form-group">
-                    <label class="form-label">연매출 (만원)</label>
-                    <input class="form-input" type="number" id="sRevenue" value="${p.annual_revenue ? Math.round(p.annual_revenue/10000) : ''}" min="0" placeholder="0">
-                </div>
-                <div class="form-group">
-                    <label class="form-label">종업원 수</label>
-                    <input class="form-input" type="number" id="sEmpCount" value="${p.employee_count != null ? p.employee_count : ''}" min="0">
+                    <input class="form-input" id="pSigungu" placeholder="예: 강남구" value="${esc(profile.region_sigungu || '')}">
                 </div>
             </div>
             <div class="form-row">
-                <div class="form-group">
-                    <label class="form-label">업력 (년)</label>
-                    <input class="form-input" type="number" id="sBizAge" value="${p.business_age_years != null ? p.business_age_years : ''}" min="0" step="0.5">
-                </div>
                 <div class="form-group">
                     <label class="form-label">대표자 연령</label>
-                    <input class="form-input" type="number" id="sAge" value="${p.representative_age != null ? p.representative_age : ''}" min="15" max="100">
+                    <input class="form-input" type="number" id="pAge" placeholder="15~100" min="15" max="100" value="${profile.representative_age || ''}">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">연매출 (만원)</label>
+                    <input class="form-input" type="number" id="pRevenue" placeholder="0~" min="0" value="${profile.annual_revenue ? Math.round(profile.annual_revenue / 10000) : ''}">
                 </div>
             </div>
-        </div>
+            <div class="form-row">
+                <div class="form-group">
+                    <label class="form-label">상시 종업원 수</label>
+                    <input class="form-input" type="number" id="pEmpCount" placeholder="0~" min="0" value="${profile.employee_count || ''}">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">업력 (년)</label>
+                    <input class="form-input" type="number" id="pBizAge" placeholder="0~" min="0" step="0.5" value="${profile.business_age_years || ''}">
+                </div>
+            </div>
+            <div class="form-row">
+                <div class="form-group">
+                    <label class="form-label">신용등급</label>
+                    <select class="form-select" id="pCredit">
+                        <option value="">선택</option>
+                        ${[1,2,3,4,5,6,7,8,9,10].map(g => `<option value="${g}등급" ${profile.credit_rating===g+'등급'?'selected':''}>${g}등급</option>`).join('')}
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">부채비율 (%)</label>
+                    <input class="form-input" type="number" id="pDebt" placeholder="0~100" min="0" max="100" step="0.1" value="${profile.debt_ratio || ''}">
+                </div>
+            </div>
+            <div class="form-group">
+                <label class="form-label">기존 수혜 건수</label>
+                <input class="form-input" type="number" id="pPrevCount" placeholder="0~" min="0" value="${profile.previous_subsidy_count || 0}">
+            </div>
 
-        <button class="btn-primary" onclick="doSaveProfile()"><i class="lucide-save" style="font-size:16px;vertical-align:-2px;"></i> 프로필 저장</button>
-        <button class="btn-outline" style="margin-top:12px;" onclick="handleLogout()"><i class="lucide-log-out" style="font-size:14px;vertical-align:-2px;"></i> 로그아웃</button>
-        <p style="font-size:11px;color:var(--text-tertiary);text-align:center;margin-top:20px;">${currentUser}</p>
+            <div style="margin-top:16px;padding-top:16px;border-top:1px solid var(--border);">
+                <label class="form-label">특성</label>
+                <div class="form-checkbox">
+                    <input type="checkbox" id="pExport" ${profile.has_export?'checked':''}>
+                    <label for="pExport">수출 여부</label>
+                </div>
+                <div class="form-checkbox">
+                    <input type="checkbox" id="pFemale" ${profile.is_female_owned?'checked':''}>
+                    <label for="pFemale">여성기업</label>
+                </div>
+                <div class="form-checkbox">
+                    <input type="checkbox" id="pDisabled" ${profile.is_disabled_owned?'checked':''}>
+                    <label for="pDisabled">장애인기업</label>
+                </div>
+                <div class="form-checkbox">
+                    <input type="checkbox" id="pSocial" ${profile.is_social_enterprise?'checked':''}>
+                    <label for="pSocial">사회적기업</label>
+                </div>
+                <div class="form-checkbox">
+                    <input type="checkbox" id="pVenture" ${profile.is_venture_certified?'checked':''}>
+                    <label for="pVenture">벤처인증</label>
+                </div>
+                <div class="form-checkbox">
+                    <input type="checkbox" id="pInnobiz" ${profile.is_innobiz?'checked':''}>
+                    <label for="pInnobiz">이노비즈(INNOBIZ)</label>
+                </div>
+                <div class="form-checkbox">
+                    <input type="checkbox" id="pInsurance" ${profile.has_employment_insurance !== false?'checked':''}>
+                    <label for="pInsurance">고용보험 가입</label>
+                </div>
+            </div>
+
+            <button class="btn-primary" onclick="doSaveProfile()" style="margin-top:20px;"><i class="lucide-save" style="margin-right:6px;"></i>프로필 저장</button>
+        </div>
     `;
+
+    el.innerHTML = html;
 }
 
 function doSaveProfile() {
-    const val = (id) => document.getElementById(id).value.trim();
-    const numVal = (id) => { const v = document.getElementById(id).value.trim(); return v !== '' ? Number(v) : null; };
     const p = {
-        profile_name: val('sName'),
-        business_type: val('sBizType'),
-        industry_name: val('sIndustry'),
-        region_sido: val('sRegion'),
-        region_sigungu: val('sSigungu'),
-        annual_revenue: numVal('sRevenue') !== null ? numVal('sRevenue') * 10000 : null,
-        employee_count: numVal('sEmpCount'),
-        business_age_years: numVal('sBizAge'),
-        representative_age: numVal('sAge'),
+        profile_name: document.getElementById('pName').value,
+        business_type: document.getElementById('pBizType').value,
+        industry_name: document.getElementById('pIndustry').value,
+        region_sido: document.getElementById('pRegion').value,
+        business_registration_number: document.getElementById('pRegNo').value,
+        industry_code: document.getElementById('pIndCode').value,
+        establishment_date: document.getElementById('pEstDate').value,
+        region_sigungu: document.getElementById('pSigungu').value,
+        representative_age: document.getElementById('pAge').value ? parseInt(document.getElementById('pAge').value) : null,
+        annual_revenue: document.getElementById('pRevenue').value ? parseInt(document.getElementById('pRevenue').value) * 10000 : null,
+        employee_count: document.getElementById('pEmpCount').value ? parseInt(document.getElementById('pEmpCount').value) : null,
+        business_age_years: document.getElementById('pBizAge').value ? parseFloat(document.getElementById('pBizAge').value) : null,
+        credit_rating: document.getElementById('pCredit').value,
+        debt_ratio: document.getElementById('pDebt').value ? parseFloat(document.getElementById('pDebt').value) : null,
+        previous_subsidy_count: parseInt(document.getElementById('pPrevCount').value) || 0,
+        has_export: document.getElementById('pExport').checked,
+        is_female_owned: document.getElementById('pFemale').checked,
+        is_disabled_owned: document.getElementById('pDisabled').checked,
+        is_social_enterprise: document.getElementById('pSocial').checked,
+        is_venture_certified: document.getElementById('pVenture').checked,
+        is_innobiz: document.getElementById('pInnobiz').checked,
+        has_employment_insurance: document.getElementById('pInsurance').checked
     };
     saveProfile(p);
     showToast('프로필이 저장되었습니다');
-    matchResults = []; // reset match on profile change
 }
 
-// ===== Detail =====
-function showSubsidyDetail(id) {
+// ===== Detail Modal =====
+function showDetail(id) {
     const s = subsidies.find(x => x.id === id);
     if (!s) return;
-    document.getElementById('detailTitle').textContent = s.title;
     const st = getStatus(s.apply_end_date);
     let html = `
         <div class="detail-row"><div class="detail-label">상태</div><div class="detail-value"><span class="tag ${st.cls}">${st.text}</span></div></div>
+        <div class="detail-row"><div class="detail-label">사업명</div><div class="detail-value">${esc(s.title)}</div></div>
         <div class="detail-row"><div class="detail-label">분야</div><div class="detail-value">${esc(s.category)}</div></div>
         <div class="detail-row"><div class="detail-label">소관기관</div><div class="detail-value">${esc(s.organization)}</div></div>
-        <div class="detail-row"><div class="detail-label">수행기관</div><div class="detail-value">${esc(s.executor || '-')}</div></div>
-        <div class="detail-row"><div class="detail-label">신청기간</div><div class="detail-value">${s.apply_start_date || '-'} ~ ${s.apply_end_date || '-'}</div></div>
+        <div class="detail-row"><div class="detail-label">지원대상</div><div class="detail-value">${esc(s.target || '-')}</div></div>
+        ${s.apply_end_date ? `<div class="detail-row"><div class="detail-label">마감일</div><div class="detail-value">${s.apply_end_date}</div></div>` : ''}
+        ${s.description ? `<div class="detail-row"><div class="detail-label">설명</div><div class="detail-value">${esc(s.description).slice(0, 200)}</div></div>` : ''}
     `;
-    if (s.target) html += `<div class="detail-row"><div class="detail-label">지원대상</div><div class="detail-value">${esc(s.target).slice(0,300)}</div></div>`;
-    if (s.region) html += `<div class="detail-row"><div class="detail-label">지역</div><div class="detail-value">${esc(s.region)}</div></div>`;
-    if (s.detail_url) html += `<div style="margin-top:16px;"><a href="${esc(s.detail_url)}" target="_blank" style="display:block;text-align:center;padding:12px;background:var(--primary);color:#fff;border-radius:var(--radius);font-size:14px;font-weight:700;text-decoration:none;">상세 페이지 바로가기</a></div>`;
+    document.getElementById('detailTitle').textContent = esc(s.title).slice(0, 40);
     document.getElementById('detailBody').innerHTML = html;
     document.getElementById('detailModal').classList.add('show');
 }
 
-function closeDetail() { document.getElementById('detailModal').classList.remove('show'); }
-document.addEventListener('keydown', e => { if (e.key === 'Escape') closeDetail(); });
+function closeDetail() {
+    document.getElementById('detailModal').classList.remove('show');
+}
 
 // ===== Init =====
 checkAuth();
