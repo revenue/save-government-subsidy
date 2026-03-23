@@ -334,6 +334,23 @@
         .personalized-section { background: linear-gradient(135deg, #fef3c7 0%, #fef9e7 100%); border: 1px solid #fde68a;
             border-radius: var(--radius-lg); padding: 16px; margin-bottom: 16px; }
         .personalized-section .section-title { margin-top: 0; }
+
+        /* Banner Swiper */
+        .banner-swiper { display:flex; gap:12px; overflow-x:auto; scroll-snap-type:x mandatory; -webkit-overflow-scrolling:touch; padding:4px 0 16px; }
+        .banner-swiper::-webkit-scrollbar { display:none; }
+        .banner-card { min-width:280px; max-width:300px; scroll-snap-align:start; background:#fff; border-radius:var(--radius-lg); padding:16px; border:1px solid var(--border-light); box-shadow:var(--shadow-sm); flex-shrink:0; position:relative; overflow:hidden; cursor:pointer; transition:box-shadow 0.2s; }
+        .banner-card:active { box-shadow:var(--shadow-md); }
+        .banner-rank { position:absolute; top:12px; right:12px; width:28px; height:28px; border-radius:50%; background:var(--primary); color:#fff; font-size:12px; font-weight:800; display:flex; align-items:center; justify-content:center; }
+        .banner-card .match-prob { margin-top:8px; }
+        .banner-kw { display:flex; flex-wrap:wrap; gap:4px; margin-top:8px; }
+        .banner-kw span { background:var(--primary-bg); color:var(--primary); font-size:10px; padding:2px 6px; border-radius:4px; font-weight:600; }
+        .swipe-indicator { display:flex; justify-content:center; gap:6px; margin-bottom:12px; }
+        .swipe-dot { width:6px; height:6px; border-radius:50%; background:var(--border); }
+        .swipe-dot.active { background:var(--primary); width:16px; border-radius:3px; }
+
+        /* Interactive SVG chart */
+        .svg-chart { width:100%; }
+        .svg-chart svg { width:100%; height:auto; }
     </style>
 </head>
 <body>
@@ -521,72 +538,148 @@ function renderMatching() {
     const profile = loadProfile();
     const el = document.getElementById('page-matching');
 
-    let html = `
-        <div class="hero-card">
-            <div class="hero-label"><i class="lucide-target" style="font-size:14px;vertical-align:-2px;"></i> AI 맞춤 매칭</div>
-            <div class="hero-title">나에게 맞는<br>지원사업 찾기</div>
-            <div class="hero-sub">${profile ? esc(profile.profile_name || '프로필') + ' 기준으로 분석합니다' : '프로필을 설정하면 맞춤 매칭을 받을 수 있어요'}</div>
-            <button class="hero-btn" onclick="${profile ? 'runMatching()' : 'navigateTo(\'settings\')'}">
-                <i class="lucide-${profile ? 'zap' : 'settings'}"></i>
-                ${profile ? '매칭 시작' : '프로필 설정하기'}
-            </button>
-        </div>
-    `;
-
-    // KPI
-    const active = subsidies.filter(s => !s.apply_end_date || s.apply_end_date >= today).length;
-    const urgent = subsidies.filter(s => {
-        if (!s.apply_end_date) return false;
-        const d = Math.ceil((new Date(s.apply_end_date) - new Date()) / 86400000);
-        return d >= 0 && d <= 7;
-    }).length;
-    const cats = new Set(subsidies.map(s => s.category)).size;
-    const orgs = new Set(subsidies.map(s => s.organization)).size;
-
-    html += `
-        <div class="kpi-row">
-            <div class="kpi-card"><div class="kpi-value">${subsidies.length}</div><div class="kpi-label">총 지원사업</div></div>
-            <div class="kpi-card"><div class="kpi-value">${active}</div><div class="kpi-label">접수 중</div></div>
-        </div>
-        <div class="kpi-row">
-            <div class="kpi-card"><div class="kpi-value">${cats}</div><div class="kpi-label">분야</div></div>
-            <div class="kpi-card"><div class="kpi-value">${orgs}</div><div class="kpi-label">기관</div></div>
-        </div>
-        <div class="kpi-row">
-            <div class="kpi-card"><div class="kpi-value">${urgent}</div><div class="kpi-label">7일 내 마감</div></div>
-            <div class="kpi-card"><div class="kpi-value">${Object.keys(meta.sources || {}).length}</div><div class="kpi-label">데이터 출처</div></div>
-        </div>
-    `;
-
     if (!profile) {
-        html += `<div class="empty-state" style="padding:20px;"><i class="lucide-clipboard-list"></i><p>프로필을 설정하면<br>AI가 최적의 사업을 추천해 드립니다</p></div>`;
-    } else {
-        html += `<div class="section-title"><i class="lucide-list-check"></i> 추천 목록</div>`;
-        const filtered = subsidies.slice(0, 10);
-        filtered.forEach(s => {
-            const st = getStatus(s.apply_end_date);
-            html += `
-                <div class="match-card" onclick="showDetail(${s.id})">
-                    <div class="match-header">
-                        <div class="match-title">${esc(s.title)}</div>
-                        <div class="match-prob high">90%</div>
-                    </div>
-                    <div class="match-meta">
-                        <span class="match-meta-tag">${esc(s.category)}</span>
-                        <span class="tag ${st.cls}">${st.text}</span>
-                    </div>
-                </div>
-            `;
-        });
+        el.innerHTML = `
+            <div class="hero-card">
+                <div class="hero-label"><i class="lucide-target" style="font-size:14px;vertical-align:-2px;"></i> AI 맞춤 매칭</div>
+                <div class="hero-title">나에게 맞는<br>지원사업 찾기</div>
+                <div class="hero-sub">프로필을 설정하면 AI가 최적의 사업을 추천합니다</div>
+                <button class="hero-btn" onclick="navigateTo('settings')"><i class="lucide-settings"></i> 프로필 설정하기</button>
+            </div>
+            <div class="empty-state" style="padding:20px;"><i class="lucide-clipboard-list"></i><p>설정에서 사업자 정보를 등록하면<br>맞춤 매칭이 자동으로 실행됩니다</p></div>`;
+        return;
     }
 
-    el.innerHTML = html;
+    // Auto-run matching if not done yet
+    if (!matchResults.length) {
+        el.innerHTML = '<div style="text-align:center;padding:60px 20px;"><div class="spinner"></div><p style="font-size:13px;color:var(--text-secondary);margin-top:12px;">선정확률 분석 중...</p></div>';
+        setTimeout(() => {
+            const engine = new ProbabilityEngine(history);
+            const target = subsidies.filter(s => !s.apply_end_date || s.apply_end_date >= today);
+            matchResults = engine.calculateAll(target, profile, 5);
+            renderMatchingUI(profile);
+        }, 200);
+        return;
+    }
+    renderMatchingUI(profile);
 }
 
-// ===== Matching Logic =====
+function extractKeywords(title) {
+    const stops = ['공고','모집','안내','계획','사업','지원','년도','수정','연장','대한','위한','관련','통한','따른'];
+    return (title || '').replace(/[가-힣]{2,}/g, w => stops.includes(w) ? '' : w).match(/[가-힣]{2,}/g) || [];
+}
+
+function getDday(endDate) {
+    if (!endDate) return '상시';
+    const diff = Math.ceil((new Date(endDate) - new Date()) / 86400000);
+    if (diff < 0) return '마감';
+    return 'D-' + diff;
+}
+
+function renderMatchingUI(profile) {
+    const el = document.getElementById('page-matching');
+    const filtered = [...matchResults];
+    let displayList = filtered;
+
+    // Search bar
+    let html = `
+        <div class="search-bar" style="margin-bottom:12px;">
+            <i class="lucide-search"></i>
+            <input type="text" id="matchSearch" placeholder="매칭 결과 내 검색" oninput="filterMatchResults()">
+        </div>
+        <div id="matchContent">`;
+
+    // Profile summary
+    html += `<div style="display:flex;align-items:center;gap:8px;margin-bottom:14px;padding:10px 14px;background:var(--primary-bg);border-radius:var(--radius);border:1px solid var(--primary-border);">
+        <i class="lucide-user" style="font-size:16px;color:var(--primary);"></i>
+        <span style="font-size:12px;color:var(--primary);font-weight:600;">${esc(profile.profile_name || '프로필')} · ${esc(profile.industry_name || '')} · ${esc(profile.region_sido || '')}</span>
+        <span style="margin-left:auto;font-size:11px;color:var(--text-tertiary);">${displayList.length}건 매칭</span>
+    </div>`;
+
+    // Top 5 Banner Swiper
+    const top5 = displayList.slice(0, 5);
+    if (top5.length > 0) {
+        html += `<div style="font-size:13px;font-weight:700;color:var(--heading);margin-bottom:8px;display:flex;align-items:center;gap:6px;"><i class="lucide-crown" style="font-size:15px;color:var(--warning);"></i> TOP 5 추천</div>`;
+        html += '<div class="banner-swiper" id="bannerSwiper">';
+        top5.forEach((r, i) => {
+            const level = r.final_probability >= 70 ? 'high' : r.final_probability >= 40 ? 'medium' : 'low';
+            const dday = getDday(r.apply_end_date);
+            const kws = extractKeywords(r.subsidy_title).slice(0, 3);
+            const ddayCls = dday === '상시' ? 'tag-blue' : dday === '마감' ? 'tag-red' : (parseInt(dday.replace('D-','')) <= 7 ? 'tag-orange' : 'tag-green');
+            html += `<div class="banner-card" onclick="showSubsidyDetail('${r.subsidy_id}')">
+                <div class="banner-rank">${i + 1}</div>
+                <div style="font-size:14px;font-weight:700;color:var(--heading);line-height:1.4;margin-bottom:6px;padding-right:32px;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;">${esc(r.subsidy_title)}</div>
+                <div style="font-size:12px;color:var(--text-secondary);margin-bottom:4px;"><i class="lucide-building-2" style="font-size:12px;vertical-align:-1px;"></i> ${esc(r.organization)}</div>
+                <div style="display:flex;align-items:center;gap:8px;">
+                    <span class="tag ${ddayCls}">${dday}</span>
+                    <div class="match-prob ${level}" style="min-width:auto;height:auto;border-radius:8px;padding:4px 10px;font-size:14px;">${r.final_probability.toFixed(0)}%</div>
+                </div>
+                ${kws.length ? '<div class="banner-kw">' + kws.map(k => '<span>' + esc(k) + '</span>').join('') + '</div>' : ''}
+            </div>`;
+        });
+        html += '</div>';
+        html += '<div class="swipe-indicator">' + top5.map((_, i) => `<div class="swipe-dot${i === 0 ? ' active' : ''}"></div>`).join('') + '</div>';
+    }
+
+    // #6+ List
+    const rest = displayList.slice(5, 100);
+    if (rest.length > 0) {
+        html += `<div style="font-size:13px;font-weight:700;color:var(--heading);margin-bottom:8px;display:flex;align-items:center;gap:6px;"><i class="lucide-list" style="font-size:15px;color:var(--primary);"></i> 추천 목록</div>`;
+        html += '<div class="m-card" style="padding:4px 16px;">';
+        rest.forEach((r, i) => {
+            const level = r.final_probability >= 70 ? 'high' : r.final_probability >= 40 ? 'medium' : 'low';
+            const dday = getDday(r.apply_end_date);
+            const kws = extractKeywords(r.subsidy_title).slice(0, 2);
+            const ddayCls = dday === '상시' ? 'tag-blue' : dday === '마감' ? 'tag-red' : (parseInt(dday.replace('D-','')) <= 7 ? 'tag-orange' : 'tag-green');
+            html += `<div class="subsidy-item" onclick="showSubsidyDetail('${r.subsidy_id}')" style="display:flex;align-items:center;gap:12px;">
+                <span style="font-size:12px;color:var(--text-tertiary);min-width:24px;font-weight:700;">${i + 6}</span>
+                <div style="flex:1;min-width:0;">
+                    <div class="subsidy-item-title">${esc(r.subsidy_title)}</div>
+                    <div class="subsidy-item-meta" style="display:flex;align-items:center;gap:4px;flex-wrap:wrap;">
+                        ${esc(r.organization)} · <span class="tag ${ddayCls}" style="font-size:9px;padding:2px 6px;">${dday}</span>
+                        ${kws.map(k => '<span style="background:var(--bg);padding:1px 5px;border-radius:3px;font-size:10px;color:var(--text-tertiary);">' + esc(k) + '</span>').join('')}
+                    </div>
+                </div>
+                <div class="match-prob ${level}" style="min-width:42px;height:42px;border-radius:12px;font-size:14px;">${r.final_probability.toFixed(0)}%</div>
+            </div>`;
+        });
+        html += '</div>';
+    }
+
+    html += '</div>';
+    el.innerHTML = html;
+
+    // Swiper indicator update
+    const swiper = document.getElementById('bannerSwiper');
+    if (swiper) {
+        swiper.addEventListener('scroll', () => {
+            const scrollLeft = swiper.scrollLeft;
+            const cardWidth = 292;
+            const activeIdx = Math.round(scrollLeft / cardWidth);
+            document.querySelectorAll('.swipe-dot').forEach((d, i) => d.classList.toggle('active', i === activeIdx));
+        });
+    }
+}
+
+function filterMatchResults() {
+    const q = (document.getElementById('matchSearch')?.value || '').toLowerCase();
+    if (!q) { renderMatchingUI(loadProfile()); return; }
+    const origResults = matchResults;
+    const filtered = origResults.filter(r =>
+        (r.subsidy_title || '').toLowerCase().includes(q) ||
+        (r.organization || '').toLowerCase().includes(q) ||
+        (r.category || '').toLowerCase().includes(q)
+    );
+    // Temporarily swap
+    const saved = matchResults;
+    matchResults = filtered;
+    renderMatchingUI(loadProfile());
+    matchResults = saved;
+}
+
 function runMatching() {
-    showToast('매칭 분석 중입니다...');
-    navigateTo('list');
+    matchResults = [];
+    renderMatching();
 }
 
 // ===== List Page =====
@@ -688,41 +781,40 @@ function renderStats() {
     const profile = loadProfile();
     const el = document.getElementById('page-stats');
 
-    // Basic aggregation
     const catCounts = {}, orgCounts = {}, srcCounts = {};
     let deadlineSubs = [];
+    const srcNames = { bizinfo:'기업마당', mss:'중소벤처기업부', kstartup:'K-스타트업', smes:'중소벤처24' };
     subsidies.forEach(s => {
         catCounts[s.category] = (catCounts[s.category] || 0) + 1;
-        orgCounts[s.organization || 'etc'] = (orgCounts[s.organization || 'etc'] || 0) + 1;
+        orgCounts[s.organization || '기타'] = (orgCounts[s.organization || '기타'] || 0) + 1;
         srcCounts[s.source || 'unknown'] = (srcCounts[s.source || 'unknown'] || 0) + 1;
         if (s.apply_end_date) {
-            const diff = (new Date(s.apply_end_date) - new Date()) / 86400000;
-            if (diff >= 0 && diff <= 30) deadlineSubs.push({...s, daysLeft: Math.ceil(diff)});
+            const diff = Math.ceil((new Date(s.apply_end_date) - new Date()) / 86400000);
+            if (diff >= 0 && diff <= 30) deadlineSubs.push({...s, daysLeft: diff});
         }
     });
 
     const cats = Object.entries(catCounts).sort((a, b) => b[1] - a[1]);
     const orgs = Object.entries(orgCounts).sort((a, b) => b[1] - a[1]).slice(0, 10);
-    const topOrg = orgs[0] || ['N/A', 0];
+    const srcs = Object.entries(srcCounts).sort((a, b) => b[1] - a[1]);
     const totalSub = subsidies.length;
+    const maxCat = cats[0] ? cats[0][1] : 1;
+    const maxOrg = orgs[0] ? orgs[0][1] : 1;
 
     // HHI
     const hhi = cats.reduce((s, [, n]) => s + Math.pow(n / totalSub * 100, 2), 0);
     const hhiLabel = hhi > 2500 ? '고집중' : hhi > 1500 ? '중집중' : '분산';
-
-    // Shannon Entropy
-    const shannon = -Object.values(orgCounts).reduce((s, n) => {
-        const p = n / totalSub;
-        return s + (p > 0 ? p * Math.log2(p) : 0);
-    }, 0);
+    // Shannon
+    const shannon = -Object.values(orgCounts).reduce((s, n) => { const p=n/totalSub; return s+(p>0?p*Math.log2(p):0); }, 0);
     const maxEntropy = Math.log2(Object.keys(orgCounts).length);
     const evenness = maxEntropy > 0 ? (shannon / maxEntropy * 100).toFixed(1) : 0;
+    // CR4
+    const cr4 = orgs.slice(0,4).reduce((s,[,n])=>s+n,0) / totalSub * 100;
 
     deadlineSubs.sort((a, b) => a.daysLeft - b.daysLeft);
-    const urgentCount = deadlineSubs.filter(s => s.daysLeft <= 7).length;
 
     let html = `
-        <div class="section-title"><i class="lucide-bar-chart-3"></i> KPI 요약</div>
+        <div class="section-title"><i class="lucide-bar-chart-3"></i> 통계 분석</div>
         <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:16px;">
             <div class="stat-card"><div class="stat-value">${totalSub.toLocaleString()}<span class="stat-suffix">건</span></div><div class="stat-label">총 사업</div></div>
             <div class="stat-card"><div class="stat-value">${cats.length}</div><div class="stat-label">분야</div></div>
@@ -732,88 +824,152 @@ function renderStats() {
         <div class="insight-card">
             <div class="insight-title"><i class="lucide-lightbulb"></i> 핵심 인사이트</div>
             <div class="insight-grid">
-                <div class="insight-item">
-                    <strong style="color:var(--primary);">시장 집중도</strong><br>
-                    HHI: ${hhi.toFixed(0)} (${hhiLabel})<br>
-                    '${esc(cats[0][0])}' ${cats[0][1]}건
-                </div>
-                <div class="insight-item">
-                    <strong style="color:var(--primary);">기관 다양성</strong><br>
-                    Shannon: ${evenness}%<br>
-                    Top: '${esc(topOrg[0])}' ${topOrg[1]}건
-                </div>
-                <div class="insight-item">
-                    <strong style="color:var(--primary);">긴급 알림</strong><br>
-                    7일 마감: ${urgentCount}건<br>
-                    30일 마감: ${deadlineSubs.length}건
-                </div>
-                <div class="insight-item">
-                    <strong style="color:var(--primary);">데이터</strong><br>
-                    수집: ${meta.last_collected || '-'}<br>
-                    출처: ${Object.keys(srcCounts).length}개
-                </div>
+                <div class="insight-item"><strong style="color:var(--primary);">시장 집중도</strong><br>HHI: ${hhi.toFixed(0)} (${hhiLabel})<br>'${esc(cats[0][0])}' ${(cats[0][1]/totalSub*100).toFixed(1)}%</div>
+                <div class="insight-item"><strong style="color:var(--success);">기관 다양성</strong><br>Shannon 균등도: ${evenness}%<br>CR4 집중률: ${cr4.toFixed(1)}%</div>
+                <div class="insight-item"><strong style="color:var(--warning);">긴급</strong><br>7일 마감: ${deadlineSubs.filter(s=>s.daysLeft<=7).length}건<br>30일 마감: ${deadlineSubs.length}건</div>
+                <div class="insight-item"><strong style="color:var(--error);">데이터</strong><br>출처: ${Object.keys(srcCounts).length}개<br>수집: ${(meta.last_collected||'-').slice(0,10)}</div>
             </div>
         </div>
 
-        <div class="section-title"><i class="lucide-pie-chart"></i> 분야별 구성</div>
         <div class="chart-container">
-            <div class="stat-bar" style="margin:0;">
-                <div style="width:100%;">
-                    ${cats.slice(0, 8).map(([c, n]) => {
-                        const pct = (n / totalSub * 100).toFixed(1);
-                        return `<div class="stat-bar" style="margin-bottom:8px;">
-                            <div class="stat-bar-label">${esc(c).slice(0, 8)}</div>
-                            <div class="stat-bar-track"><div class="stat-bar-fill" style="width:${pct}%;background:var(--primary);"></div></div>
-                            <div class="stat-bar-value">${pct}%</div>
-                        </div>`;
-                    }).join('')}
-                </div>
-            </div>
-        </div>
-
-        <div class="section-title"><i class="lucide-building-2"></i> 기관별 현황 (Top 10)</div>
-        <div class="chart-container">
-            ${orgs.map(([o, n]) => {
+            <div class="chart-title"><i class="lucide-pie-chart"></i> 분야별 구성</div>
+            ${cats.map(([c, n]) => {
                 const pct = (n / totalSub * 100).toFixed(1);
-                return `<div class="stat-bar">
-                    <div class="stat-bar-label">${esc(o).slice(0, 10)}</div>
-                    <div class="stat-bar-track"><div class="stat-bar-fill" style="width:${pct}%;background:var(--primary);"></div></div>
-                    <div class="stat-bar-value">${n}건</div>
-                </div>`;
+                return '<div class="stat-bar"><div class="stat-bar-label">'+esc(c)+'</div><div class="stat-bar-track"><div class="stat-bar-fill" style="width:'+pct+'%;background:var(--primary);"></div></div><div class="stat-bar-value">'+n+'건</div></div>';
             }).join('')}
         </div>
 
-        <div class="section-title"><i class="lucide-list-check"></i> 마감 임박 (Top 5)</div>
         <div class="chart-container">
-            ${deadlineSubs.slice(0, 5).map(s => {
-                const st = getStatus(s.apply_end_date);
-                return `<div class="subsidy-item" style="cursor:pointer;" onclick="showDetail(${s.id})">
-                    <div class="subsidy-item-title">${esc(s.title).slice(0, 40)}</div>
-                    <div class="subsidy-item-meta">D-${s.daysLeft} · <span class="tag ${st.cls}">${st.text}</span></div>
-                </div>`;
+            <div class="chart-title"><i class="lucide-building-2"></i> 주요 기관 (Top 10)</div>
+            ${orgs.map(([o, n]) => {
+                const pct = (n / maxOrg * 100).toFixed(0);
+                return '<div class="stat-bar"><div class="stat-bar-label" style="min-width:80px;">'+esc(o).substring(0,10)+'</div><div class="stat-bar-track"><div class="stat-bar-fill" style="width:'+pct+'%;background:var(--success);"></div></div><div class="stat-bar-value">'+n+'건</div></div>';
             }).join('')}
+        </div>
+
+        <div class="chart-container">
+            <div class="chart-title"><i class="lucide-database"></i> 출처별 구성</div>
+            ${srcs.map(([s, n]) => {
+                const pct = (n / totalSub * 100).toFixed(1);
+                return '<div class="stat-bar"><div class="stat-bar-label">'+(srcNames[s]||esc(s))+'</div><div class="stat-bar-track"><div class="stat-bar-fill" style="width:'+pct+'%;background:var(--warning);"></div></div><div class="stat-bar-value">'+pct+'%</div></div>';
+            }).join('')}
+        </div>
+
+        <div class="chart-container">
+            <div class="chart-title"><i class="lucide-clock"></i> 마감 임박 (30일 내)</div>
+            ${deadlineSubs.length ? deadlineSubs.slice(0, 8).map(s => {
+                const urgColor = s.daysLeft <= 3 ? 'var(--error)' : s.daysLeft <= 7 ? 'var(--warning)' : 'var(--primary)';
+                return '<div class="subsidy-item" onclick="showSubsidyDetail(\''+s.id+'\')" style="display:flex;align-items:center;gap:10px;"><span style="font-size:13px;font-weight:800;color:'+urgColor+';min-width:36px;">D-'+s.daysLeft+'</span><div style="flex:1;min-width:0;"><div class="subsidy-item-title">'+esc(s.title).slice(0,45)+'</div><div class="subsidy-item-meta">'+esc(s.organization)+' · '+esc(s.category)+'</div></div></div>';
+            }).join('') : '<div style="text-align:center;color:var(--text-tertiary);padding:16px;font-size:13px;">30일 내 마감 사업 없음</div>'}
+        </div>
+
+        <div class="chart-container">
+            <div class="chart-title"><i class="lucide-brain"></i> 다양성 지수</div>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+                ${(() => {
+                    const catEnt = -cats.reduce((s,[,n])=>{const p=n/totalSub;return s+(p>0?p*Math.log2(p):0);},0);
+                    const catMax = Math.log2(cats.length);
+                    const catNorm = catMax>0?(catEnt/catMax*100).toFixed(0):0;
+                    const orgEnt = shannon;
+                    const orgNorm = evenness;
+                    return [
+                        {label:'분야 다양성',val:catNorm,color:'var(--primary)'},
+                        {label:'기관 다양성',val:orgNorm,color:'var(--success)'},
+                        {label:'CR4 집중률',val:cr4.toFixed(0),color:cr4>80?'var(--error)':'var(--warning)'},
+                        {label:'HHI 지수',val:Math.min(100,(hhi/100)).toFixed(0),color:'var(--primary)'}
+                    ].map(g => {
+                        const pct = Math.min(100, parseFloat(g.val));
+                        return '<div style="text-align:center;"><div style="font-size:24px;font-weight:800;color:var(--heading);">'+g.val+'</div><div style="height:6px;background:var(--border-light);border-radius:3px;margin:6px 0;overflow:hidden;"><div style="height:100%;width:'+pct+'%;background:'+g.color+';border-radius:3px;transition:width 0.5s;"></div></div><div style="font-size:11px;color:var(--text-secondary);">'+g.label+'</div></div>';
+                    }).join('');
+                })()}
+            </div>
         </div>
     `;
 
-    if (profile) {
+    // ===== Personalized Stats from matchResults =====
+    if (matchResults.length > 0) {
+        const mr = matchResults.slice(0, 100);
+        const probs = mr.map(r => r.final_probability);
+        const avgProb = probs.reduce((a,b)=>a+b,0)/probs.length;
+        const maxProb = Math.max(...probs);
+        const minProb = Math.min(...probs);
+        const high = probs.filter(p=>p>=70).length;
+        const mid = probs.filter(p=>p>=40&&p<70).length;
+        const low = probs.filter(p=>p<40).length;
+
+        // Category distribution in matches
+        const mCatCounts = {};
+        mr.forEach(r => { mCatCounts[r.category] = (mCatCounts[r.category]||0)+1; });
+        const mCats = Object.entries(mCatCounts).sort((a,b)=>b[1]-a[1]);
+
+        // Org distribution
+        const mOrgCounts = {};
+        mr.forEach(r => { mOrgCounts[r.organization] = (mOrgCounts[r.organization]||0)+1; });
+        const mOrgs = Object.entries(mOrgCounts).sort((a,b)=>b[1]-a[1]).slice(0,5);
+
+        // Score factor averages
+        const avgElig = mr.reduce((s,r)=>s+r.eligibility_score,0)/mr.length;
+        const avgMatch = mr.reduce((s,r)=>s+r.matching_score,0)/mr.length;
+        const avgComp = mr.reduce((s,r)=>s+r.competition_score,0)/mr.length;
+        const avgHist = mr.reduce((s,r)=>s+r.historical_score,0)/mr.length;
+
+        // Urgency for matched items
+        const matchUrgent = mr.filter(r => {
+            if (!r.apply_end_date) return false;
+            const d = Math.ceil((new Date(r.apply_end_date)-new Date())/86400000);
+            return d >= 0 && d <= 14;
+        }).length;
+
+        // Probability distribution buckets
+        const buckets = [0,0,0,0,0]; // 0-20, 20-40, 40-60, 60-80, 80-100
+        probs.forEach(p => { buckets[Math.min(4, Math.floor(p/20))]++; });
+        const maxBucket = Math.max(...buckets, 1);
+
         html += `
-            <div class="personalized-section">
-                <div class="section-title" style="margin-top:0;"><i class="lucide-sparkles"></i> 나의 맞춤 통계</div>
-                <p style="font-size:12px;color:var(--text-secondary);margin-bottom:12px;">
-                    프로필: ${esc(profile.profile_name || '미설정')} · 업종: ${esc(profile.industry_name || '미설정')} · 지역: ${esc(profile.region_sido || '미설정')}
-                </p>
-                <div class="insight-grid">
-                    <div class="insight-item">
-                        <strong>맞춤 분야</strong><br>
-                        ${profile.industry_name ? esc(profile.industry_name) : 'N/A'}
-                    </div>
-                    <div class="insight-item">
-                        <strong>지역 사업</strong><br>
-                        ${profile.region_sido ? esc(profile.region_sido) : 'N/A'}
-                    </div>
+        <div class="personalized-section">
+            <div style="font-size:14px;font-weight:800;color:var(--heading);margin-bottom:4px;display:flex;align-items:center;gap:6px;"><i class="lucide-sparkles" style="font-size:16px;color:var(--warning);"></i> 나의 맞춤 통계</div>
+            <p style="font-size:11px;color:var(--text-secondary);margin-bottom:14px;">매칭 결과 ${mr.length}건 기반 개인화 분석</p>
+
+            <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:16px;">
+                <div class="stat-card" style="background:rgba(255,255,255,0.8);"><div class="stat-value" style="color:var(--primary);">${avgProb.toFixed(0)}<span class="stat-suffix">%</span></div><div class="stat-label">평균 확률</div></div>
+                <div class="stat-card" style="background:rgba(255,255,255,0.8);"><div class="stat-value" style="color:var(--success);">${high}</div><div class="stat-label">높은 확률 (70%+)</div></div>
+                <div class="stat-card" style="background:rgba(255,255,255,0.8);"><div class="stat-value" style="color:var(--warning);">${matchUrgent}</div><div class="stat-label">14일 내 마감</div></div>
+            </div>
+
+            <div style="background:rgba(255,255,255,0.7);border-radius:var(--radius);padding:14px;margin-bottom:12px;">
+                <div style="font-size:12px;font-weight:700;color:var(--heading);margin-bottom:10px;display:flex;align-items:center;gap:4px;"><i class="lucide-bar-chart" style="font-size:14px;color:var(--primary);"></i> 확률 분포</div>
+                <div style="display:flex;align-items:flex-end;gap:6px;height:80px;">
+                    ${['0-20','20-40','40-60','60-80','80-100'].map((label,i) => {
+                        const h = buckets[i]/maxBucket*100;
+                        const colors = ['var(--error)','var(--warning)','#d97706','var(--primary)','var(--success)'];
+                        return '<div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:2px;"><div style="width:100%;background:'+colors[i]+';border-radius:4px 4px 0 0;height:'+Math.max(4,h)+'%;opacity:0.8;transition:height 0.5s;"></div><div style="font-size:9px;color:var(--text-tertiary);white-space:nowrap;">'+label+'</div><div style="font-size:10px;font-weight:700;color:var(--heading);">'+buckets[i]+'</div></div>';
+                    }).join('')}
                 </div>
             </div>
-        `;
+
+            <div style="background:rgba(255,255,255,0.7);border-radius:var(--radius);padding:14px;margin-bottom:12px;">
+                <div style="font-size:12px;font-weight:700;color:var(--heading);margin-bottom:10px;display:flex;align-items:center;gap:4px;"><i class="lucide-radar" style="font-size:14px;color:var(--primary);"></i> 점수 요인 분석</div>
+                ${[['자격요건 적합도',avgElig,'var(--primary)'],['조건 매칭도',avgMatch,'var(--success)'],['경쟁률 점수',avgComp,'var(--warning)'],['이력 보정',avgHist,'#7c3aed']].map(([l,v,c]) =>
+                    '<div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;"><span style="min-width:85px;font-size:11px;color:var(--text-secondary);">'+l+'</span><div style="flex:1;height:8px;background:var(--border-light);border-radius:4px;overflow:hidden;"><div style="height:100%;width:'+v.toFixed(0)+'%;background:'+c+';border-radius:4px;transition:width 0.5s;"></div></div><span style="min-width:30px;font-size:12px;font-weight:700;color:var(--heading);text-align:right;">'+v.toFixed(0)+'</span></div>'
+                ).join('')}
+            </div>
+
+            <div style="background:rgba(255,255,255,0.7);border-radius:var(--radius);padding:14px;margin-bottom:12px;">
+                <div style="font-size:12px;font-weight:700;color:var(--heading);margin-bottom:10px;display:flex;align-items:center;gap:4px;"><i class="lucide-pie-chart" style="font-size:14px;color:var(--primary);"></i> 매칭 분야 집중도</div>
+                ${mCats.slice(0,5).map(([c,n]) => {
+                    const pct = (n/mr.length*100).toFixed(0);
+                    return '<div style="display:flex;align-items:center;gap:8px;margin-bottom:6px;"><span style="min-width:70px;font-size:11px;color:var(--text-secondary);">'+esc(c)+'</span><div style="flex:1;height:8px;background:var(--border-light);border-radius:4px;overflow:hidden;"><div style="height:100%;width:'+pct+'%;background:var(--primary);border-radius:4px;"></div></div><span style="font-size:11px;font-weight:600;color:var(--heading);">'+n+'건 ('+pct+'%)</span></div>';
+                }).join('')}
+            </div>
+
+            <div style="background:rgba(255,255,255,0.7);border-radius:var(--radius);padding:14px;">
+                <div style="font-size:12px;font-weight:700;color:var(--heading);margin-bottom:10px;display:flex;align-items:center;gap:4px;"><i class="lucide-building-2" style="font-size:14px;color:var(--success);"></i> 주요 매칭 기관</div>
+                ${mOrgs.map(([o,n]) => {
+                    const pct = (n/mr.length*100).toFixed(0);
+                    return '<div style="display:flex;align-items:center;gap:8px;margin-bottom:6px;"><span style="min-width:80px;font-size:11px;color:var(--text-secondary);">'+esc(o).substring(0,10)+'</span><div style="flex:1;height:8px;background:var(--border-light);border-radius:4px;overflow:hidden;"><div style="height:100%;width:'+pct+'%;background:var(--success);border-radius:4px;"></div></div><span style="font-size:11px;font-weight:600;color:var(--heading);">'+n+'건</span></div>';
+                }).join('')}
+            </div>
+        </div>`;
     }
 
     el.innerHTML = html;
@@ -988,7 +1144,7 @@ function doSaveProfile() {
 }
 
 // ===== Detail Modal =====
-function showDetail(id) {
+function showSubsidyDetail(id) {
     const s = subsidies.find(x => x.id === id);
     if (!s) return;
     const st = getStatus(s.apply_end_date);
@@ -1005,6 +1161,8 @@ function showDetail(id) {
     document.getElementById('detailBody').innerHTML = html;
     document.getElementById('detailModal').classList.add('show');
 }
+
+function showDetail(id) { showSubsidyDetail(id); }
 
 function closeDetail() {
     document.getElementById('detailModal').classList.remove('show');
