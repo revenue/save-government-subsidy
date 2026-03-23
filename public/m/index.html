@@ -47,14 +47,17 @@
             }
             .app-content { flex: 1; overflow-y: auto; display: flex; flex-direction: column; }
             .bottom-nav {
-                position: absolute; left: 0; right: 0; bottom: 0; width: 480px;
+                position: relative; width: 100%;
                 border-radius: 0 0 24px 24px;
             }
             .login-screen { border-radius: 24px; }
         }
         @media (max-width: 768px) {
-            .desktop-wrapper { width: 100%; border-radius: 0; box-shadow: none; max-height: 100vh; }
+            .desktop-wrapper { width: 100%; border-radius: 0; box-shadow: none; min-height: 100vh; display: flex; flex-direction: column; }
             .app-content { flex: 1; overflow-y: auto; }
+            .bottom-nav {
+                position: fixed; bottom: 0; left: 0; right: 0;
+            }
         }
 
         /* Login */
@@ -115,12 +118,11 @@
 
         /* Bottom Nav - 72px height, bigger buttons/text */
         .bottom-nav {
-            position: fixed; bottom: 0; left: 0; right: 0; z-index: 100;
             background: #fff; border-top: 1px solid var(--border-light);
             padding: 8px 8px calc(8px + var(--safe-bottom));
             display: flex; justify-content: space-around;
             box-shadow: 0 -2px 12px rgba(0,0,0,0.04);
-            height: var(--nav-height);
+            height: var(--nav-height); z-index: 100; flex-shrink: 0;
         }
         .nav-tab {
             flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px;
