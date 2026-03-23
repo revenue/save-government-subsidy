@@ -2,6 +2,75 @@
  * SAVE 정부지원사업 백오피스 - 프론트엔드 앱
  */
 
+// ===== 로그인 / 인증 =====
+const ALLOWED_DOMAIN = 'unitblack.co.kr';
+
+function checkAuth() {
+    const user = localStorage.getItem('save_user_email');
+    if (user && user.endsWith('@' + ALLOWED_DOMAIN)) {
+        showApp(user);
+        return true;
+    }
+    showLogin();
+    return false;
+}
+
+function showLogin() {
+    document.getElementById('loginOverlay').classList.remove('hidden');
+    document.getElementById('appLayout').style.display = 'none';
+}
+
+function showApp(email) {
+    document.getElementById('loginOverlay').classList.add('hidden');
+    document.getElementById('appLayout').style.display = 'flex';
+    // 사용자 정보 표시
+    const userBar = document.getElementById('userBar');
+    if (userBar) {
+        userBar.innerHTML = `
+            <span class="user-email">${email}</span>
+            <button class="logout-btn" onclick="handleLogout()">로그아웃</button>
+        `;
+    }
+}
+
+function handleLogin(e) {
+    e.preventDefault();
+    const emailInput = document.getElementById('loginEmail');
+    const errorEl = document.getElementById('loginError');
+    const email = emailInput.value.trim().toLowerCase();
+
+    // 이메일 형식 검증
+    if (!email) {
+        errorEl.textContent = '이메일 주소를 입력해주세요.';
+        emailInput.classList.add('error');
+        return;
+    }
+
+    // 도메인 검증
+    if (!email.endsWith('@' + ALLOWED_DOMAIN)) {
+        errorEl.textContent = `@${ALLOWED_DOMAIN} 도메인의 이메일만 허용됩니다.`;
+        emailInput.classList.add('error');
+        return;
+    }
+
+    // 로그인 성공
+    emailInput.classList.remove('error');
+    errorEl.textContent = '';
+    localStorage.setItem('save_user_email', email);
+    showApp(email);
+    loadData();
+}
+
+function handleLogout() {
+    localStorage.removeItem('save_user_email');
+    showLogin();
+    // 입력 필드 초기화
+    const emailInput = document.getElementById('loginEmail');
+    if (emailInput) { emailInput.value = ''; }
+    document.getElementById('loginError').textContent = '';
+}
+
+// ===== 앱 데이터 =====
 let allSubsidies = [];  // 전체 데이터 (마감 포함)
 let subsidies = [];     // 활성 데이터만 (마감 제외) — 기본 표시용
 let history = [];
@@ -742,5 +811,7 @@ function saveProfile() {
     alert('프로필이 저장되었습니다!');
 }
 
-// Init
-loadData();
+// Init — 인증 확인 후 데이터 로드
+if (checkAuth()) {
+    loadData();
+}

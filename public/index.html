@@ -169,15 +169,79 @@
         .empty-state { text-align: center; padding: 60px 20px; color: var(--ant-text-secondary); }
         .empty-state .icon { font-size: 48px; margin-bottom: 16px; }
         .recommendations li { margin-bottom: 6px; font-size: 13px; }
+
+        /* Login Page */
+        .login-overlay {
+            position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+            background: linear-gradient(135deg, #001529 0%, #003a70 50%, #0050a0 100%);
+            z-index: 9999; display: flex; justify-content: center; align-items: center;
+        }
+        .login-overlay.hidden { display: none; }
+        .login-box {
+            background: #fff; border-radius: 8px; padding: 48px 40px; width: 420px;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.3); text-align: center;
+        }
+        .login-logo { font-size: 48px; margin-bottom: 12px; }
+        .login-title { font-size: 22px; font-weight: 600; color: var(--ant-heading); margin-bottom: 4px; }
+        .login-subtitle { font-size: 13px; color: var(--ant-text-secondary); margin-bottom: 32px; }
+        .login-input {
+            width: 100%; padding: 10px 14px; border: 1px solid var(--ant-border);
+            border-radius: 4px; font-size: 15px; color: var(--ant-heading);
+            transition: border-color 0.3s; margin-bottom: 8px;
+        }
+        .login-input:focus { outline: none; border-color: var(--ant-primary); box-shadow: 0 0 0 2px rgba(24,144,255,0.2); }
+        .login-input.error { border-color: var(--ant-error); }
+        .login-error {
+            font-size: 13px; color: var(--ant-error); min-height: 20px;
+            margin-bottom: 12px; text-align: left;
+        }
+        .login-btn {
+            width: 100%; padding: 10px; background: var(--ant-primary); color: #fff;
+            border: none; border-radius: 4px; font-size: 15px; font-weight: 500;
+            cursor: pointer; transition: background 0.3s;
+        }
+        .login-btn:hover { background: var(--ant-primary-hover); }
+        .login-btn:disabled { background: #d9d9d9; cursor: not-allowed; }
+        .login-domain { font-size: 12px; color: var(--ant-text-secondary); margin-top: 16px; }
+        .login-domain code { background: #f5f5f5; padding: 2px 6px; border-radius: 3px; font-size: 12px; }
+        .login-user-bar {
+            display: flex; align-items: center; gap: 8px; padding: 4px 0;
+            font-size: 13px; color: rgba(255,255,255,0.65);
+        }
+        .login-user-bar .user-email { color: rgba(255,255,255,0.85); font-weight: 500; }
+        .login-user-bar .logout-btn {
+            background: none; border: 1px solid rgba(255,255,255,0.3); color: rgba(255,255,255,0.65);
+            padding: 2px 10px; border-radius: 3px; font-size: 12px; cursor: pointer; margin-left: auto;
+        }
+        .login-user-bar .logout-btn:hover { border-color: rgba(255,255,255,0.6); color: #fff; }
     </style>
 </head>
 <body>
-    <div class="layout">
+    <!-- Login Overlay -->
+    <div class="login-overlay" id="loginOverlay">
+        <div class="login-box">
+            <div class="login-logo">🏛️</div>
+            <div class="login-title">SAVE 백오피스</div>
+            <div class="login-subtitle">정부지원사업 통합 관리 시스템</div>
+            <form id="loginForm" onsubmit="handleLogin(event)">
+                <input type="email" class="login-input" id="loginEmail"
+                       placeholder="이메일 주소를 입력하세요" autocomplete="email" required>
+                <div class="login-error" id="loginError"></div>
+                <button type="submit" class="login-btn" id="loginBtn">로그인</button>
+            </form>
+            <div class="login-domain">
+                허용 도메인: <code>@unitblack.co.kr</code>
+            </div>
+        </div>
+    </div>
+
+    <div class="layout" id="appLayout" style="display:none;">
         <!-- Sidebar -->
         <div class="sidebar">
             <div class="sidebar-header">
                 <h2>🏛️ SAVE</h2>
                 <p>정부지원사업 백오피스 v2.0</p>
+                <div class="login-user-bar" id="userBar"></div>
             </div>
             <div class="nav-menu">
                 <div class="nav-item active" data-page="dashboard"><span class="icon">📊</span> 대시보드</div>
@@ -188,7 +252,7 @@
                 <div class="nav-item" data-page="settings"><span class="icon">⚙️</span> 설정</div>
             </div>
             <div class="sidebar-footer">
-                데이터: 기업마당 · 중소벤처기업부<br>K-스타트업 · 중소벤처24
+                데이터: 기업마당 · 중소벤처기업부 · K-스타트업<br>중소벤처24 · 14개 부처 · 17개 광역지자체
             </div>
         </div>
 
