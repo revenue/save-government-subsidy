@@ -1,28 +1,12 @@
 {
   "version": 2,
-  "name": "save-government-subsidy",
   "builds": [
-    { "src": "api/**/*.py", "use": "@vercel/python" },
+    { "src": "api/**/*.js", "use": "@vercel/node" },
     { "src": "public/**", "use": "@vercel/static" }
   ],
   "routes": [
     { "src": "/api/(.*)", "dest": "/api/$1" },
     { "src": "/data/(.*)", "dest": "/public/data/$1" },
     { "src": "/(.*)", "dest": "/public/$1" }
-  ],
-  "headers": [
-    {
-      "source": "/data/(.*)",
-      "headers": [
-        { "key": "Cache-Control", "value": "public, max-age=3600" },
-        { "key": "Access-Control-Allow-Origin", "value": "*" }
-      ]
-    }
-  ],
-  "crons": [
-    {
-      "path": "/api/collect",
-      "schedule": "0 0 * * *"
-    }
   ]
 }
