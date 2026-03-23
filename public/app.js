@@ -113,34 +113,60 @@ function toggleExpired() {
     navigateTo(currentPage);
 }
 
-// 수집하기 — GitHub Actions 워크플로우 트리거
+// 수집하기 — Vercel Serverless API 호출 (토큰 불필요)
 async function triggerCollection() {
     if (isCollecting) return;
     isCollecting = true;
     const btn = document.getElementById('collectBtn');
-    if (btn) { btn.disabled = true; btn.textContent = '수집 중...'; }
+    if (btn) { btn.disabled = true; btn.textContent = '⏳ 수집 중...'; }
+
+    // 상태 배너 업데이트
+    const statusEl = document.getElementById('collectStatus');
+    if (statusEl) statusEl.innerHTML = '<span style="color:var(--ant-primary);">수집 진행 중... (약 30초 소요)</span>';
 
     try {
-        // GitHub Actions workflow dispatch (GITHUB_TOKEN 필요)
-        const token = localStorage.getItem('github_token');
-        if (!token) {
-            alert('설정에서 GitHub Token을 등록해주세요.\\n(repo 권한의 Personal Access Token 필요)');
-            isCollecting = false;
-            if (btn) { btn.disabled = false; btn.textContent = '🔄 수집하기'; }
-            return;
-        }
-        const resp = await fetch('https://api.github.com/repos/revenue/save-gov-subsidy-v2/dispatches', {
+        const resp = await fetch('/api/collect', {
             method: 'POST',
-            headers: { 'Authorization': `token ${token}`, 'Accept': 'application/vnd.github.v3+json' },
-            body: JSON.stringify({ event_type: 'manual_collect' }),
+            headers: { 'Content-Type': 'application/json' },
         });
-        if (resp.ok || resp.status === 204) {
-            alert('수집이 시작되었습니다!\\n완료까지 약 5~10분 소요됩니다.\\n완료 후 페이지를 새로고침 해주세요.');
+        const data = await resp.json();
+
+        if (data.success && data.items && data.items.length > 0) {
+            // 수집된 데이터를 현재 화면에 병합
+            const newItems = data.items;
+            const existingIds = new Set(allSubsidies.map(s => s.external_id));
+            let addedCount = 0;
+
+            for (const item of newItems) {
+                if (!existingIds.has(item.external_id)) {
+                    allSubsidies.push(item);
+                    existingIds.add(item.external_id);
+                    addedCount++;
+                }
+            }
+
+            // 활성 데이터 재필터링
+            subsidies = showExpired
+                ? allSubsidies
+                : allSubsidies.filter(s => !s.apply_end_date || s.apply_end_date >= today);
+
+            // 소스별 결과 표시
+            const srcSummary = Object.entries(data.sources || {})
+                .map(([k, v]) => `${v.name}: ${v.count}건`)
+                .join(', ');
+
+            if (statusEl) statusEl.innerHTML =
+                `<span style="color:var(--ant-success);">✅ 수집 완료! ${data.total}건 수집 (신규 ${addedCount}건 추가) — ${srcSummary}</span>`;
+
+            // 현재 페이지 새로고침
+            navigateTo(currentPage);
+        } else if (data.success) {
+            if (statusEl) statusEl.innerHTML = '<span style="color:var(--ant-warning);">수집 완료 — 새로운 데이터 없음</span>';
         } else {
-            alert('수집 실행 실패: ' + resp.status + '\\n토큰 권한을 확인해주세요.');
+            if (statusEl) statusEl.innerHTML = `<span style="color:var(--ant-error);">수집 실패: ${data.error || '알 수 없는 오류'}</span>`;
         }
     } catch (e) {
-        alert('수집 요청 실패: ' + e.message);
+        if (statusEl) statusEl.innerHTML = `<span style="color:var(--ant-error);">수집 요청 실패: ${e.message}</span>`;
     } finally {
         isCollecting = false;
         if (btn) { btn.disabled = false; btn.textContent = '🔄 수집하기'; }
@@ -205,21 +231,24 @@ function renderDashboard() {
             <h1>📊 대시보드</h1>
         </div>
         <!-- 수집 정보 배너 -->
-        <div class="card" style="background:linear-gradient(135deg,#e6f7ff,#f0f7ff);border-color:#91d5ff;padding:16px 24px;margin-bottom:16px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px;">
-            <div>
-                <div style="font-size:14px;color:var(--ant-heading);font-weight:500;">📡 데이터 수집 현황</div>
-                <div style="font-size:13px;color:var(--ant-text-secondary);margin-top:4px;">
-                    마지막 수집: <strong>${escHtml(lastCollected)}</strong> ·
-                    마지막 갱신: <strong>${escHtml(lastUpdated)}</strong> ·
-                    출처: 기업마당 ${meta.sources?.bizinfo || 0} · 중소벤처기업부 ${meta.sources?.mss || 0} · 중소벤처24 ${meta.sources?.smes || 0} · K-스타트업 ${meta.sources?.kstartup || 0}
+        <div class="card" style="background:linear-gradient(135deg,#e6f7ff,#f0f7ff);border-color:#91d5ff;padding:16px 24px;margin-bottom:16px;">
+            <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px;">
+                <div>
+                    <div style="font-size:14px;color:var(--ant-heading);font-weight:500;">📡 데이터 수집 현황</div>
+                    <div style="font-size:13px;color:var(--ant-text-secondary);margin-top:4px;">
+                        마지막 수집: <strong>${escHtml(lastCollected)}</strong> ·
+                        마지막 갱신: <strong>${escHtml(lastUpdated)}</strong> ·
+                        출처 ${Object.keys(meta.sources || {}).length}개 (기업마당 · 중소벤처기업부 · K-스타트업 · 부처 · 지자체)
+                    </div>
+                </div>
+                <div style="display:flex;gap:8px;align-items:center;">
+                    <label style="font-size:13px;display:flex;align-items:center;gap:4px;cursor:pointer;">
+                        <input type="checkbox" ${showExpired?'checked':''} onchange="toggleExpired()"> 마감 포함 (${expiredCount}건)
+                    </label>
+                    <button class="btn btn-primary" id="collectBtn" onclick="triggerCollection()">🔄 수집하기</button>
                 </div>
             </div>
-            <div style="display:flex;gap:8px;align-items:center;">
-                <label style="font-size:13px;display:flex;align-items:center;gap:4px;cursor:pointer;">
-                    <input type="checkbox" ${showExpired?'checked':''} onchange="toggleExpired()"> 마감 포함 (${expiredCount}건)
-                </label>
-                <button class="btn btn-primary" id="collectBtn" onclick="triggerCollection()">🔄 수집하기</button>
-            </div>
+            <div id="collectStatus" style="font-size:13px;margin-top:8px;min-height:18px;"></div>
         </div>
         <div class="stat-grid">
             <div class="stat-card"><div class="stat-value">${subsidies.length.toLocaleString()}<span class="stat-suffix">건</span></div><div class="stat-label">${showExpired ? '전체 지원사업' : '진행중 지원사업'}</div></div>
@@ -765,16 +794,14 @@ function renderSettings() {
         </div>
         <div class="card" style="margin-top:16px;">
             <div class="profile-section">
-                <h4>🔑 수집 설정 (GitHub Token)</h4>
+                <h4>📡 수집 설정</h4>
                 <p style="font-size:13px;color:var(--ant-text-secondary);margin-bottom:12px;">
-                    수집하기 버튼 사용을 위해 GitHub Personal Access Token이 필요합니다.<br>
-                    <a href="https://github.com/settings/tokens" target="_blank">GitHub → Settings → Developer settings → Personal access tokens</a>에서 repo 권한으로 생성하세요.
+                    대시보드의 <strong>수집하기</strong> 버튼을 클릭하면 주요 출처(기업마당, K-스타트업, 중소벤처24, 보조금24)에서 실시간으로 최신 데이터를 수집합니다.<br>
+                    전체 37개 출처(부처·지자체 포함) 수집은 매일 오전 9시 자동으로 실행됩니다.
                 </p>
-                <div class="form-group">
-                    <label class="form-label">GitHub Token</label>
-                    <input class="form-control" id="pGhToken" type="password" value="${localStorage.getItem('github_token') || ''}" placeholder="ghp_xxxxxxxxxxxx">
+                <div style="background:#f6ffed;border:1px solid #b7eb8f;border-radius:4px;padding:12px 16px;font-size:13px;color:#389e0d;">
+                    ✅ 토큰 설정 없이 바로 사용할 수 있습니다.
                 </div>
-                <button class="btn" onclick="localStorage.setItem('github_token', document.getElementById('pGhToken').value); alert('토큰이 저장되었습니다.');">🔑 토큰 저장</button>
             </div>
         </div>
     `;

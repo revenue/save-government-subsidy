@@ -1,0 +1,2 @@
+# Vercel Python Serverless - no external dependencies needed
+# All collection uses Python stdlib (urllib, re, json, hashlib)
