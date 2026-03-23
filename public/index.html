@@ -253,7 +253,40 @@
 
         /* ── Interactive chart container ── */
         .chart-wrap { position: relative; overflow: hidden; border-radius: var(--radius); }
-        .chart-wrap svg { display: block; }
+        .chart-wrap svg { display: block; width: 100%; }
+
+        /* ── Standardized chart heights ── */
+        .chart-sm { height: 200px; }
+        .chart-md { height: 280px; }
+        .chart-lg { height: 340px; }
+        .chart-sm svg, .chart-md svg, .chart-lg svg { height: 100%; }
+        .chart-wrap.chart-sm svg, .chart-wrap.chart-md svg, .chart-wrap.chart-lg svg { max-height: 100%; }
+
+        /* ── Knowledge Graph Overlay ── */
+        .kg-overlay { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(15,23,42,0.55); backdrop-filter: blur(4px); z-index: 2000; display: flex; align-items: center; justify-content: center; opacity: 0; pointer-events: none; transition: opacity 0.25s ease; }
+        .kg-overlay.show { opacity: 1; pointer-events: auto; }
+        .kg-panel { background: #fff; border-radius: var(--radius-xl); box-shadow: var(--shadow-lg), 0 25px 50px rgba(0,0,0,0.15); max-width: 780px; width: 92%; max-height: 85vh; overflow: hidden; transform: translateY(20px) scale(0.97); transition: transform 0.3s cubic-bezier(0.34,1.56,0.64,1); }
+        .kg-overlay.show .kg-panel { transform: translateY(0) scale(1); }
+        .kg-panel-header { padding: 20px 24px 16px; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; }
+        .kg-panel-header h3 { font-size: 16px; font-weight: 700; color: var(--heading); display: flex; align-items: center; gap: 8px; }
+        .kg-panel-close { width: 32px; height: 32px; border-radius: 8px; border: none; background: var(--bg); cursor: pointer; display: flex; align-items: center; justify-content: center; color: var(--text-secondary); transition: all var(--transition); font-size: 18px; }
+        .kg-panel-close:hover { background: var(--error-bg); color: var(--error); }
+        .kg-panel-body { padding: 20px 24px; overflow-y: auto; max-height: calc(85vh - 60px); }
+        .kg-graph-area { display: flex; justify-content: center; margin-bottom: 20px; }
+        .kg-detail-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+        .kg-detail-card { background: var(--bg); border: 1px solid var(--border-light); border-radius: var(--radius); padding: 14px; transition: all var(--transition); }
+        .kg-detail-card:hover { border-color: var(--primary-border); background: var(--primary-bg); }
+        .kg-detail-card .kg-label { font-size: 11px; color: var(--text-tertiary); text-transform: uppercase; letter-spacing: 0.4px; margin-bottom: 4px; }
+        .kg-detail-card .kg-value { font-size: 15px; font-weight: 700; color: var(--heading); }
+        .kg-detail-card .kg-sub { font-size: 12px; color: var(--text-secondary); margin-top: 4px; line-height: 1.5; }
+        .kg-related-list { margin-top: 16px; }
+        .kg-related-item { display: flex; align-items: center; gap: 10px; padding: 10px 14px; border-radius: var(--radius); background: var(--bg); border: 1px solid var(--border-light); margin-bottom: 6px; transition: all var(--transition); cursor: pointer; }
+        .kg-related-item:hover { border-color: var(--primary-border); background: var(--primary-bg); transform: translateX(4px); }
+        .kg-related-dot { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; }
+        .kg-related-name { font-size: 13px; font-weight: 600; color: var(--heading); flex: 1; }
+        .kg-related-meta { font-size: 11px; color: var(--text-tertiary); }
+        .kg-strength-bar { width: 50px; height: 5px; background: var(--border-light); border-radius: 3px; overflow: hidden; }
+        .kg-strength-fill { height: 100%; border-radius: 3px; }
 
         /* Scrollbar */
         ::-webkit-scrollbar { width: 6px; height: 6px; }
@@ -321,6 +354,17 @@
                 <button class="modal-close" onclick="closeModal()">&times;</button>
             </div>
             <div class="modal-body" id="modalBody"></div>
+        </div>
+    </div>
+
+    <!-- Knowledge Graph Overlay -->
+    <div class="kg-overlay" id="kgOverlay" onclick="if(event.target===this)closeKG()">
+        <div class="kg-panel">
+            <div class="kg-panel-header">
+                <h3 id="kgTitle"><i class="lucide-share-2"></i> Knowledge Graph</h3>
+                <button class="kg-panel-close" onclick="closeKG()">&times;</button>
+            </div>
+            <div class="kg-panel-body" id="kgBody"></div>
         </div>
     </div>
 

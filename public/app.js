@@ -688,14 +688,15 @@ function renderStats() {
     const srcs = Object.entries(srcCounts).sort((a, b) => b[1] - a[1]);
     const totalSrc = srcs.reduce((s, [, n]) => s + n, 0);
 
-    // ── 6. SVG 차트 생성 헬퍼 ──
-    function svgDonut(data, w, h, title) {
-        const cx = w / 2, cy = h / 2 - 10, r = Math.min(w, h) / 2 - 30, ir = r * 0.55;
-        const colors = ['#1890ff','#52c41a','#faad14','#ff4d4f','#722ed1','#13c2c2','#eb2f96','#fa8c16','#a0d911','#2f54eb'];
+    // ── 6. SVG 차트 생성 헬퍼 (통일 크기) ──
+    const CHART_COLORS = ['#2563eb','#16a34a','#d97706','#dc2626','#7c3aed','#0891b2','#db2777','#ea580c','#65a30d','#4f46e5','#0d9488','#c026d3','#e11d48','#ca8a04','#059669'];
+
+    function svgDonut(data, chartId) {
+        const w = 380, h = 240;
+        const cx = 130, cy = h / 2, r = 85, ir = r * 0.55;
         const total = data.reduce((s, d) => s + d[1], 0);
         let cumAngle = -Math.PI / 2;
-        let paths = '';
-        let legends = '';
+        let paths = '', legends = '';
         data.forEach(([label, val], i) => {
             const angle = (val / total) * Math.PI * 2;
             const x1 = cx + r * Math.cos(cumAngle), y1 = cy + r * Math.sin(cumAngle);
@@ -703,70 +704,68 @@ function renderStats() {
             const ix1 = cx + ir * Math.cos(cumAngle), iy1 = cy + ir * Math.sin(cumAngle);
             const ix2 = cx + ir * Math.cos(cumAngle + angle), iy2 = cy + ir * Math.sin(cumAngle + angle);
             const large = angle > Math.PI ? 1 : 0;
-            paths += '<path d="M' + x1 + ',' + y1 + ' A' + r + ',' + r + ' 0 ' + large + ' 1 ' + x2 + ',' + y2 + ' L' + ix2 + ',' + iy2 + ' A' + ir + ',' + ir + ' 0 ' + large + ' 0 ' + ix1 + ',' + iy1 + 'Z" fill="' + colors[i % colors.length] + '" opacity="0.85"><title>' + label + ': ' + val + '건 (' + (val/total*100).toFixed(1) + '%)</title></path>';
+            paths += '<path d="M'+x1+','+y1+' A'+r+','+r+' 0 '+large+' 1 '+x2+','+y2+' L'+ix2+','+iy2+' A'+ir+','+ir+' 0 '+large+' 0 '+ix1+','+iy1+'Z" fill="'+CHART_COLORS[i%CHART_COLORS.length]+'" opacity="0.85" style="cursor:pointer" onclick="openKG(\''+chartId+'\',\''+label.replace(/'/g,"\\'")+'\')"><title>'+label+': '+val+'건 ('+(val/total*100).toFixed(1)+'%)</title></path>';
             cumAngle += angle;
-            if (i < 8) legends += '<text x="' + (w + 5) + '" y="' + (20 + i * 18) + '" font-size="12" fill="#595959"><tspan fill="' + colors[i % colors.length] + '">■ </tspan>' + label + ' ' + (val/total*100).toFixed(1) + '%</text>';
+            if (i < 8) legends += '<text x="240" y="'+(30+i*24)+'" font-size="12" fill="#334155" style="cursor:pointer" onclick="openKG(\''+chartId+'\',\''+label.replace(/'/g,"\\'")+'\')"><tspan fill="'+CHART_COLORS[i%CHART_COLORS.length]+'" font-size="14">● </tspan>'+label+' <tspan fill="#94a3b8">'+(val/total*100).toFixed(1)+'%</tspan></text>';
         });
-        return '<svg viewBox="0 0 ' + (w + 130) + ' ' + h + '" style="width:100%;max-height:' + h + 'px;">' + paths + '<text x="' + cx + '" y="' + (cy + 4) + '" text-anchor="middle" font-size="13" font-weight="bold" fill="#262626">' + total + '건</text>' + legends + '</svg>';
+        return '<svg viewBox="0 0 '+w+' '+h+'" preserveAspectRatio="xMidYMid meet">' + paths + '<text x="'+cx+'" y="'+(cy+2)+'" text-anchor="middle" font-size="14" font-weight="bold" fill="#0f172a">'+total+'건</text>' + legends + '</svg>';
     }
 
-    function svgTreemap(data, w, h) {
+    function svgTreemap(data, chartId) {
+        const w = 600, h = 90;
         const total = data.reduce((s, d) => s + d[1], 0);
-        const colors = ['#1890ff','#52c41a','#faad14','#ff4d4f','#722ed1','#13c2c2','#eb2f96','#fa8c16','#a0d911','#2f54eb','#597ef7','#9254de','#f759ab','#ffc53d','#36cfc9'];
         let rects = '', x = 0;
         data.forEach(([label, val], i) => {
             const rw = (val / total) * w;
             if (rw < 2) return;
-            rects += '<g><rect x="' + x + '" y="0" width="' + rw + '" height="' + h + '" fill="' + colors[i % colors.length] + '" rx="3" opacity="0.85" stroke="#fff" stroke-width="1"><title>' + label + ': ' + val + '건</title></rect>';
-            if (rw > 40) rects += '<text x="' + (x + rw/2) + '" y="' + (h/2 - 6) + '" text-anchor="middle" font-size="' + (rw > 80 ? 11 : 9) + '" fill="#fff" font-weight="bold">' + label + '</text><text x="' + (x + rw/2) + '" y="' + (h/2 + 10) + '" text-anchor="middle" font-size="10" fill="rgba(255,255,255,0.9)">' + val + '건</text>';
+            rects += '<g style="cursor:pointer" onclick="openKG(\''+chartId+'\',\''+label.replace(/'/g,"\\'")+'\')"><rect x="'+x+'" y="0" width="'+rw+'" height="'+h+'" fill="'+CHART_COLORS[i%CHART_COLORS.length]+'" rx="4" opacity="0.85" stroke="#fff" stroke-width="1.5"><title>'+label+': '+val+'건</title></rect>';
+            if (rw > 50) rects += '<text x="'+(x+rw/2)+'" y="'+(h/2-4)+'" text-anchor="middle" font-size="'+(rw>90?12:10)+'" fill="#fff" font-weight="600">'+label+'</text><text x="'+(x+rw/2)+'" y="'+(h/2+12)+'" text-anchor="middle" font-size="10" fill="rgba(255,255,255,0.85)">'+val+'건</text>';
             rects += '</g>';
             x += rw;
         });
-        return '<svg viewBox="0 0 ' + w + ' ' + h + '" style="width:100%;height:' + h + 'px;">' + rects + '</svg>';
+        return '<svg viewBox="0 0 '+w+' '+h+'" preserveAspectRatio="xMidYMid meet">'+rects+'</svg>';
     }
 
-    function svgHeatmap(rowLabels, colLabels, matrix, w, h) {
-        const cw = Math.floor((w - 100) / colLabels.length);
-        const ch = Math.floor((h - 60) / rowLabels.length);
+    function svgHeatmap(rowLabels, colLabels, matrix, chartId) {
+        const w = 700, h = 50 + rowLabels.length * 30;
+        const cw = Math.floor((w - 110) / colLabels.length);
+        const ch = 26;
         const maxVal = Math.max(...matrix.flat(), 1);
         let cells = '';
-        // Column headers
         colLabels.forEach((c, ci) => {
-            cells += '<text x="' + (105 + ci * cw + cw/2) + '" y="14" text-anchor="middle" font-size="10" fill="#595959" transform="rotate(-25,' + (105 + ci * cw + cw/2) + ',14)">' + c + '</text>';
+            cells += '<text x="'+(115+ci*cw+cw/2)+'" y="16" text-anchor="middle" font-size="10" fill="#64748b" transform="rotate(-25,'+(115+ci*cw+cw/2)+',16)">'+c+'</text>';
         });
         rowLabels.forEach((r, ri) => {
-            cells += '<text x="98" y="' + (35 + ri * ch + ch/2 + 4) + '" text-anchor="end" font-size="10" fill="#595959">' + (r.length > 8 ? r.substring(0,7) + '..' : r) + '</text>';
+            cells += '<text x="105" y="'+(38+ri*ch+ch/2)+'" text-anchor="end" font-size="10" fill="#334155">'+(r.length>8?r.substring(0,7)+'..':r)+'</text>';
             colLabels.forEach((c, ci) => {
                 const v = matrix[ri] ? (matrix[ri][ci] || 0) : 0;
                 const intensity = v / maxVal;
-                const r2 = Math.round(24 + (230 - 24) * (1 - intensity));
-                const g2 = Math.round(144 + (247 - 144) * (1 - intensity));
-                const b2 = Math.round(255 + (255 - 255) * (1 - intensity));
-                cells += '<rect x="' + (105 + ci * cw) + '" y="' + (25 + ri * ch) + '" width="' + (cw-1) + '" height="' + (ch-1) + '" fill="rgb(' + r2 + ',' + g2 + ',' + b2 + ')" rx="2"><title>' + r + ' × ' + c + ': ' + v + '건</title></rect>';
-                if (v > 0 && cw > 20) cells += '<text x="' + (105 + ci * cw + cw/2) + '" y="' + (25 + ri * ch + ch/2 + 4) + '" text-anchor="middle" font-size="' + (cw > 35 ? 10 : 8) + '" fill="' + (intensity > 0.5 ? '#fff' : '#595959') + '">' + v + '</text>';
+                const cr = Math.round(37+(230-37)*(1-intensity));
+                const cg = Math.round(99+(247-99)*(1-intensity));
+                const cb = Math.round(235+(255-235)*(1-intensity));
+                cells += '<rect x="'+(115+ci*cw)+'" y="'+(30+ri*ch)+'" width="'+(cw-2)+'" height="'+(ch-2)+'" fill="rgb('+cr+','+cg+','+cb+')" rx="3" style="cursor:pointer" onclick="openKG(\''+chartId+'\',\''+r.replace(/'/g,"\\'")+' × '+c.replace(/'/g,"\\'")+'\')"><title>'+r+' × '+c+': '+v+'건</title></rect>';
+                if (v > 0 && cw > 24) cells += '<text x="'+(115+ci*cw+cw/2)+'" y="'+(30+ri*ch+ch/2+3)+'" text-anchor="middle" font-size="'+(cw>35?10:8)+'" fill="'+(intensity>0.5?'#fff':'#475569')+'" pointer-events="none">'+v+'</text>';
             });
         });
-        return '<svg viewBox="0 0 ' + w + ' ' + h + '" style="width:100%;height:' + h + 'px;">' + cells + '</svg>';
+        return '<svg viewBox="0 0 '+w+' '+h+'" preserveAspectRatio="xMidYMid meet">'+cells+'</svg>';
     }
 
     // ── 7. 키워드 클라우드 (SVG) ──
-    function svgWordCloud(words, w, h) {
+    function svgWordCloud(words, chartId) {
+        const w = 500, h = 240;
         const maxF = Math.max(...words.map(w => w[1]), 1);
-        const colors = ['#1890ff','#52c41a','#722ed1','#ff4d4f','#faad14','#13c2c2','#eb2f96','#fa8c16','#2f54eb','#a0d911'];
         let texts = '';
-        const positions = [];
         words.forEach(([word, freq], i) => {
-            const fontSize = Math.max(11, Math.round(10 + (freq / maxF) * 26));
-            // 간단한 나선형 배치
-            const angle = i * 0.8;
-            const radius = 8 + i * 4.5;
+            const fontSize = Math.max(11, Math.round(11 + (freq / maxF) * 24));
+            const angle = i * 0.75;
+            const radius = 10 + i * 4.2;
             let x = w/2 + Math.cos(angle) * radius;
-            let y = h/2 + Math.sin(angle) * radius * 0.6;
-            x = Math.max(30, Math.min(w - 30, x));
+            let y = h/2 + Math.sin(angle) * radius * 0.55;
+            x = Math.max(35, Math.min(w - 35, x));
             y = Math.max(20, Math.min(h - 10, y));
-            texts += '<text x="' + x + '" y="' + y + '" font-size="' + fontSize + '" fill="' + colors[i % colors.length] + '" text-anchor="middle" opacity="' + (0.7 + (freq/maxF)*0.3).toFixed(2) + '" font-weight="' + (freq/maxF > 0.5 ? 'bold' : 'normal') + '"><title>' + word + ': ' + freq + '건</title>' + word + '</text>';
+            texts += '<text x="'+x+'" y="'+y+'" font-size="'+fontSize+'" fill="'+CHART_COLORS[i%CHART_COLORS.length]+'" text-anchor="middle" opacity="'+(0.7+(freq/maxF)*0.3).toFixed(2)+'" font-weight="'+(freq/maxF>0.4?'bold':'normal')+'" style="cursor:pointer" onclick="openKG(\'keyword\',\''+word.replace(/'/g,"\\'")+'\')"><title>'+word+': '+freq+'건</title>'+word+'</text>';
         });
-        return '<svg viewBox="0 0 ' + w + ' ' + h + '" style="width:100%;height:' + h + 'px;background:#fafafa;border-radius:8px;">' + texts + '</svg>';
+        return '<svg viewBox="0 0 '+w+' '+h+'" preserveAspectRatio="xMidYMid meet" style="background:var(--bg);border-radius:8px;">'+texts+'</svg>';
     }
 
     // ── 8. 히트맵 데이터 구성 ──
@@ -830,52 +829,56 @@ function renderStats() {
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px;">
             <div class="card">
                 <div class="card-title"><i class="lucide-pie-chart"></i> 분야별 구성비 (도넛 차트)</div>
-                ${svgDonut(cats, 200, 180, '분야별')}
+                <p style="font-size:11px;color:var(--text-tertiary);margin-bottom:8px;">항목을 클릭하면 연관 정보를 볼 수 있습니다</p>
+                <div class="chart-wrap chart-md">${svgDonut(cats, 'category')}</div>
             </div>
-            <div class="card">
+            <div class="card" style="display:flex;flex-direction:column;">
                 <div class="card-title"><i class="lucide-map"></i> 분야별 비중 (트리맵)</div>
-                ${svgTreemap(cats, 500, 120)}
-                <p style="font-size:11px;color:var(--text-secondary);margin-top:8px;">면적이 넓을수록 해당 분야의 지원사업이 많습니다. 마우스를 올리면 상세 정보를 볼 수 있습니다.</p>
+                <p style="font-size:11px;color:var(--text-tertiary);margin-bottom:8px;">면적이 넓을수록 해당 분야의 지원사업이 많습니다</p>
+                <div class="chart-wrap" style="flex:1;display:flex;align-items:center;">${svgTreemap(cats, 'category')}</div>
             </div>
         </div>
 
         <!-- Row 2: 기관별 수평바 + 출처별 도넛 -->
-        <div style="display:grid;grid-template-columns:2fr 1fr;gap:16px;margin-bottom:16px;">
+        <div style="display:grid;grid-template-columns:3fr 2fr;gap:16px;margin-bottom:16px;">
             <div class="card">
                 <div class="card-title"><i class="lucide-building-2"></i> 소관기관별 사업 현황 (상위 15)</div>
+                <div style="padding:4px 0;">
                 ${topOrgs.map(([o, n], i) => {
                     const pct = (n / totalSub * 100).toFixed(1);
-                    const barColor = i === 0 ? '#1890ff' : i < 3 ? '#40a9ff' : i < 7 ? '#69c0ff' : '#91d5ff';
-                    return '<div style="display:flex;align-items:center;margin-bottom:6px;"><span style="min-width:110px;font-size:12px;color:#595959;text-align:right;padding-right:8px;">' + escHtml(o) + '</span><div style="flex:1;background:#f5f5f5;border-radius:4px;height:20px;position:relative;overflow:hidden;"><div style="height:100%;width:' + (n/maxOrg*100) + '%;background:' + barColor + ';border-radius:4px;transition:width 0.5s;"></div></div><span style="min-width:70px;font-size:12px;color:#262626;padding-left:8px;font-weight:' + (i < 3 ? 'bold' : 'normal') + ';">' + n + '건 (' + pct + '%)</span></div>';
+                    const barColor = i === 0 ? 'var(--primary)' : i < 3 ? 'var(--primary-light)' : i < 7 ? 'var(--primary-lighter)' : '#93c5fd';
+                    return '<div style="display:flex;align-items:center;margin-bottom:5px;cursor:pointer;" onclick="openKG(\'org\',\'' + o.replace(/'/g,"\\'") + '\')"><span style="min-width:100px;font-size:12px;color:var(--text-secondary);text-align:right;padding-right:10px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">' + escHtml(o) + '</span><div style="flex:1;background:var(--border-light);border-radius:20px;height:18px;overflow:hidden;"><div style="height:100%;width:' + (n/maxOrg*100) + '%;background:' + barColor + ';border-radius:20px;transition:width 0.5s;"></div></div><span style="min-width:75px;font-size:12px;color:var(--heading);padding-left:8px;font-weight:' + (i < 3 ? '700' : '400') + ';">' + n + '건 <span style="color:var(--text-tertiary);">' + pct + '%</span></span></div>';
                 }).join('')}
+                </div>
             </div>
             <div class="card">
                 <div class="card-title"><i class="lucide-database"></i> 데이터 출처별 구성</div>
-                ${svgDonut(srcs.map(([s, n]) => [srcNames[s] || s, n]), 160, 170, '출처별')}
+                <div class="chart-wrap chart-md">${svgDonut(srcs.map(([s, n]) => [srcNames[s] || s, n]), 'source')}</div>
             </div>
         </div>
 
         <!-- Row 3: 히트맵 -->
         <div class="card" style="margin-bottom:16px;">
             <div class="card-title"><i class="lucide-grid-3x3"></i> 기관 × 분야 교차 히트맵</div>
-            <p style="font-size:12px;color:var(--text-secondary);margin-bottom:8px;">상위 8개 기관의 분야별 지원사업 분포를 보여줍니다. 색상이 진할수록 해당 교차 영역의 사업 수가 많습니다.</p>
-            ${svgHeatmap(ctOrgs, ctCats, hmMatrix, 700, 230)}
+            <p style="font-size:12px;color:var(--text-secondary);margin-bottom:8px;">상위 8개 기관의 분야별 분포입니다. 셀을 클릭하면 상세 연관 정보를 확인할 수 있습니다.</p>
+            <div class="chart-wrap">${svgHeatmap(ctOrgs, ctCats, hmMatrix, 'heatmap')}</div>
         </div>
 
         <!-- Row 4: 키워드 클라우드 + 수행기관 -->
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px;">
             <div class="card">
                 <div class="card-title"><i class="lucide-cloud"></i> 키워드 클라우드</div>
-                <p style="font-size:12px;color:var(--text-secondary);margin-bottom:4px;">지원사업 제목에서 추출한 핵심 키워드 빈도</p>
-                ${svgWordCloud(topKw, 440, 200)}
+                <p style="font-size:12px;color:var(--text-secondary);margin-bottom:4px;">키워드를 클릭하면 관련 사업을 볼 수 있습니다</p>
+                <div class="chart-wrap chart-md">${svgWordCloud(topKw, 'keyword')}</div>
             </div>
             <div class="card">
                 <div class="card-title"><i class="lucide-network"></i> 주요 수행기관 네트워크</div>
-                <p style="font-size:12px;color:var(--text-secondary);margin-bottom:8px;">사업을 실제로 집행하는 수행기관 현황</p>
+                <p style="font-size:12px;color:var(--text-secondary);margin-bottom:8px;">클릭하면 수행기관의 연관 사업을 확인합니다</p>
+                <div style="display:flex;flex-wrap:wrap;gap:6px;">
                 ${topExecs.map(([e, n]) => {
-                    const size = 40 + (n / maxExec) * 60;
-                    return '<div style="display:inline-flex;align-items:center;margin:4px 6px;padding:4px 12px;background:linear-gradient(135deg,#f0f5ff,#e6f7ff);border:1px solid #91d5ff;border-radius:20px;font-size:12px;"><span style="display:inline-block;width:' + Math.round(8 + n/maxExec*12) + 'px;height:' + Math.round(8 + n/maxExec*12) + 'px;border-radius:50%;background:#1890ff;margin-right:6px;opacity:' + (0.4 + n/maxExec*0.6).toFixed(2) + ';"></span>' + escHtml(e).substring(0, 15) + ' <strong style="margin-left:4px;">' + n + '</strong></div>';
+                    return '<div style="display:inline-flex;align-items:center;padding:6px 14px;background:var(--primary-bg);border:1px solid var(--primary-border);border-radius:20px;font-size:12px;cursor:pointer;transition:all 0.2s;" onclick="openKG(\'executor\',\'' + e.replace(/'/g,"\\'") + '\')" onmouseenter="this.style.background=\'var(--primary)\';this.style.color=\'#fff\'" onmouseleave="this.style.background=\'var(--primary-bg)\';this.style.color=\'inherit\'"><span style="display:inline-block;width:' + Math.round(8 + n/maxExec*10) + 'px;height:' + Math.round(8 + n/maxExec*10) + 'px;border-radius:50%;background:var(--primary);margin-right:6px;opacity:' + (0.4 + n/maxExec*0.6).toFixed(2) + ';"></span>' + escHtml(e).substring(0, 15) + ' <strong style="margin-left:4px;">' + n + '</strong></div>';
                 }).join('')}
+                </div>
             </div>
         </div>
 
@@ -921,96 +924,78 @@ function renderStats() {
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px;">
             <div class="card">
                 <div class="card-title"><i class="lucide-trending-up"></i> 로렌츠 곡선 & 지니계수 (기관 집중도)</div>
-                <div class="chart-wrap">
+                <div class="chart-wrap chart-md">
                 ${(() => {
-                    // 로렌츠 곡선: 기관별 사업 수 분포의 불균등도
                     const sorted = orgs.map(o => o[1]).sort((a, b) => a - b);
                     const n = sorted.length;
                     const cumPop = [0], cumShare = [0];
                     let runSum = 0;
-                    sorted.forEach((v, i) => {
-                        runSum += v;
-                        cumPop.push((i + 1) / n);
-                        cumShare.push(runSum / totalSub);
-                    });
-                    // 지니계수
+                    sorted.forEach((v, i) => { runSum += v; cumPop.push((i+1)/n); cumShare.push(runSum/totalSub); });
                     let giniArea = 0;
-                    for (let i = 1; i < cumPop.length; i++) {
-                        giniArea += (cumPop[i] - cumPop[i-1]) * (cumShare[i] + cumShare[i-1]) / 2;
-                    }
+                    for (let i = 1; i < cumPop.length; i++) giniArea += (cumPop[i]-cumPop[i-1])*(cumShare[i]+cumShare[i-1])/2;
                     const gini = (0.5 - giniArea) / 0.5;
-
-                    const w = 360, h = 240, pad = 45;
-                    const pw = w - pad * 2, ph = h - pad * 2;
-                    let lorenzPath = 'M' + pad + ',' + (pad + ph);
-                    cumPop.forEach((p, i) => {
-                        lorenzPath += ' L' + (pad + p * pw) + ',' + (pad + ph - cumShare[i] * ph);
-                    });
-                    // 축, 그리드, 대각선
+                    const w = 400, h = 280, pad = 48;
+                    const pw = w-pad*2, ph = h-pad*2;
+                    let lorenzPath = 'M'+pad+','+(pad+ph);
+                    cumPop.forEach((p, i) => { lorenzPath += ' L'+(pad+p*pw)+','+(pad+ph-cumShare[i]*ph); });
                     let gridLines = '';
                     for (let g = 0.25; g <= 0.75; g += 0.25) {
-                        const gx = pad + g * pw, gy = pad + ph - g * ph;
-                        gridLines += '<line x1="' + pad + '" y1="' + gy + '" x2="' + (pad+pw) + '" y2="' + gy + '" stroke="#e2e8f0" stroke-width="0.5"/>';
-                        gridLines += '<line x1="' + gx + '" y1="' + pad + '" x2="' + gx + '" y2="' + (pad+ph) + '" stroke="#e2e8f0" stroke-width="0.5"/>';
-                        gridLines += '<text x="' + (pad-6) + '" y="' + (gy+3) + '" text-anchor="end" font-size="9" fill="#94a3b8">' + (g*100).toFixed(0) + '%</text>';
-                        gridLines += '<text x="' + gx + '" y="' + (pad+ph+14) + '" text-anchor="middle" font-size="9" fill="#94a3b8">' + (g*100).toFixed(0) + '%</text>';
+                        const gx = pad+g*pw, gy = pad+ph-g*ph;
+                        gridLines += '<line x1="'+pad+'" y1="'+gy+'" x2="'+(pad+pw)+'" y2="'+gy+'" stroke="#e2e8f0" stroke-width="0.5"/>';
+                        gridLines += '<line x1="'+gx+'" y1="'+pad+'" x2="'+gx+'" y2="'+(pad+ph)+'" stroke="#e2e8f0" stroke-width="0.5"/>';
+                        gridLines += '<text x="'+(pad-6)+'" y="'+(gy+3)+'" text-anchor="end" font-size="9" fill="#94a3b8">'+(g*100).toFixed(0)+'%</text>';
+                        gridLines += '<text x="'+gx+'" y="'+(pad+ph+14)+'" text-anchor="middle" font-size="9" fill="#94a3b8">'+(g*100).toFixed(0)+'%</text>';
                     }
-
-                    return '<svg viewBox="0 0 ' + w + ' ' + (h+20) + '" style="width:100%;max-height:260px;">' +
-                        gridLines +
-                        '<line x1="' + pad + '" y1="' + (pad+ph) + '" x2="' + (pad+pw) + '" y2="' + pad + '" stroke="#cbd5e1" stroke-width="1" stroke-dasharray="4,4"/>' +
-                        '<path d="' + lorenzPath + '" fill="rgba(37,99,235,0.12)" stroke="var(--primary)" stroke-width="2.5" fill-opacity="0.3"/>' +
-                        '<text x="' + (pad+pw/2) + '" y="' + (pad+ph+30) + '" text-anchor="middle" font-size="10" fill="#64748b">기관 누적 비율 (%)</text>' +
-                        '<text x="' + (pad-32) + '" y="' + (pad+ph/2) + '" text-anchor="middle" font-size="10" fill="#64748b" transform="rotate(-90,' + (pad-32) + ',' + (pad+ph/2) + ')">사업 누적 비율 (%)</text>' +
-                        '<rect x="' + (pad+pw-140) + '" y="' + (pad+5) + '" width="135" height="40" rx="6" fill="white" stroke="var(--border)" stroke-width="1"/>' +
-                        '<text x="' + (pad+pw-130) + '" y="' + (pad+22) + '" font-size="11" fill="var(--heading)" font-weight="700">지니계수: ' + gini.toFixed(3) + '</text>' +
-                        '<text x="' + (pad+pw-130) + '" y="' + (pad+37) + '" font-size="9" fill="' + (gini > 0.6 ? 'var(--error)' : gini > 0.4 ? 'var(--warning)' : 'var(--success)') + '">' + (gini > 0.6 ? '매우 불균등 (상위 기관 과도 집중)' : gini > 0.4 ? '보통 수준의 불균등' : '비교적 균등한 분포') + '</text>' +
+                    return '<svg viewBox="0 0 '+w+' '+(h+20)+'" preserveAspectRatio="xMidYMid meet">' + gridLines +
+                        '<line x1="'+pad+'" y1="'+(pad+ph)+'" x2="'+(pad+pw)+'" y2="'+pad+'" stroke="#cbd5e1" stroke-width="1" stroke-dasharray="4,4"/>' +
+                        '<path d="'+lorenzPath+'" fill="rgba(37,99,235,0.12)" stroke="var(--primary)" stroke-width="2.5" fill-opacity="0.3"/>' +
+                        '<text x="'+(pad+pw/2)+'" y="'+(pad+ph+30)+'" text-anchor="middle" font-size="10" fill="#64748b">기관 누적 비율 (%)</text>' +
+                        '<text x="'+(pad-34)+'" y="'+(pad+ph/2)+'" text-anchor="middle" font-size="10" fill="#64748b" transform="rotate(-90,'+(pad-34)+','+(pad+ph/2)+')">사업 누적 비율 (%)</text>' +
+                        '<rect x="'+(pad+pw-145)+'" y="'+(pad+8)+'" width="140" height="42" rx="8" fill="white" stroke="var(--border)" stroke-width="1"/>' +
+                        '<text x="'+(pad+pw-135)+'" y="'+(pad+26)+'" font-size="12" fill="var(--heading)" font-weight="700">지니계수: '+gini.toFixed(3)+'</text>' +
+                        '<text x="'+(pad+pw-135)+'" y="'+(pad+42)+'" font-size="9" fill="'+(gini>0.6?'var(--error)':gini>0.4?'var(--warning)':'var(--success)')+'">'+(gini>0.6?'매우 불균등 (상위 기관 과도 집중)':gini>0.4?'보통 수준의 불균등':'비교적 균등한 분포')+'</text>' +
                     '</svg>';
                 })()}
                 </div>
-                <p style="font-size:11px;color:var(--text-tertiary);margin-top:8px;">로렌츠 곡선이 대각선에서 멀수록, 지니계수가 1에 가까울수록 소수 기관에 사업이 편중되어 있음을 나타냅니다.</p>
+                <p style="font-size:11px;color:var(--text-tertiary);margin-top:8px;">곡선이 대각선에서 멀수록 소수 기관에 사업이 편중되어 있음을 나타냅니다.</p>
             </div>
 
             <div class="card">
                 <div class="card-title"><i class="lucide-bar-chart-horizontal"></i> 파레토 분석 (80/20 법칙)</div>
-                <div class="chart-wrap">
+                <div class="chart-wrap chart-md">
                 ${(() => {
-                    // 파레토: 상위 몇 % 기관이 전체 80%를 차지하는가
                     const sortedDesc = orgs.map(o => o[1]).sort((a, b) => b - a);
-                    const w = 360, h = 240, pad = 45;
-                    const pw = w - pad * 2, ph = h - pad * 2;
-                    const barW = Math.max(4, Math.min(20, pw / Math.min(sortedDesc.length, 25)));
+                    const w = 400, h = 280, pad = 48;
+                    const pw = w-pad*2, ph = h-pad*2;
+                    const barW = Math.max(5, Math.min(18, pw/Math.min(sortedDesc.length, 25)));
                     const maxBar = sortedDesc[0];
-                    let bars = '', cumLine = 'M';
-                    let cumSum = 0, pareto80 = -1;
+                    let bars = '', cumLine = 'M', cumSum = 0, pareto80 = -1;
                     const showN = Math.min(sortedDesc.length, 25);
-
                     for (let i = 0; i < showN; i++) {
-                        const bh = (sortedDesc[i] / maxBar) * ph;
-                        const bx = pad + (i / showN) * pw + (pw/showN - barW) / 2;
-                        bars += '<rect x="' + bx + '" y="' + (pad + ph - bh) + '" width="' + barW + '" height="' + bh + '" fill="var(--primary)" rx="2" opacity="0.7"><title>#' + (i+1) + '위: ' + sortedDesc[i] + '건</title></rect>';
+                        const bh = (sortedDesc[i]/maxBar)*ph;
+                        const bx = pad+(i/showN)*pw+(pw/showN-barW)/2;
+                        bars += '<rect x="'+bx+'" y="'+(pad+ph-bh)+'" width="'+barW+'" height="'+bh+'" fill="var(--primary)" rx="2" opacity="0.75"><title>#'+(i+1)+'위: '+sortedDesc[i]+'건</title></rect>';
                         cumSum += sortedDesc[i];
-                        const cumPct = cumSum / totalSub;
-                        const cx = pad + ((i + 0.5) / showN) * pw;
-                        const cy = pad + ph - cumPct * ph;
-                        cumLine += (i === 0 ? '' : ' L') + cx + ',' + cy;
-                        if (pareto80 < 0 && cumPct >= 0.8) pareto80 = i + 1;
+                        const cumPct = cumSum/totalSub;
+                        const cx2 = pad+((i+0.5)/showN)*pw;
+                        const cy2 = pad+ph-cumPct*ph;
+                        cumLine += (i===0?'':' L')+cx2+','+cy2;
+                        if (pareto80 < 0 && cumPct >= 0.8) pareto80 = i+1;
                     }
-
-                    const p80y = pad + ph * 0.2;
-                    return '<svg viewBox="0 0 ' + w + ' ' + (h+20) + '" style="width:100%;max-height:260px;">' +
-                        '<line x1="' + pad + '" y1="' + p80y + '" x2="' + (pad+pw) + '" y2="' + p80y + '" stroke="var(--error)" stroke-width="1" stroke-dasharray="4,3" opacity="0.6"/>' +
-                        '<text x="' + (pad+pw+2) + '" y="' + (p80y+3) + '" font-size="9" fill="var(--error)">80%</text>' +
+                    const p80y = pad+ph*0.2;
+                    return '<svg viewBox="0 0 '+w+' '+(h+20)+'" preserveAspectRatio="xMidYMid meet">' +
+                        '<line x1="'+pad+'" y1="'+p80y+'" x2="'+(pad+pw)+'" y2="'+p80y+'" stroke="var(--error)" stroke-width="1" stroke-dasharray="4,3" opacity="0.6"/>' +
+                        '<text x="'+(pad+pw+4)+'" y="'+(p80y+3)+'" font-size="9" fill="var(--error)">80%</text>' +
                         bars +
-                        '<path d="' + cumLine + '" fill="none" stroke="var(--warning)" stroke-width="2.5" stroke-linecap="round"/>' +
-                        '<rect x="' + (pad+8) + '" y="' + (pad+5) + '" width="170" height="40" rx="6" fill="white" stroke="var(--border)" stroke-width="1"/>' +
-                        '<text x="' + (pad+16) + '" y="' + (pad+22) + '" font-size="11" fill="var(--heading)" font-weight="700">상위 ' + pareto80 + '개 기관 = 80% 점유</text>' +
-                        '<text x="' + (pad+16) + '" y="' + (pad+37) + '" font-size="9" fill="var(--text-secondary)">전체 ' + orgs.length + '개 기관 중 ' + (pareto80/orgs.length*100).toFixed(1) + '%</text>' +
-                        '<text x="' + (pad+pw/2) + '" y="' + (pad+ph+16) + '" text-anchor="middle" font-size="10" fill="#64748b">기관 순위 (사업수 내림차순)</text>' +
+                        '<path d="'+cumLine+'" fill="none" stroke="var(--warning)" stroke-width="2.5" stroke-linecap="round"/>' +
+                        '<rect x="'+(pad+8)+'" y="'+(pad+8)+'" width="175" height="42" rx="8" fill="white" stroke="var(--border)" stroke-width="1"/>' +
+                        '<text x="'+(pad+16)+'" y="'+(pad+26)+'" font-size="12" fill="var(--heading)" font-weight="700">상위 '+pareto80+'개 기관 = 80% 점유</text>' +
+                        '<text x="'+(pad+16)+'" y="'+(pad+42)+'" font-size="9" fill="var(--text-secondary)">전체 '+orgs.length+'개 기관 중 '+(pareto80/orgs.length*100).toFixed(1)+'%</text>' +
+                        '<text x="'+(pad+pw/2)+'" y="'+(pad+ph+16)+'" text-anchor="middle" font-size="10" fill="#64748b">기관 순위 (사업수 내림차순)</text>' +
                     '</svg>';
                 })()}
                 </div>
-                <p style="font-size:11px;color:var(--text-tertiary);margin-top:8px;">파레토 법칙에 따라 소수 기관이 대다수 사업을 관리합니다. 파란 막대는 개별 사업 수, 주황 선은 누적 비율입니다.</p>
+                <p style="font-size:11px;color:var(--text-tertiary);margin-top:8px;">파란 막대는 개별 사업 수, 주황 선은 누적 비율입니다.</p>
             </div>
         </div>
 
@@ -1018,52 +1003,38 @@ function renderStats() {
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px;">
             <div class="card">
                 <div class="card-title"><i class="lucide-radar"></i> 분야별 다양성 레이더 차트</div>
-                <div class="chart-wrap" style="display:flex;justify-content:center;">
+                <div class="chart-wrap chart-md" style="display:flex;justify-content:center;">
                 ${(() => {
-                    // 레이더 차트
-                    const w = 340, h = 280;
-                    const cx = w/2, cy = h/2 + 5, r = 100;
-                    const n = cats.length;
+                    const w = 380, h = 300;
+                    const cx3 = w/2, cy3 = h/2+5, rad = 110;
+                    const nCats = cats.length;
                     const maxVal = cats[0][1];
-                    const angleStep = (Math.PI * 2) / n;
-
-                    // 그리드 링
+                    const angleStep = (Math.PI*2)/nCats;
                     let grid = '';
-                    [0.25, 0.5, 0.75, 1.0].forEach(pct => {
-                        const rr = r * pct;
+                    [0.25,0.5,0.75,1.0].forEach(pct => {
+                        const rr = rad*pct;
                         let poly = '';
-                        for (let i = 0; i < n; i++) {
-                            const a = -Math.PI/2 + i * angleStep;
-                            poly += (i===0?'M':' L') + (cx + rr*Math.cos(a)) + ',' + (cy + rr*Math.sin(a));
-                        }
-                        grid += '<polygon points="' + poly.replace(/M|L/g, '') + '" fill="none" stroke="#e2e8f0" stroke-width="0.5"/>';
+                        for (let i = 0; i < nCats; i++) { const a = -Math.PI/2+i*angleStep; poly += (i===0?'':' ')+(cx3+rr*Math.cos(a))+','+(cy3+rr*Math.sin(a)); }
+                        grid += '<polygon points="'+poly+'" fill="none" stroke="#e2e8f0" stroke-width="0.5"/>';
                     });
-                    // 축선 + 라벨
                     let axes = '';
                     cats.forEach(([cat], i) => {
-                        const a = -Math.PI/2 + i * angleStep;
-                        const lx = cx + (r + 20) * Math.cos(a);
-                        const ly = cy + (r + 20) * Math.sin(a);
-                        axes += '<line x1="' + cx + '" y1="' + cy + '" x2="' + (cx + r*Math.cos(a)) + '" y2="' + (cy + r*Math.sin(a)) + '" stroke="#e2e8f0" stroke-width="0.5"/>';
-                        axes += '<text x="' + lx + '" y="' + (ly+3) + '" text-anchor="middle" font-size="10" fill="#64748b" font-weight="500">' + cat + '</text>';
+                        const a = -Math.PI/2+i*angleStep;
+                        const lx = cx3+(rad+22)*Math.cos(a);
+                        const ly = cy3+(rad+22)*Math.sin(a);
+                        axes += '<line x1="'+cx3+'" y1="'+cy3+'" x2="'+(cx3+rad*Math.cos(a))+'" y2="'+(cy3+rad*Math.sin(a))+'" stroke="#e2e8f0" stroke-width="0.5"/>';
+                        axes += '<text x="'+lx+'" y="'+(ly+3)+'" text-anchor="middle" font-size="10" fill="#64748b" font-weight="500">'+cat+'</text>';
                     });
-                    // 데이터 다각형
-                    let dataPath = '';
-                    let dots = '';
+                    let dataPath = '', dots = '';
                     cats.forEach(([, val], i) => {
-                        const a = -Math.PI/2 + i * angleStep;
-                        const pr = (val / maxVal) * r;
-                        const px = cx + pr * Math.cos(a);
-                        const py = cy + pr * Math.sin(a);
-                        dataPath += (i===0?'M':' L') + px + ',' + py;
-                        dots += '<circle cx="' + px + '" cy="' + py + '" r="3.5" fill="var(--primary)" stroke="white" stroke-width="1.5"><title>' + cats[i][0] + ': ' + val + '건</title></circle>';
+                        const a = -Math.PI/2+i*angleStep;
+                        const pr = (val/maxVal)*rad;
+                        const px = cx3+pr*Math.cos(a), py = cy3+pr*Math.sin(a);
+                        dataPath += (i===0?'':' ')+px+','+py;
+                        dots += '<circle cx="'+px+'" cy="'+py+'" r="4" fill="var(--primary)" stroke="white" stroke-width="2" style="cursor:pointer" onclick="openKG(\'category\',\''+cats[i][0].replace(/'/g,"\\'")+'\')"><title>'+cats[i][0]+': '+val+'건</title></circle>';
                     });
-
-                    return '<svg viewBox="0 0 ' + w + ' ' + h + '" style="width:100%;max-height:280px;">' +
-                        grid + axes +
-                        '<polygon points="' + dataPath.replace(/M|L/g, '') + '" fill="rgba(37,99,235,0.15)" stroke="var(--primary)" stroke-width="2"/>' +
-                        dots +
-                    '</svg>';
+                    return '<svg viewBox="0 0 '+w+' '+h+'" preserveAspectRatio="xMidYMid meet">' + grid + axes +
+                        '<polygon points="'+dataPath+'" fill="rgba(37,99,235,0.15)" stroke="var(--primary)" stroke-width="2"/>' + dots + '</svg>';
                 })()}
                 </div>
             </div>
@@ -1122,10 +1093,10 @@ function renderStats() {
 
                     function makeGauge(label, value, desc, color) {
                         const angle = (value / 100) * 180;
-                        const rad = angle * Math.PI / 180;
-                        const ex = 60 + 45 * Math.cos(Math.PI - rad);
-                        const ey = 62 - 45 * Math.sin(Math.PI - rad);
-                        return '<div style="text-align:center;"><svg viewBox="0 0 120 75" style="width:100%;max-width:140px;"><path d="M15,62 A45,45 0 0,1 105,62" fill="none" stroke="var(--border-light)" stroke-width="8" stroke-linecap="round"/><path d="M15,62 A45,45 0 0,1 ' + ex + ',' + ey + '" fill="none" stroke="' + color + '" stroke-width="8" stroke-linecap="round"/><text x="60" y="58" text-anchor="middle" font-size="16" font-weight="800" fill="var(--heading)">' + value + '</text><text x="60" y="70" text-anchor="middle" font-size="8" fill="var(--text-tertiary)">/ 100</text></svg><div style="font-size:12px;font-weight:600;color:var(--heading);margin-top:2px;">' + label + '</div><div style="font-size:10px;color:var(--text-tertiary);margin-top:2px;">' + desc + '</div></div>';
+                        const rad2 = angle * Math.PI / 180;
+                        const ex = 70 + 52 * Math.cos(Math.PI - rad2);
+                        const ey = 72 - 52 * Math.sin(Math.PI - rad2);
+                        return '<div style="text-align:center;padding:8px 0;"><svg viewBox="0 0 140 85" style="width:100%;max-width:160px;"><path d="M18,72 A52,52 0 0,1 122,72" fill="none" stroke="var(--border-light)" stroke-width="10" stroke-linecap="round"/><path d="M18,72 A52,52 0 0,1 ' + ex + ',' + ey + '" fill="none" stroke="' + color + '" stroke-width="10" stroke-linecap="round"/><text x="70" y="66" text-anchor="middle" font-size="20" font-weight="800" fill="var(--heading)">' + value + '</text><text x="70" y="80" text-anchor="middle" font-size="9" fill="var(--text-tertiary)">/ 100</text></svg><div style="font-size:13px;font-weight:700;color:var(--heading);margin-top:4px;">' + label + '</div><div style="font-size:11px;color:var(--text-tertiary);margin-top:3px;">' + desc + '</div></div>';
                     }
 
                     return makeGauge('분야 다양성', catNormEntropy, '분야 엔트로피 균등도', 'var(--primary)') +
@@ -1137,11 +1108,174 @@ function renderStats() {
         </div>
     `;
 
-    // ── 인터랙티브: 매칭 카드 토글, 차트 호버 ──
-    document.querySelectorAll('.chart-wrap svg').forEach(svg => {
-        svg.style.cursor = 'default';
-    });
 }
+
+// ===== Knowledge Graph =====
+function openKG(chartType, label) {
+    const overlay = document.getElementById('kgOverlay');
+    const title = document.getElementById('kgTitle');
+    const body = document.getElementById('kgBody');
+
+    // 연관 데이터 수집
+    let related = [];
+    let stats = {};
+    let centerLabel = label;
+    let centerColor = 'var(--primary)';
+
+    if (chartType === 'category') {
+        const items = subsidies.filter(s => s.category === label);
+        const orgMap = {}, srcMap = {}, execMap = {};
+        items.forEach(s => {
+            orgMap[s.organization || '기타'] = (orgMap[s.organization || '기타'] || 0) + 1;
+            srcMap[s.source || 'unknown'] = (srcMap[s.source || 'unknown'] || 0) + 1;
+            if (s.executor) execMap[s.executor] = (execMap[s.executor] || 0) + 1;
+        });
+        const activeCount = items.filter(s => !s.apply_end_date || s.apply_end_date >= today).length;
+        stats = { total: items.length, active: activeCount, orgs: Object.keys(orgMap).length, execs: Object.keys(execMap).length };
+        related = [
+            ...Object.entries(orgMap).sort((a,b) => b[1]-a[1]).slice(0,8).map(([n,c]) => ({name:n, count:c, type:'기관', color:'var(--primary)'})),
+            ...Object.entries(execMap).sort((a,b) => b[1]-a[1]).slice(0,5).map(([n,c]) => ({name:n, count:c, type:'수행기관', color:'var(--success)'})),
+            ...Object.entries(srcMap).sort((a,b) => b[1]-a[1]).map(([n,c]) => ({name:n, count:c, type:'출처', color:'var(--warning)'}))
+        ];
+        title.innerHTML = '<i class="lucide-share-2"></i> 분야 연관 그래프: ' + escHtml(label);
+    } else if (chartType === 'org') {
+        const items = subsidies.filter(s => s.organization === label);
+        const catMap = {}, execMap = {};
+        items.forEach(s => {
+            catMap[s.category] = (catMap[s.category] || 0) + 1;
+            if (s.executor) execMap[s.executor] = (execMap[s.executor] || 0) + 1;
+        });
+        const activeCount = items.filter(s => !s.apply_end_date || s.apply_end_date >= today).length;
+        stats = { total: items.length, active: activeCount, cats: Object.keys(catMap).length, execs: Object.keys(execMap).length };
+        related = [
+            ...Object.entries(catMap).sort((a,b) => b[1]-a[1]).map(([n,c]) => ({name:n, count:c, type:'분야', color:'var(--primary)'})),
+            ...Object.entries(execMap).sort((a,b) => b[1]-a[1]).slice(0,6).map(([n,c]) => ({name:n, count:c, type:'수행기관', color:'var(--success)'}))
+        ];
+        centerColor = 'var(--primary-light)';
+        title.innerHTML = '<i class="lucide-share-2"></i> 기관 연관 그래프: ' + escHtml(label);
+    } else if (chartType === 'executor') {
+        const items = subsidies.filter(s => s.executor === label);
+        const catMap = {}, orgMap = {};
+        items.forEach(s => {
+            catMap[s.category] = (catMap[s.category] || 0) + 1;
+            orgMap[s.organization || '기타'] = (orgMap[s.organization || '기타'] || 0) + 1;
+        });
+        stats = { total: items.length, cats: Object.keys(catMap).length, orgs: Object.keys(orgMap).length };
+        related = [
+            ...Object.entries(orgMap).sort((a,b) => b[1]-a[1]).map(([n,c]) => ({name:n, count:c, type:'소관기관', color:'var(--primary)'})),
+            ...Object.entries(catMap).sort((a,b) => b[1]-a[1]).map(([n,c]) => ({name:n, count:c, type:'분야', color:'var(--warning)'}))
+        ];
+        centerColor = 'var(--success)';
+        title.innerHTML = '<i class="lucide-share-2"></i> 수행기관 연관 그래프: ' + escHtml(label);
+    } else if (chartType === 'keyword') {
+        const items = subsidies.filter(s => (s.title || '').includes(label));
+        const catMap = {}, orgMap = {};
+        items.forEach(s => {
+            catMap[s.category] = (catMap[s.category] || 0) + 1;
+            orgMap[s.organization || '기타'] = (orgMap[s.organization || '기타'] || 0) + 1;
+        });
+        stats = { total: items.length, cats: Object.keys(catMap).length, orgs: Object.keys(orgMap).length };
+        related = [
+            ...Object.entries(catMap).sort((a,b) => b[1]-a[1]).map(([n,c]) => ({name:n, count:c, type:'분야', color:'var(--primary)'})),
+            ...Object.entries(orgMap).sort((a,b) => b[1]-a[1]).slice(0,6).map(([n,c]) => ({name:n, count:c, type:'기관', color:'var(--success)'}))
+        ];
+        centerColor = '#7c3aed';
+        title.innerHTML = '<i class="lucide-share-2"></i> 키워드 연관 그래프: "' + escHtml(label) + '"';
+    } else if (chartType === 'source') {
+        const srcNames2 = { '기업마당': 'bizinfo', '중소벤처기업부': 'mss', 'K-스타트업': 'kstartup', '중소벤처24': 'smes' };
+        const srcKey = srcNames2[label] || label;
+        const items = subsidies.filter(s => s.source === srcKey || s.source === label);
+        const catMap = {}, orgMap = {};
+        items.forEach(s => {
+            catMap[s.category] = (catMap[s.category] || 0) + 1;
+            orgMap[s.organization || '기타'] = (orgMap[s.organization || '기타'] || 0) + 1;
+        });
+        stats = { total: items.length, cats: Object.keys(catMap).length, orgs: Object.keys(orgMap).length };
+        related = [
+            ...Object.entries(catMap).sort((a,b) => b[1]-a[1]).map(([n,c]) => ({name:n, count:c, type:'분야', color:'var(--primary)'})),
+            ...Object.entries(orgMap).sort((a,b) => b[1]-a[1]).slice(0,6).map(([n,c]) => ({name:n, count:c, type:'기관', color:'var(--warning)'}))
+        ];
+        centerColor = 'var(--warning)';
+        title.innerHTML = '<i class="lucide-share-2"></i> 출처 연관 그래프: ' + escHtml(label);
+    } else if (chartType === 'heatmap') {
+        const parts = label.split(' × ');
+        const items = subsidies.filter(s => (s.organization || '기타') === parts[0] && s.category === parts[1]);
+        stats = { total: items.length };
+        const execMap = {};
+        items.forEach(s => { if (s.executor) execMap[s.executor] = (execMap[s.executor]||0)+1; });
+        related = Object.entries(execMap).sort((a,b) => b[1]-a[1]).map(([n,c]) => ({name:n, count:c, type:'수행기관', color:'var(--success)'}));
+        // 같은 기관의 다른 분야
+        const sameOrg = subsidies.filter(s => (s.organization||'기타') === parts[0] && s.category !== parts[1]);
+        const otherCats = {};
+        sameOrg.forEach(s => { otherCats[s.category] = (otherCats[s.category]||0)+1; });
+        related = [...related, ...Object.entries(otherCats).sort((a,b) => b[1]-a[1]).slice(0,5).map(([n,c]) => ({name:n, count:c, type:'동일기관 타분야', color:'var(--primary)'}))];
+        centerLabel = parts[0] + ' × ' + parts[1];
+        title.innerHTML = '<i class="lucide-share-2"></i> 교차 분석: ' + escHtml(centerLabel);
+    }
+
+    // Knowledge Graph SVG 생성
+    const maxRel = Math.max(...related.map(r => r.count), 1);
+    const gw = 600, gh = 320;
+    const gcx = gw/2, gcy = gh/2;
+    let graphSvg = '<svg viewBox="0 0 '+gw+' '+gh+'" preserveAspectRatio="xMidYMid meet" style="width:100%;max-height:320px;">';
+    // 중심 노드
+    graphSvg += '<circle cx="'+gcx+'" cy="'+gcy+'" r="40" fill="'+centerColor+'" opacity="0.15" stroke="'+centerColor+'" stroke-width="2"/>';
+    graphSvg += '<text x="'+gcx+'" y="'+(gcy-2)+'" text-anchor="middle" font-size="12" font-weight="700" fill="var(--heading)">'+(centerLabel.length>12?centerLabel.substring(0,12)+'..':centerLabel)+'</text>';
+    if (stats.total !== undefined) graphSvg += '<text x="'+gcx+'" y="'+(gcy+14)+'" text-anchor="middle" font-size="11" fill="var(--text-secondary)">'+stats.total+'건</text>';
+
+    // 주변 노드
+    const nodeCount = Math.min(related.length, 14);
+    related.slice(0, nodeCount).forEach((rel, i) => {
+        const angle = -Math.PI/2 + (i / nodeCount) * Math.PI * 2;
+        const dist = 110 + (i % 2) * 30;
+        const nx = gcx + dist * Math.cos(angle);
+        const ny = gcy + dist * Math.sin(angle);
+        const strength = rel.count / maxRel;
+        const nodeR = 18 + strength * 16;
+        // 엣지
+        graphSvg += '<line x1="'+gcx+'" y1="'+gcy+'" x2="'+nx+'" y2="'+ny+'" stroke="'+rel.color+'" stroke-width="'+(1+strength*2.5)+'" opacity="'+(0.2+strength*0.4)+'" stroke-dasharray="'+(strength<0.3?'3,3':'none')+'"/>';
+        // 노드
+        graphSvg += '<circle cx="'+nx+'" cy="'+ny+'" r="'+nodeR+'" fill="'+rel.color+'" opacity="0.12" stroke="'+rel.color+'" stroke-width="1.5"/>';
+        graphSvg += '<text x="'+nx+'" y="'+(ny-3)+'" text-anchor="middle" font-size="'+(nodeR>26?11:9)+'" font-weight="600" fill="var(--heading)">'+(rel.name.length>8?rel.name.substring(0,7)+'..':rel.name)+'</text>';
+        graphSvg += '<text x="'+nx+'" y="'+(ny+10)+'" text-anchor="middle" font-size="9" fill="var(--text-secondary)">'+rel.count+'건</text>';
+    });
+    graphSvg += '</svg>';
+
+    // 패널 본문 조립
+    let html = '<div class="kg-graph-area">' + graphSvg + '</div>';
+
+    // 통계 카드
+    html += '<div class="kg-detail-grid">';
+    if (stats.total !== undefined) html += '<div class="kg-detail-card"><div class="kg-label">총 사업 수</div><div class="kg-value">'+stats.total+'건</div></div>';
+    if (stats.active !== undefined) html += '<div class="kg-detail-card"><div class="kg-label">진행중 사업</div><div class="kg-value" style="color:var(--success);">'+stats.active+'건</div></div>';
+    if (stats.cats !== undefined) html += '<div class="kg-detail-card"><div class="kg-label">관련 분야</div><div class="kg-value">'+stats.cats+'개</div></div>';
+    if (stats.orgs !== undefined) html += '<div class="kg-detail-card"><div class="kg-label">관련 기관</div><div class="kg-value">'+stats.orgs+'개</div></div>';
+    if (stats.execs !== undefined) html += '<div class="kg-detail-card"><div class="kg-label">수행기관</div><div class="kg-value">'+stats.execs+'개</div></div>';
+    html += '</div>';
+
+    // 연관 항목 리스트
+    if (related.length > 0) {
+        html += '<div class="kg-related-list"><h4 style="font-size:13px;font-weight:700;color:var(--heading);margin-bottom:10px;"><i class="lucide-link"></i> 연관 항목 ('+related.length+'건)</h4>';
+        related.forEach(rel => {
+            const strength = rel.count / maxRel;
+            html += '<div class="kg-related-item">' +
+                '<div class="kg-related-dot" style="background:'+rel.color+';"></div>' +
+                '<div class="kg-related-name">'+escHtml(rel.name)+'</div>' +
+                '<div class="kg-related-meta">'+rel.type+' · '+rel.count+'건</div>' +
+                '<div class="kg-strength-bar"><div class="kg-strength-fill" style="width:'+(strength*100)+'%;background:'+rel.color+';"></div></div>' +
+            '</div>';
+        });
+        html += '</div>';
+    }
+
+    body.innerHTML = html;
+    overlay.classList.add('show');
+}
+
+function closeKG() {
+    document.getElementById('kgOverlay').classList.remove('show');
+}
+document.addEventListener('keydown', e => { if (e.key === 'Escape') closeKG(); });
 
 // ===== Settings =====
 function renderSettings() {
