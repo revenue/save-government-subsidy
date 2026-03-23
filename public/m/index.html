@@ -722,7 +722,20 @@ function renderList() {
     const el = document.getElementById('page-list');
     const cats = [...new Set(subsidies.map(s => s.category))].sort();
     const orgsAll = [...new Set(subsidies.map(s => s.organization))].sort();
-    const regions = [...new Set(subsidies.map(s => s.region).filter(Boolean))].sort();
+    const SIDO_LIST = ['서울','부산','대구','인천','광주','대전','울산','세종','경기','강원','충북','충남','전북','전남','경북','경남','제주'];
+    const getSubsidyRegion = (s) => {
+        if (s.region && s.region !== '') return s.region;
+        const m = (s.title || '').match(/\[([^\]]+)\]/);
+        if (m) { const r = m[1]; if (SIDO_LIST.some(si => r.includes(si))) return r; }
+        return '';
+    };
+    const regionSet = new Set();
+    subsidies.forEach(s => { const r = getSubsidyRegion(s); if (r) regionSet.add(r); });
+    const regions = [...regionSet].sort((a, b) => {
+        const ai = SIDO_LIST.findIndex(si => a.includes(si));
+        const bi = SIDO_LIST.findIndex(si => b.includes(si));
+        return (ai === -1 ? 99 : ai) - (bi === -1 ? 99 : bi);
+    });
     const srcNames = { bizinfo:'기업마당', mss:'중소벤처기업부', kstartup:'K-스타트업', smes:'중소벤처24' };
 
     el.innerHTML = `
@@ -781,7 +794,7 @@ function renderList() {
             // Org filter
             if (listFilterOrg && s.organization !== listFilterOrg) return false;
             // Region filter
-            if (listFilterRegion && s.region !== listFilterRegion) return false;
+            if (listFilterRegion && getSubsidyRegion(s) !== listFilterRegion) return false;
             // Status filter
             if (listFilterStatus) {
                 const st = getStatus(s.apply_end_date, s.apply_start_date);
