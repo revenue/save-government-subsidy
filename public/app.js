@@ -679,8 +679,8 @@ function renderStats() {
     const maxEntropy = Math.log2(orgs.length);
     const evenness = maxEntropy > 0 ? (shannon / maxEntropy * 100).toFixed(1) : 0;
 
-    // ── 4. 기관-분야 크로스탭 (상위 8기관 × 전체 분야) ──
-    const ctOrgs = orgs.slice(0, 8).map(o => o[0]);
+    // ── 4. 기관-분야 크로스탭 (상위 20기관 × 전체 분야) ──
+    const ctOrgs = orgs.slice(0, 20).map(o => o[0]);
     const ctCats = cats.map(c => c[0]);
 
     // ── 5. 출처별 분석 ──
@@ -727,24 +727,24 @@ function renderStats() {
     }
 
     function svgHeatmap(rowLabels, colLabels, matrix, chartId) {
-        const w = 700, h = 50 + rowLabels.length * 30;
-        const cw = Math.floor((w - 110) / colLabels.length);
-        const ch = 26;
+        const ch = Math.max(20, Math.min(28, 400 / rowLabels.length));
+        const w = 700, h = 40 + rowLabels.length * ch + 10;
+        const cw = Math.floor((w - 120) / colLabels.length);
         const maxVal = Math.max(...matrix.flat(), 1);
         let cells = '';
         colLabels.forEach((c, ci) => {
-            cells += '<text x="'+(115+ci*cw+cw/2)+'" y="16" text-anchor="middle" font-size="10" fill="#64748b" transform="rotate(-25,'+(115+ci*cw+cw/2)+',16)">'+c+'</text>';
+            cells += '<text x="'+(125+ci*cw+cw/2)+'" y="16" text-anchor="middle" font-size="9" fill="#64748b" transform="rotate(-30,'+(125+ci*cw+cw/2)+',16)">'+c+'</text>';
         });
         rowLabels.forEach((r, ri) => {
-            cells += '<text x="105" y="'+(38+ri*ch+ch/2)+'" text-anchor="end" font-size="10" fill="#334155">'+(r.length>8?r.substring(0,7)+'..':r)+'</text>';
+            cells += '<text x="115" y="'+(38+ri*ch+ch/2)+'" text-anchor="end" font-size="9" fill="#334155">'+(r.length>12?r.substring(0,11)+'..':r)+'</text>';
             colLabels.forEach((c, ci) => {
                 const v = matrix[ri] ? (matrix[ri][ci] || 0) : 0;
                 const intensity = v / maxVal;
                 const cr = Math.round(37+(230-37)*(1-intensity));
                 const cg = Math.round(99+(247-99)*(1-intensity));
                 const cb = Math.round(235+(255-235)*(1-intensity));
-                cells += '<rect x="'+(115+ci*cw)+'" y="'+(30+ri*ch)+'" width="'+(cw-2)+'" height="'+(ch-2)+'" fill="rgb('+cr+','+cg+','+cb+')" rx="3" style="cursor:pointer" onclick="openKG(\''+chartId+'\',\''+r.replace(/'/g,"\\'")+' × '+c.replace(/'/g,"\\'")+'\')"><title>'+r+' × '+c+': '+v+'건</title></rect>';
-                if (v > 0 && cw > 24) cells += '<text x="'+(115+ci*cw+cw/2)+'" y="'+(30+ri*ch+ch/2+3)+'" text-anchor="middle" font-size="'+(cw>35?10:8)+'" fill="'+(intensity>0.5?'#fff':'#475569')+'" pointer-events="none">'+v+'</text>';
+                cells += '<rect x="'+(125+ci*cw)+'" y="'+(30+ri*ch)+'" width="'+(cw-2)+'" height="'+(ch-2)+'" fill="rgb('+cr+','+cg+','+cb+')" rx="3" style="cursor:pointer" onclick="openKG(\''+chartId+'\',\''+r.replace(/'/g,"\\'")+' × '+c.replace(/'/g,"\\'")+'\')"><title>'+r+' × '+c+': '+v+'건</title></rect>';
+                if (v > 0 && cw > 24) cells += '<text x="'+(125+ci*cw+cw/2)+'" y="'+(30+ri*ch+ch/2+3)+'" text-anchor="middle" font-size="'+(cw>35?9:7)+'" fill="'+(intensity>0.5?'#fff':'#475569')+'" pointer-events="none">'+v+'</text>';
             });
         });
         return '<svg viewBox="0 0 '+w+' '+h+'" preserveAspectRatio="xMidYMid meet">'+cells+'</svg>';
@@ -860,7 +860,7 @@ function renderStats() {
         <!-- Row 3: 히트맵 -->
         <div class="card" style="margin-bottom:16px;">
             <div class="card-title"><i class="lucide-grid-3x3"></i> 기관 × 분야 교차 히트맵</div>
-            <p style="font-size:12px;color:var(--text-secondary);margin-bottom:8px;">상위 8개 기관의 분야별 분포입니다. 셀을 클릭하면 상세 연관 정보를 확인할 수 있습니다.</p>
+            <p style="font-size:11px;color:var(--text-secondary);margin-bottom:8px;">상위 20개 기관의 분야별 분포입니다. 셀을 클릭하면 연관 정보를 확인할 수 있습니다.</p>
             <div class="chart-wrap">${svgHeatmap(ctOrgs, ctCats, hmMatrix, 'heatmap')}</div>
         </div>
 
