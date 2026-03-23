@@ -188,9 +188,9 @@
             min-width: 48px; height: 48px; border-radius: 14px; display: flex; align-items: center; justify-content: center;
             font-size: 16px; font-weight: 800; flex-shrink: 0;
         }
-        .match-prob.high { background: var(--success-bg); color: var(--success); }
-        .match-prob.medium { background: var(--warning-bg); color: var(--warning); }
-        .match-prob.low { background: var(--error-bg); color: var(--error); }
+        .match-prob.high { background: #dbeafe; color: #1d4ed8; }
+        .match-prob.medium { background: #dbeafe; color: #2563eb; }
+        .match-prob.low { background: #eff6ff; color: #3b82f6; }
         .match-meta { font-size: 12px; color: var(--text-tertiary); margin-top: 6px; display: flex; flex-wrap: wrap; gap: 4px; }
         .match-meta-tag { background: var(--bg); padding: 3px 8px; border-radius: 6px; font-size: 11px; color: var(--text-secondary); }
 
@@ -826,41 +826,47 @@ function renderStats() {
         <div class="insight-card">
             <div class="insight-title"><i class="lucide-lightbulb"></i> 핵심 인사이트</div>
             <div class="insight-grid">
-                <div class="insight-item"><strong style="color:var(--primary);">시장 집중도</strong><br>HHI: ${hhi.toFixed(0)} (${hhiLabel})<br>'${esc(cats[0][0])}' ${(cats[0][1]/totalSub*100).toFixed(1)}%</div>
-                <div class="insight-item"><strong style="color:var(--success);">기관 다양성</strong><br>Shannon 균등도: ${evenness}%<br>CR4 집중률: ${cr4.toFixed(1)}%</div>
-                <div class="insight-item"><strong style="color:var(--warning);">긴급</strong><br>7일 마감: ${deadlineSubs.filter(s=>s.daysLeft<=7).length}건<br>30일 마감: ${deadlineSubs.length}건</div>
-                <div class="insight-item"><strong style="color:var(--error);">데이터</strong><br>출처: ${Object.keys(srcCounts).length}개<br>수집: ${(meta.last_collected||'-').slice(0,10)}</div>
+                <div class="insight-item"><strong style="color:#1e3a5f;">시장 집중도</strong><br>HHI: ${hhi.toFixed(0)} (${hhiLabel})<br>'${esc(cats[0][0])}' ${(cats[0][1]/totalSub*100).toFixed(1)}%</div>
+                <div class="insight-item"><strong style="color:#1d4ed8;">기관 다양성</strong><br>Shannon 균등도: ${evenness}%<br>CR4 집중률: ${cr4.toFixed(1)}%</div>
+                <div class="insight-item"><strong style="color:#3b82f6;">긴급</strong><br>7일 마감: ${deadlineSubs.filter(s=>s.daysLeft<=7).length}건<br>30일 마감: ${deadlineSubs.length}건</div>
+                <div class="insight-item"><strong style="color:#60a5fa;">데이터</strong><br>출처: ${Object.keys(srcCounts).length}개<br>수집: ${(meta.last_collected||'-').slice(0,10)}</div>
             </div>
         </div>
 
         <div class="chart-container">
             <div class="chart-title"><i class="lucide-pie-chart"></i> 분야별 구성</div>
-            ${cats.map(([c, n]) => {
+            ${cats.map(([c, n], i) => {
                 const pct = (n / totalSub * 100).toFixed(1);
-                return '<div class="stat-bar"><div class="stat-bar-label">'+esc(c)+'</div><div class="stat-bar-track"><div class="stat-bar-fill" style="width:'+pct+'%;background:var(--primary);"></div></div><div class="stat-bar-value">'+n+'건</div></div>';
+                const blues = ['#1e3a5f','#1d4ed8','#2563eb','#3b82f6','#60a5fa','#93bbfd','#bfdbfe','#dbeafe','#eff6ff'];
+                const clr = blues[Math.min(i, blues.length-1)];
+                return '<div class="stat-bar"><div class="stat-bar-label">'+esc(c)+'</div><div class="stat-bar-track"><div class="stat-bar-fill" style="width:'+pct+'%;background:'+clr+';"></div></div><div class="stat-bar-value">'+n+'건</div></div>';
             }).join('')}
         </div>
 
         <div class="chart-container">
             <div class="chart-title"><i class="lucide-building-2"></i> 주요 기관 (Top 10)</div>
-            ${orgs.map(([o, n]) => {
+            ${orgs.map(([o, n], i) => {
                 const pct = (n / maxOrg * 100).toFixed(0);
-                return '<div class="stat-bar"><div class="stat-bar-label" style="min-width:80px;">'+esc(o).substring(0,10)+'</div><div class="stat-bar-track"><div class="stat-bar-fill" style="width:'+pct+'%;background:var(--success);"></div></div><div class="stat-bar-value">'+n+'건</div></div>';
+                const blues = ['#1e3a5f','#1d4ed8','#2563eb','#3b82f6','#60a5fa','#93bbfd','#bfdbfe','#dbeafe','#eff6ff','#f0f7ff'];
+                const clr = blues[Math.min(i, blues.length-1)];
+                return '<div class="stat-bar"><div class="stat-bar-label" style="min-width:80px;">'+esc(o).substring(0,10)+'</div><div class="stat-bar-track"><div class="stat-bar-fill" style="width:'+pct+'%;background:'+clr+';"></div></div><div class="stat-bar-value">'+n+'건</div></div>';
             }).join('')}
         </div>
 
         <div class="chart-container">
             <div class="chart-title"><i class="lucide-database"></i> 출처별 구성</div>
-            ${srcs.map(([s, n]) => {
+            ${srcs.map(([s, n], i) => {
                 const pct = (n / totalSub * 100).toFixed(1);
-                return '<div class="stat-bar"><div class="stat-bar-label">'+(srcNames[s]||esc(s))+'</div><div class="stat-bar-track"><div class="stat-bar-fill" style="width:'+pct+'%;background:var(--warning);"></div></div><div class="stat-bar-value">'+pct+'%</div></div>';
+                const blues = ['#1e3a5f','#1d4ed8','#2563eb','#3b82f6','#60a5fa','#93bbfd','#bfdbfe'];
+                const clr = blues[Math.min(i, blues.length-1)];
+                return '<div class="stat-bar"><div class="stat-bar-label">'+(srcNames[s]||esc(s))+'</div><div class="stat-bar-track"><div class="stat-bar-fill" style="width:'+pct+'%;background:'+clr+';"></div></div><div class="stat-bar-value">'+pct+'%</div></div>';
             }).join('')}
         </div>
 
         <div class="chart-container">
             <div class="chart-title"><i class="lucide-clock"></i> 마감 임박 (30일 내)</div>
             ${deadlineSubs.length ? deadlineSubs.slice(0, 8).map(s => {
-                const urgColor = s.daysLeft <= 3 ? 'var(--error)' : s.daysLeft <= 7 ? 'var(--warning)' : 'var(--primary)';
+                const urgColor = s.daysLeft <= 3 ? '#1e3a5f' : s.daysLeft <= 7 ? '#1d4ed8' : '#60a5fa';
                 return '<div class="subsidy-item" onclick="showSubsidyDetail(\''+s.id+'\')" style="display:flex;align-items:center;gap:10px;"><span style="font-size:13px;font-weight:800;color:'+urgColor+';min-width:36px;">D-'+s.daysLeft+'</span><div style="flex:1;min-width:0;"><div class="subsidy-item-title">'+esc(s.title).slice(0,45)+'</div><div class="subsidy-item-meta">'+esc(s.organization)+' · '+esc(s.category)+'</div></div></div>';
             }).join('') : '<div style="text-align:center;color:var(--text-tertiary);padding:16px;font-size:13px;">30일 내 마감 사업 없음</div>'}
         </div>
@@ -875,10 +881,10 @@ function renderStats() {
                     const orgEnt = shannon;
                     const orgNorm = evenness;
                     return [
-                        {label:'분야 다양성',val:catNorm,color:'var(--primary)'},
-                        {label:'기관 다양성',val:orgNorm,color:'var(--success)'},
-                        {label:'CR4 집중률',val:cr4.toFixed(0),color:cr4>80?'var(--error)':'var(--warning)'},
-                        {label:'HHI 지수',val:Math.min(100,(hhi/100)).toFixed(0),color:'var(--primary)'}
+                        {label:'분야 다양성',val:catNorm,color:'#1d4ed8'},
+                        {label:'기관 다양성',val:orgNorm,color:'#2563eb'},
+                        {label:'CR4 집중률',val:cr4.toFixed(0),color:'#3b82f6'},
+                        {label:'HHI 지수',val:Math.min(100,(hhi/100)).toFixed(0),color:'#60a5fa'}
                     ].map(g => {
                         const pct = Math.min(100, parseFloat(g.val));
                         return '<div style="text-align:center;"><div style="font-size:24px;font-weight:800;color:var(--heading);">'+g.val+'</div><div style="height:6px;background:var(--border-light);border-radius:3px;margin:6px 0;overflow:hidden;"><div style="height:100%;width:'+pct+'%;background:'+g.color+';border-radius:3px;transition:width 0.5s;"></div></div><div style="font-size:11px;color:var(--text-secondary);">'+g.label+'</div></div>';
@@ -933,9 +939,9 @@ function renderStats() {
             <p style="font-size:11px;color:var(--text-secondary);margin-bottom:14px;">매칭 결과 ${mr.length}건 기반 개인화 분석</p>
 
             <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:16px;">
-                <div class="stat-card" style="background:rgba(255,255,255,0.8);"><div class="stat-value" style="color:var(--primary);">${avgProb.toFixed(0)}<span class="stat-suffix">%</span></div><div class="stat-label">평균 확률</div></div>
-                <div class="stat-card" style="background:rgba(255,255,255,0.8);"><div class="stat-value" style="color:var(--success);">${high}</div><div class="stat-label">높은 확률 (70%+)</div></div>
-                <div class="stat-card" style="background:rgba(255,255,255,0.8);"><div class="stat-value" style="color:var(--warning);">${matchUrgent}</div><div class="stat-label">14일 내 마감</div></div>
+                <div class="stat-card" style="background:rgba(255,255,255,0.8);"><div class="stat-value" style="color:#1d4ed8;">${avgProb.toFixed(0)}<span class="stat-suffix">%</span></div><div class="stat-label">평균 확률</div></div>
+                <div class="stat-card" style="background:rgba(255,255,255,0.8);"><div class="stat-value" style="color:#2563eb;">${high}</div><div class="stat-label">높은 확률 (70%+)</div></div>
+                <div class="stat-card" style="background:rgba(255,255,255,0.8);"><div class="stat-value" style="color:#3b82f6;">${matchUrgent}</div><div class="stat-label">14일 내 마감</div></div>
             </div>
 
             <div style="background:rgba(255,255,255,0.7);border-radius:var(--radius);padding:14px;margin-bottom:12px;">
@@ -943,7 +949,7 @@ function renderStats() {
                 <div style="display:flex;align-items:flex-end;gap:6px;height:80px;">
                     ${['0-20','20-40','40-60','60-80','80-100'].map((label,i) => {
                         const h = buckets[i]/maxBucket*100;
-                        const colors = ['var(--error)','var(--warning)','#d97706','var(--primary)','var(--success)'];
+                        const colors = ['#dbeafe','#93bbfd','#3b82f6','#2563eb','#1e3a5f'];
                         return '<div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:2px;"><div style="width:100%;background:'+colors[i]+';border-radius:4px 4px 0 0;height:'+Math.max(4,h)+'%;opacity:0.8;transition:height 0.5s;"></div><div style="font-size:9px;color:var(--text-tertiary);white-space:nowrap;">'+label+'</div><div style="font-size:10px;font-weight:700;color:var(--heading);">'+buckets[i]+'</div></div>';
                     }).join('')}
                 </div>
@@ -951,24 +957,26 @@ function renderStats() {
 
             <div style="background:rgba(255,255,255,0.7);border-radius:var(--radius);padding:14px;margin-bottom:12px;">
                 <div style="font-size:12px;font-weight:700;color:var(--heading);margin-bottom:10px;display:flex;align-items:center;gap:4px;"><i class="lucide-radar" style="font-size:14px;color:var(--primary);"></i> 점수 요인 분석</div>
-                ${[['자격요건 적합도',avgElig,'var(--primary)'],['조건 매칭도',avgMatch,'var(--success)'],['경쟁률 점수',avgComp,'var(--warning)'],['이력 보정',avgHist,'#7c3aed']].map(([l,v,c]) =>
+                ${[['자격요건 적합도',avgElig,'#1e3a5f'],['조건 매칭도',avgMatch,'#1d4ed8'],['경쟁률 점수',avgComp,'#3b82f6'],['이력 보정',avgHist,'#93bbfd']].map(([l,v,c]) =>
                     '<div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;"><span style="min-width:85px;font-size:11px;color:var(--text-secondary);">'+l+'</span><div style="flex:1;height:8px;background:var(--border-light);border-radius:4px;overflow:hidden;"><div style="height:100%;width:'+v.toFixed(0)+'%;background:'+c+';border-radius:4px;transition:width 0.5s;"></div></div><span style="min-width:30px;font-size:12px;font-weight:700;color:var(--heading);text-align:right;">'+v.toFixed(0)+'</span></div>'
                 ).join('')}
             </div>
 
             <div style="background:rgba(255,255,255,0.7);border-radius:var(--radius);padding:14px;margin-bottom:12px;">
                 <div style="font-size:12px;font-weight:700;color:var(--heading);margin-bottom:10px;display:flex;align-items:center;gap:4px;"><i class="lucide-pie-chart" style="font-size:14px;color:var(--primary);"></i> 매칭 분야 집중도</div>
-                ${mCats.slice(0,5).map(([c,n]) => {
+                ${mCats.slice(0,5).map(([c,n],i) => {
                     const pct = (n/mr.length*100).toFixed(0);
-                    return '<div style="display:flex;align-items:center;gap:8px;margin-bottom:6px;"><span style="min-width:70px;font-size:11px;color:var(--text-secondary);">'+esc(c)+'</span><div style="flex:1;height:8px;background:var(--border-light);border-radius:4px;overflow:hidden;"><div style="height:100%;width:'+pct+'%;background:var(--primary);border-radius:4px;"></div></div><span style="font-size:11px;font-weight:600;color:var(--heading);">'+n+'건 ('+pct+'%)</span></div>';
+                    const blues = ['#1e3a5f','#1d4ed8','#2563eb','#3b82f6','#60a5fa'];
+                    return '<div style="display:flex;align-items:center;gap:8px;margin-bottom:6px;"><span style="min-width:70px;font-size:11px;color:var(--text-secondary);">'+esc(c)+'</span><div style="flex:1;height:8px;background:var(--border-light);border-radius:4px;overflow:hidden;"><div style="height:100%;width:'+pct+'%;background:'+blues[i]+';border-radius:4px;"></div></div><span style="font-size:11px;font-weight:600;color:var(--heading);">'+n+'건 ('+pct+'%)</span></div>';
                 }).join('')}
             </div>
 
             <div style="background:rgba(255,255,255,0.7);border-radius:var(--radius);padding:14px;">
-                <div style="font-size:12px;font-weight:700;color:var(--heading);margin-bottom:10px;display:flex;align-items:center;gap:4px;"><i class="lucide-building-2" style="font-size:14px;color:var(--success);"></i> 주요 매칭 기관</div>
-                ${mOrgs.map(([o,n]) => {
+                <div style="font-size:12px;font-weight:700;color:var(--heading);margin-bottom:10px;display:flex;align-items:center;gap:4px;"><i class="lucide-building-2" style="font-size:14px;color:#1d4ed8;"></i> 주요 매칭 기관</div>
+                ${mOrgs.map(([o,n],i) => {
                     const pct = (n/mr.length*100).toFixed(0);
-                    return '<div style="display:flex;align-items:center;gap:8px;margin-bottom:6px;"><span style="min-width:80px;font-size:11px;color:var(--text-secondary);">'+esc(o).substring(0,10)+'</span><div style="flex:1;height:8px;background:var(--border-light);border-radius:4px;overflow:hidden;"><div style="height:100%;width:'+pct+'%;background:var(--success);border-radius:4px;"></div></div><span style="font-size:11px;font-weight:600;color:var(--heading);">'+n+'건</span></div>';
+                    const blues = ['#1e3a5f','#1d4ed8','#2563eb','#3b82f6','#60a5fa'];
+                    return '<div style="display:flex;align-items:center;gap:8px;margin-bottom:6px;"><span style="min-width:80px;font-size:11px;color:var(--text-secondary);">'+esc(o).substring(0,10)+'</span><div style="flex:1;height:8px;background:var(--border-light);border-radius:4px;overflow:hidden;"><div style="height:100%;width:'+pct+'%;background:'+blues[i]+';border-radius:4px;"></div></div><span style="font-size:11px;font-weight:600;color:var(--heading);">'+n+'건</span></div>';
                 }).join('')}
             </div>
         </div>`;
