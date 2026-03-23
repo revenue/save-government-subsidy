@@ -626,100 +626,293 @@ function doSearch() {
 
 // ===== Stats =====
 function renderStats() {
+    // ── 1. 기초 데이터 집계 ──
     const catCounts = {};
-    subsidies.forEach(s => { catCounts[s.category] = (catCounts[s.category] || 0) + 1; });
+    const orgCounts = {};
+    const srcCounts = {};
+    const execCounts = {};
+    const orgCatMatrix = {}; // org → { cat → count }
+    const deadlineSubs = [];
+    const kwCounts = {};
+
+    subsidies.forEach(s => {
+        catCounts[s.category] = (catCounts[s.category] || 0) + 1;
+        orgCounts[s.organization || '기타'] = (orgCounts[s.organization || '기타'] || 0) + 1;
+        srcCounts[s.source || 'unknown'] = (srcCounts[s.source || 'unknown'] || 0) + 1;
+        if (s.executor) execCounts[s.executor] = (execCounts[s.executor] || 0) + 1;
+
+        const org = s.organization || '기타';
+        if (!orgCatMatrix[org]) orgCatMatrix[org] = {};
+        orgCatMatrix[org][s.category] = (orgCatMatrix[org][s.category] || 0) + 1;
+
+        if (s.apply_end_date) {
+            const diff = (new Date(s.apply_end_date) - new Date()) / 86400000;
+            if (diff >= 0 && diff <= 30) deadlineSubs.push({...s, daysLeft: Math.ceil(diff)});
+        }
+
+        // 키워드 추출
+        (s.title || '').replace(/[가-힣]{2,}/g, w => {
+            if (!['공고','모집','안내','계획','사업','지원','년도','수정','연장','대한'].includes(w))
+                kwCounts[w] = (kwCounts[w] || 0) + 1;
+        });
+    });
+
     const cats = Object.entries(catCounts).sort((a, b) => b[1] - a[1]);
     const maxCat = Math.max(...cats.map(c => c[1]), 1);
+    const orgs = Object.entries(orgCounts).sort((a, b) => b[1] - a[1]);
+    const topOrgs = orgs.slice(0, 15);
+    const maxOrg = Math.max(...topOrgs.map(o => o[1]), 1);
+    const topKw = Object.entries(kwCounts).sort((a, b) => b[1] - a[1]).slice(0, 40);
+    const maxKw = Math.max(...topKw.map(k => k[1]), 1);
+    deadlineSubs.sort((a, b) => a.daysLeft - b.daysLeft);
 
-    const histByCat = {};
-    history.forEach(h => {
-        if (!histByCat[h.program_category]) histByCat[h.program_category] = [];
-        histByCat[h.program_category].push(h);
-    });
-    const catRates = Object.entries(histByCat).map(([cat, recs]) => ({
-        cat, rate: recs.reduce((s, r) => s + (r.selection_rate || 0), 0) / recs.length,
-    })).sort((a, b) => b.rate - a.rate);
-    const maxRate = Math.max(...catRates.map(c => c.rate), 1);
+    // ── 2. 분야별 집중도 분석 (HHI) ──
+    const totalSub = subsidies.length;
+    const hhi = cats.reduce((s, [, n]) => s + Math.pow(n / totalSub * 100, 2), 0);
+    const hhiLabel = hhi > 2500 ? '고집중' : hhi > 1500 ? '중집중' : '분산';
 
+    // ── 3. 기관 다양성 지수 (Shannon Entropy) ──
+    const shannon = -orgs.reduce((s, [, n]) => {
+        const p = n / totalSub;
+        return s + (p > 0 ? p * Math.log2(p) : 0);
+    }, 0);
+    const maxEntropy = Math.log2(orgs.length);
+    const evenness = maxEntropy > 0 ? (shannon / maxEntropy * 100).toFixed(1) : 0;
+
+    // ── 4. 기관-분야 크로스탭 (상위 8기관 × 전체 분야) ──
+    const ctOrgs = orgs.slice(0, 8).map(o => o[0]);
+    const ctCats = cats.map(c => c[0]);
+
+    // ── 5. 출처별 분석 ──
+    const srcNames = { bizinfo: '기업마당', mss: '중소벤처기업부', kstartup: 'K-스타트업', smes: '중소벤처24' };
+    const srcs = Object.entries(srcCounts).sort((a, b) => b[1] - a[1]);
+    const totalSrc = srcs.reduce((s, [, n]) => s + n, 0);
+
+    // ── 6. SVG 차트 생성 헬퍼 ──
+    function svgDonut(data, w, h, title) {
+        const cx = w / 2, cy = h / 2 - 10, r = Math.min(w, h) / 2 - 30, ir = r * 0.55;
+        const colors = ['#1890ff','#52c41a','#faad14','#ff4d4f','#722ed1','#13c2c2','#eb2f96','#fa8c16','#a0d911','#2f54eb'];
+        const total = data.reduce((s, d) => s + d[1], 0);
+        let cumAngle = -Math.PI / 2;
+        let paths = '';
+        let legends = '';
+        data.forEach(([label, val], i) => {
+            const angle = (val / total) * Math.PI * 2;
+            const x1 = cx + r * Math.cos(cumAngle), y1 = cy + r * Math.sin(cumAngle);
+            const x2 = cx + r * Math.cos(cumAngle + angle), y2 = cy + r * Math.sin(cumAngle + angle);
+            const ix1 = cx + ir * Math.cos(cumAngle), iy1 = cy + ir * Math.sin(cumAngle);
+            const ix2 = cx + ir * Math.cos(cumAngle + angle), iy2 = cy + ir * Math.sin(cumAngle + angle);
+            const large = angle > Math.PI ? 1 : 0;
+            paths += '<path d="M' + x1 + ',' + y1 + ' A' + r + ',' + r + ' 0 ' + large + ' 1 ' + x2 + ',' + y2 + ' L' + ix2 + ',' + iy2 + ' A' + ir + ',' + ir + ' 0 ' + large + ' 0 ' + ix1 + ',' + iy1 + 'Z" fill="' + colors[i % colors.length] + '" opacity="0.85"><title>' + label + ': ' + val + '건 (' + (val/total*100).toFixed(1) + '%)</title></path>';
+            cumAngle += angle;
+            if (i < 8) legends += '<text x="' + (w + 5) + '" y="' + (20 + i * 18) + '" font-size="12" fill="#595959"><tspan fill="' + colors[i % colors.length] + '">■ </tspan>' + label + ' ' + (val/total*100).toFixed(1) + '%</text>';
+        });
+        return '<svg viewBox="0 0 ' + (w + 130) + ' ' + h + '" style="width:100%;max-height:' + h + 'px;">' + paths + '<text x="' + cx + '" y="' + (cy + 4) + '" text-anchor="middle" font-size="13" font-weight="bold" fill="#262626">' + total + '건</text>' + legends + '</svg>';
+    }
+
+    function svgTreemap(data, w, h) {
+        const total = data.reduce((s, d) => s + d[1], 0);
+        const colors = ['#1890ff','#52c41a','#faad14','#ff4d4f','#722ed1','#13c2c2','#eb2f96','#fa8c16','#a0d911','#2f54eb','#597ef7','#9254de','#f759ab','#ffc53d','#36cfc9'];
+        let rects = '', x = 0;
+        data.forEach(([label, val], i) => {
+            const rw = (val / total) * w;
+            if (rw < 2) return;
+            rects += '<g><rect x="' + x + '" y="0" width="' + rw + '" height="' + h + '" fill="' + colors[i % colors.length] + '" rx="3" opacity="0.85" stroke="#fff" stroke-width="1"><title>' + label + ': ' + val + '건</title></rect>';
+            if (rw > 40) rects += '<text x="' + (x + rw/2) + '" y="' + (h/2 - 6) + '" text-anchor="middle" font-size="' + (rw > 80 ? 11 : 9) + '" fill="#fff" font-weight="bold">' + label + '</text><text x="' + (x + rw/2) + '" y="' + (h/2 + 10) + '" text-anchor="middle" font-size="10" fill="rgba(255,255,255,0.9)">' + val + '건</text>';
+            rects += '</g>';
+            x += rw;
+        });
+        return '<svg viewBox="0 0 ' + w + ' ' + h + '" style="width:100%;height:' + h + 'px;">' + rects + '</svg>';
+    }
+
+    function svgHeatmap(rowLabels, colLabels, matrix, w, h) {
+        const cw = Math.floor((w - 100) / colLabels.length);
+        const ch = Math.floor((h - 60) / rowLabels.length);
+        const maxVal = Math.max(...matrix.flat(), 1);
+        let cells = '';
+        // Column headers
+        colLabels.forEach((c, ci) => {
+            cells += '<text x="' + (105 + ci * cw + cw/2) + '" y="14" text-anchor="middle" font-size="10" fill="#595959" transform="rotate(-25,' + (105 + ci * cw + cw/2) + ',14)">' + c + '</text>';
+        });
+        rowLabels.forEach((r, ri) => {
+            cells += '<text x="98" y="' + (35 + ri * ch + ch/2 + 4) + '" text-anchor="end" font-size="10" fill="#595959">' + (r.length > 8 ? r.substring(0,7) + '..' : r) + '</text>';
+            colLabels.forEach((c, ci) => {
+                const v = matrix[ri] ? (matrix[ri][ci] || 0) : 0;
+                const intensity = v / maxVal;
+                const r2 = Math.round(24 + (230 - 24) * (1 - intensity));
+                const g2 = Math.round(144 + (247 - 144) * (1 - intensity));
+                const b2 = Math.round(255 + (255 - 255) * (1 - intensity));
+                cells += '<rect x="' + (105 + ci * cw) + '" y="' + (25 + ri * ch) + '" width="' + (cw-1) + '" height="' + (ch-1) + '" fill="rgb(' + r2 + ',' + g2 + ',' + b2 + ')" rx="2"><title>' + r + ' × ' + c + ': ' + v + '건</title></rect>';
+                if (v > 0 && cw > 20) cells += '<text x="' + (105 + ci * cw + cw/2) + '" y="' + (25 + ri * ch + ch/2 + 4) + '" text-anchor="middle" font-size="' + (cw > 35 ? 10 : 8) + '" fill="' + (intensity > 0.5 ? '#fff' : '#595959') + '">' + v + '</text>';
+            });
+        });
+        return '<svg viewBox="0 0 ' + w + ' ' + h + '" style="width:100%;height:' + h + 'px;">' + cells + '</svg>';
+    }
+
+    // ── 7. 키워드 클라우드 (SVG) ──
+    function svgWordCloud(words, w, h) {
+        const maxF = Math.max(...words.map(w => w[1]), 1);
+        const colors = ['#1890ff','#52c41a','#722ed1','#ff4d4f','#faad14','#13c2c2','#eb2f96','#fa8c16','#2f54eb','#a0d911'];
+        let texts = '';
+        const positions = [];
+        words.forEach(([word, freq], i) => {
+            const fontSize = Math.max(11, Math.round(10 + (freq / maxF) * 26));
+            // 간단한 나선형 배치
+            const angle = i * 0.8;
+            const radius = 8 + i * 4.5;
+            let x = w/2 + Math.cos(angle) * radius;
+            let y = h/2 + Math.sin(angle) * radius * 0.6;
+            x = Math.max(30, Math.min(w - 30, x));
+            y = Math.max(20, Math.min(h - 10, y));
+            texts += '<text x="' + x + '" y="' + y + '" font-size="' + fontSize + '" fill="' + colors[i % colors.length] + '" text-anchor="middle" opacity="' + (0.7 + (freq/maxF)*0.3).toFixed(2) + '" font-weight="' + (freq/maxF > 0.5 ? 'bold' : 'normal') + '"><title>' + word + ': ' + freq + '건</title>' + word + '</text>';
+        });
+        return '<svg viewBox="0 0 ' + w + ' ' + h + '" style="width:100%;height:' + h + 'px;background:#fafafa;border-radius:8px;">' + texts + '</svg>';
+    }
+
+    // ── 8. 히트맵 데이터 구성 ──
+    const hmMatrix = ctOrgs.map(org => ctCats.map(cat => (orgCatMatrix[org] || {})[cat] || 0));
+
+    // ── 9. 수행기관 네트워크 (상위) ──
+    const topExecs = Object.entries(execCounts).sort((a, b) => b[1] - a[1]).filter(e => e[0] !== '중소벤처기업부').slice(0, 12);
+    const maxExec = Math.max(...topExecs.map(e => e[1]), 1);
+
+    // ── 10. 마감 임박 타임라인 ──
+    const urgentSubs = deadlineSubs.slice(0, 15);
+
+    // ── 11. 인사이트 도출 ──
+    const topOrg = orgs[0];
+    const topOrgShare = (topOrg[1] / totalSub * 100).toFixed(1);
+    const centralGovCount = orgs.filter(([o]) => ['중소벤처기업부','고용노동부','산업통상부','과학기술정보통신부','농림축산식품부','문화체육관광부','해양수산부','보건복지부','환경부','국토교통부'].includes(o)).reduce((s, [, n]) => s + n, 0);
+    const localGovCount = totalSub - centralGovCount;
+    const topCat = cats[0];
+    const topCatShare = (topCat[1] / totalSub * 100).toFixed(1);
+
+    // ── Render ──
     document.getElementById('page-content').innerHTML = `
-        <div class="page-header"><h1>📈 통계 분석</h1></div>
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;">
-            <div class="card">
-                <div class="card-title">분야별 지원사업 현황</div>
-                ${cats.map(([c, n]) => `
-                    <div class="score-row">
-                        <span class="score-label">${escHtml(c)}</span>
-                        <div class="score-bar"><div class="score-fill" style="width:${n/maxCat*100}%;background:#1890ff;"></div></div>
-                        <span class="score-value">${n}건</span>
-                    </div>
-                `).join('')}
-            </div>
-            <div class="card">
-                <div class="card-title">분야별 평균 선정률</div>
-                ${catRates.map(({cat, rate}) => `
-                    <div class="score-row">
-                        <span class="score-label">${escHtml(cat)}</span>
-                        <div class="score-bar"><div class="score-fill" style="width:${rate}%;background:${rate>=60?'#52c41a':rate>=30?'#faad14':'#ff4d4f'};"></div></div>
-                        <span class="score-value">${rate.toFixed(1)}%</span>
-                    </div>
-                `).join('')}
+        <div class="page-header"><h1>📈 심화 통계 분석</h1>
+            <p style="color:var(--ant-text-secondary);font-size:13px;margin-top:4px;">
+                총 <strong>${totalSub.toLocaleString()}</strong>건 지원사업 데이터 기반 · 최종 수집: ${meta.last_collected || '-'}
+            </p>
+        </div>
+
+        <!-- KPI 요약 -->
+        <div style="display:grid;grid-template-columns:repeat(5,1fr);gap:12px;margin-bottom:16px;">
+            <div class="stat-card"><div class="stat-value">${totalSub.toLocaleString()}<span class="stat-suffix">건</span></div><div class="stat-label">총 지원사업</div></div>
+            <div class="stat-card"><div class="stat-value">${cats.length}<span class="stat-suffix">개</span></div><div class="stat-label">분야 수</div></div>
+            <div class="stat-card"><div class="stat-value">${orgs.length}<span class="stat-suffix">개</span></div><div class="stat-label">소관기관 수</div></div>
+            <div class="stat-card"><div class="stat-value">${deadlineSubs.length}<span class="stat-suffix">건</span></div><div class="stat-label">30일내 마감</div></div>
+            <div class="stat-card"><div class="stat-value">${Object.keys(srcCounts).length}<span class="stat-suffix">개</span></div><div class="stat-label">데이터 출처</div></div>
+        </div>
+
+        <!-- 핵심 인사이트 -->
+        <div class="card" style="margin-bottom:16px;background:linear-gradient(135deg,#f0f5ff,#e6fffb);border:1px solid #d6e4ff;">
+            <div class="card-title">💡 핵심 인사이트</div>
+            <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px;font-size:13px;line-height:1.7;">
+                <div>
+                    <strong style="color:#1890ff;">시장 집중도</strong><br>
+                    HHI 지수 <strong>${hhi.toFixed(0)}</strong> (${hhiLabel})<br>
+                    '${topCat[0]}' 분야가 전체의 <strong>${topCatShare}%</strong>를 차지하여 ${parseFloat(topCatShare) > 50 ? '높은 편중' : '보통 수준의 집중도'}를 보입니다.
+                </div>
+                <div>
+                    <strong style="color:#52c41a;">기관 다양성</strong><br>
+                    Shannon 균등도 <strong>${evenness}%</strong><br>
+                    ${topOrg[0]}이 <strong>${topOrgShare}%</strong>로 최다이며, 중앙부처 ${centralGovCount}건 vs 지자체·기타 ${localGovCount}건입니다.
+                </div>
+                <div>
+                    <strong style="color:#ff4d4f;">긴급 알림</strong><br>
+                    7일 내 마감 <strong>${deadlineSubs.filter(s => s.daysLeft <= 7).length}</strong>건<br>
+                    ${urgentSubs.length > 0 ? '가장 임박: <em>' + escHtml(urgentSubs[0].title).substring(0, 25) + '...</em> (' + urgentSubs[0].daysLeft + '일)' : '현재 임박 마감 없음'}
+                </div>
             </div>
         </div>
-        <div class="card" style="margin-top:16px;">
-            <div class="card-title">선정 이력 상세</div>
-            ${history.length ? `
-            <div class="table-container">
-                <table class="data-table">
-                    <thead><tr><th>프로그램명</th><th>분야</th><th>연도</th><th>총 신청</th><th>선정</th><th>선정률</th></tr></thead>
-                    <tbody>
-                        ${history.map(h => `<tr>
-                            <td>${escHtml(h.program_name)}</td>
-                            <td>${escHtml(h.program_category)}</td>
-                            <td>${h.fiscal_year}</td>
-                            <td>${(h.total_applications||0).toLocaleString()}</td>
-                            <td>${(h.total_selected||0).toLocaleString()}</td>
-                            <td><strong>${(h.selection_rate||0).toFixed(1)}%</strong></td>
-                        </tr>`).join('')}
-                    </tbody>
-                </table>
+
+        <!-- Row 1: 도넛 + 트리맵 -->
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px;">
+            <div class="card">
+                <div class="card-title">🍩 분야별 구성비 (도넛 차트)</div>
+                ${svgDonut(cats, 200, 180, '분야별')}
             </div>
-            ` : `
+            <div class="card">
+                <div class="card-title">🗺️ 분야별 비중 (트리맵)</div>
+                ${svgTreemap(cats, 500, 120)}
+                <p style="font-size:11px;color:var(--ant-text-secondary);margin-top:8px;">면적이 넓을수록 해당 분야의 지원사업이 많습니다. 마우스를 올리면 상세 정보를 볼 수 있습니다.</p>
+            </div>
+        </div>
+
+        <!-- Row 2: 기관별 수평바 + 출처별 도넛 -->
+        <div style="display:grid;grid-template-columns:2fr 1fr;gap:16px;margin-bottom:16px;">
+            <div class="card">
+                <div class="card-title">🏛️ 소관기관별 사업 현황 (상위 15)</div>
+                ${topOrgs.map(([o, n], i) => {
+                    const pct = (n / totalSub * 100).toFixed(1);
+                    const barColor = i === 0 ? '#1890ff' : i < 3 ? '#40a9ff' : i < 7 ? '#69c0ff' : '#91d5ff';
+                    return '<div style="display:flex;align-items:center;margin-bottom:6px;"><span style="min-width:110px;font-size:12px;color:#595959;text-align:right;padding-right:8px;">' + escHtml(o) + '</span><div style="flex:1;background:#f5f5f5;border-radius:4px;height:20px;position:relative;overflow:hidden;"><div style="height:100%;width:' + (n/maxOrg*100) + '%;background:' + barColor + ';border-radius:4px;transition:width 0.5s;"></div></div><span style="min-width:70px;font-size:12px;color:#262626;padding-left:8px;font-weight:' + (i < 3 ? 'bold' : 'normal') + ';">' + n + '건 (' + pct + '%)</span></div>';
+                }).join('')}
+            </div>
+            <div class="card">
+                <div class="card-title">📡 데이터 출처별 구성</div>
+                ${svgDonut(srcs.map(([s, n]) => [srcNames[s] || s, n]), 160, 170, '출처별')}
+            </div>
+        </div>
+
+        <!-- Row 3: 히트맵 -->
+        <div class="card" style="margin-bottom:16px;">
+            <div class="card-title">🔥 기관 × 분야 교차 히트맵</div>
+            <p style="font-size:12px;color:var(--ant-text-secondary);margin-bottom:8px;">상위 8개 기관의 분야별 지원사업 분포를 보여줍니다. 색상이 진할수록 해당 교차 영역의 사업 수가 많습니다.</p>
+            ${svgHeatmap(ctOrgs, ctCats, hmMatrix, 700, 230)}
+        </div>
+
+        <!-- Row 4: 키워드 클라우드 + 수행기관 -->
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px;">
+            <div class="card">
+                <div class="card-title">☁️ 키워드 클라우드</div>
+                <p style="font-size:12px;color:var(--ant-text-secondary);margin-bottom:4px;">지원사업 제목에서 추출한 핵심 키워드 빈도</p>
+                ${svgWordCloud(topKw, 440, 200)}
+            </div>
+            <div class="card">
+                <div class="card-title">🔗 주요 수행기관 네트워크</div>
+                <p style="font-size:12px;color:var(--ant-text-secondary);margin-bottom:8px;">사업을 실제로 집행하는 수행기관 현황</p>
+                ${topExecs.map(([e, n]) => {
+                    const size = 40 + (n / maxExec) * 60;
+                    return '<div style="display:inline-flex;align-items:center;margin:4px 6px;padding:4px 12px;background:linear-gradient(135deg,#f0f5ff,#e6f7ff);border:1px solid #91d5ff;border-radius:20px;font-size:12px;"><span style="display:inline-block;width:' + Math.round(8 + n/maxExec*12) + 'px;height:' + Math.round(8 + n/maxExec*12) + 'px;border-radius:50%;background:#1890ff;margin-right:6px;opacity:' + (0.4 + n/maxExec*0.6).toFixed(2) + ';"></span>' + escHtml(e).substring(0, 15) + ' <strong style="margin-left:4px;">' + n + '</strong></div>';
+                }).join('')}
+            </div>
+        </div>
+
+        <!-- Row 5: 마감 임박 타임라인 -->
+        <div class="card" style="margin-bottom:16px;">
+            <div class="card-title">⏰ 마감 임박 사업 타임라인 (30일 내)</div>
+            ${urgentSubs.length ? `
+            <div style="position:relative;padding:8px 0 8px 24px;border-left:3px solid #e8e8e8;margin-left:12px;">
+                ${urgentSubs.map(s => {
+                    const urgency = s.daysLeft <= 3 ? '#ff4d4f' : s.daysLeft <= 7 ? '#faad14' : '#1890ff';
+                    return '<div style="position:relative;margin-bottom:12px;padding-left:16px;"><div style="position:absolute;left:-31px;top:4px;width:14px;height:14px;border-radius:50%;background:' + urgency + ';border:2px solid #fff;box-shadow:0 0 0 2px ' + urgency + ';"></div><div style="font-size:13px;"><strong style="color:' + urgency + ';">D-' + s.daysLeft + '</strong> <span style="color:#262626;">' + escHtml(s.title).substring(0, 55) + '</span><br><span style="font-size:11px;color:#8c8c8c;">' + escHtml(s.organization) + ' · ' + escHtml(s.category) + ' · 마감: ' + s.apply_end_date + '</span></div></div>';
+                }).join('')}
+            </div>
+            ` : '<div style="text-align:center;color:var(--ant-text-secondary);padding:20px;">현재 30일 내 마감 예정 사업이 없습니다.</div>'}
+        </div>
+
+        <!-- Row 6: 기관별 상세 테이블 -->
+        <div class="card">
+            <div class="card-title">📊 기관별 지원사업 상세 분석</div>
             <div class="table-container">
                 <table class="data-table">
-                    <thead><tr><th>소관기관</th><th>진행중 사업수</th><th>주요 분야</th><th>마감 임박</th></tr></thead>
+                    <thead><tr><th>기관</th><th>사업수</th><th>점유율</th><th>주력 분야</th><th>분야 다양성</th><th>마감임박</th></tr></thead>
                     <tbody>
                         ${(() => {
-                            const orgStats = {};
-                            subsidies.forEach(s => {
-                                const org = s.organization || '기타';
-                                if (!orgStats[org]) orgStats[org] = { count: 0, cats: {}, deadline: 0 };
-                                orgStats[org].count++;
-                                orgStats[org].cats[s.category] = (orgStats[org].cats[s.category] || 0) + 1;
-                                if (s.deadline && s.deadline >= today) {
-                                    const diff = (new Date(s.deadline) - new Date()) / 86400000;
-                                    if (diff <= 7) orgStats[org].deadline++;
-                                }
-                            });
-                            return Object.entries(orgStats)
-                                .sort((a, b) => b[1].count - a[1].count)
-                                .slice(0, 30)
-                                .map(([org, st]) => {
-                                    const topCat = Object.entries(st.cats).sort((a, b) => b[1] - a[1])[0];
-                                    return '<tr>' +
-                                        '<td>' + escHtml(org) + '</td>' +
-                                        '<td><strong>' + st.count + '</strong>건</td>' +
-                                        '<td>' + (topCat ? escHtml(topCat[0]) + ' (' + topCat[1] + '건)' : '-') + '</td>' +
-                                        '<td>' + (st.deadline > 0 ? '<span style="color:#ff4d4f;">' + st.deadline + '건</span>' : '-') + '</td>' +
-                                    '</tr>';
-                                }).join('');
+                            return orgs.slice(0, 25).map(([org, cnt]) => {
+                                const oCats = orgCatMatrix[org] || {};
+                                const oCatArr = Object.entries(oCats).sort((a, b) => b[1] - a[1]);
+                                const topC = oCatArr[0] ? oCatArr[0][0] + ' (' + oCatArr[0][1] + ')' : '-';
+                                const diversity = oCatArr.length;
+                                const urgCnt = deadlineSubs.filter(s => s.organization === org && s.daysLeft <= 7).length;
+                                const share = (cnt / totalSub * 100).toFixed(1);
+                                return '<tr><td><strong>' + escHtml(org) + '</strong></td><td>' + cnt + '건</td><td><div style="display:flex;align-items:center;gap:6px;"><div style="width:60px;background:#f0f0f0;border-radius:3px;height:8px;overflow:hidden;"><div style="height:100%;width:' + share + '%;background:#1890ff;border-radius:3px;"></div></div>' + share + '%</div></td><td>' + topC + '</td><td>' + diversity + '개 분야</td><td>' + (urgCnt > 0 ? '<span style="color:#ff4d4f;font-weight:bold;">' + urgCnt + '건</span>' : '-') + '</td></tr>';
+                            }).join('');
                         })()}
                     </tbody>
                 </table>
-                <p style="margin-top:12px;font-size:13px;color:var(--ant-text-secondary);">
-                    * 선정 이력 데이터가 수집되면 프로그램별 선정률 정보가 표시됩니다. 현재는 기관별 지원사업 현황을 보여드립니다.
-                </p>
             </div>
-            `}
         </div>
     `;
 }
