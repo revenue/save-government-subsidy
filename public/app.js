@@ -503,7 +503,7 @@ function renderMatchResults() {
         </div>
     `;
 
-    matchResults.slice(0, 30).forEach((r, i) => {
+    matchResults.slice(0, 100).forEach((r, i) => {
         const level = r.final_probability >= 70 ? 'high' : r.final_probability >= 40 ? 'medium' : 'low';
         const scoreColor = { high: '#52c41a', medium: '#faad14', low: '#ff4d4f' }[level];
         const d = r.matching_details || {};
@@ -667,6 +667,7 @@ function renderStats() {
         </div>
         <div class="card" style="margin-top:16px;">
             <div class="card-title">선정 이력 상세</div>
+            ${history.length ? `
             <div class="table-container">
                 <table class="data-table">
                     <thead><tr><th>프로그램명</th><th>분야</th><th>연도</th><th>총 신청</th><th>선정</th><th>선정률</th></tr></thead>
@@ -682,6 +683,43 @@ function renderStats() {
                     </tbody>
                 </table>
             </div>
+            ` : `
+            <div class="table-container">
+                <table class="data-table">
+                    <thead><tr><th>소관기관</th><th>진행중 사업수</th><th>주요 분야</th><th>마감 임박</th></tr></thead>
+                    <tbody>
+                        ${(() => {
+                            const orgStats = {};
+                            subsidies.forEach(s => {
+                                const org = s.organization || '기타';
+                                if (!orgStats[org]) orgStats[org] = { count: 0, cats: {}, deadline: 0 };
+                                orgStats[org].count++;
+                                orgStats[org].cats[s.category] = (orgStats[org].cats[s.category] || 0) + 1;
+                                if (s.deadline && s.deadline >= today) {
+                                    const diff = (new Date(s.deadline) - new Date()) / 86400000;
+                                    if (diff <= 7) orgStats[org].deadline++;
+                                }
+                            });
+                            return Object.entries(orgStats)
+                                .sort((a, b) => b[1].count - a[1].count)
+                                .slice(0, 30)
+                                .map(([org, st]) => {
+                                    const topCat = Object.entries(st.cats).sort((a, b) => b[1] - a[1])[0];
+                                    return '<tr>' +
+                                        '<td>' + escHtml(org) + '</td>' +
+                                        '<td><strong>' + st.count + '</strong>건</td>' +
+                                        '<td>' + (topCat ? escHtml(topCat[0]) + ' (' + topCat[1] + '건)' : '-') + '</td>' +
+                                        '<td>' + (st.deadline > 0 ? '<span style="color:#ff4d4f;">' + st.deadline + '건</span>' : '-') + '</td>' +
+                                    '</tr>';
+                                }).join('');
+                        })()}
+                    </tbody>
+                </table>
+                <p style="margin-top:12px;font-size:13px;color:var(--ant-text-secondary);">
+                    * 선정 이력 데이터가 수집되면 프로그램별 선정률 정보가 표시됩니다. 현재는 기관별 지원사업 현황을 보여드립니다.
+                </p>
+            </div>
+            `}
         </div>
     `;
 }
@@ -740,7 +778,7 @@ function renderSettings() {
                     </div>
                     <div class="form-group">
                         <label class="form-label">대표자 연령</label>
-                        <input class="form-control" type="number" id="pAge" value="${p.representative_age || ''}" min="15" max="100">
+                        <input class="form-control" type="number" id="pAge" value="${p.representative_age != null ? p.representative_age : ''}" min="15" max="100">
                     </div>
                 </div>
             </div>
@@ -749,15 +787,15 @@ function renderSettings() {
                 <div class="form-row">
                     <div class="form-group">
                         <label class="form-label">연매출 (만원)</label>
-                        <input class="form-control" type="number" id="pRevenue" value="${p.annual_revenue ? Math.round(p.annual_revenue / 10000) : ''}" min="0">
+                        <input class="form-control" type="number" id="pRevenue" value="${p.annual_revenue != null ? Math.round(p.annual_revenue / 10000) : ''}" min="0">
                     </div>
                     <div class="form-group">
                         <label class="form-label">상시 종업원 수</label>
-                        <input class="form-control" type="number" id="pEmpCount" value="${p.employee_count || ''}" min="0">
+                        <input class="form-control" type="number" id="pEmpCount" value="${p.employee_count != null ? p.employee_count : ''}" min="0">
                     </div>
                     <div class="form-group">
                         <label class="form-label">업력 (년)</label>
-                        <input class="form-control" type="number" id="pBizAge" value="${p.business_age_years || ''}" min="0" step="0.5">
+                        <input class="form-control" type="number" id="pBizAge" value="${p.business_age_years != null ? p.business_age_years : ''}" min="0" step="0.5">
                     </div>
                 </div>
             </div>
@@ -773,7 +811,7 @@ function renderSettings() {
                     </div>
                     <div class="form-group">
                         <label class="form-label">부채비율 (%)</label>
-                        <input class="form-control" type="number" id="pDebt" value="${p.debt_ratio || ''}" min="0" step="0.1">
+                        <input class="form-control" type="number" id="pDebt" value="${p.debt_ratio != null ? p.debt_ratio : ''}" min="0" step="0.1">
                     </div>
                     <div class="form-group">
                         <label class="form-label">기존 수혜 건수</label>
@@ -824,13 +862,13 @@ function saveProfile() {
         establishment_date: document.getElementById('pEstDate').value,
         region_sido: document.getElementById('pRegion').value,
         region_sigungu: document.getElementById('pSigungu').value,
-        representative_age: parseInt(document.getElementById('pAge').value) || null,
-        annual_revenue: rev ? parseInt(rev) * 10000 : null,
-        employee_count: parseInt(document.getElementById('pEmpCount').value) || null,
-        business_age_years: parseFloat(document.getElementById('pBizAge').value) || null,
+        representative_age: document.getElementById('pAge').value !== '' ? parseInt(document.getElementById('pAge').value) : null,
+        annual_revenue: rev !== '' ? parseInt(rev) * 10000 : null,
+        employee_count: document.getElementById('pEmpCount').value !== '' ? parseInt(document.getElementById('pEmpCount').value) : null,
+        business_age_years: document.getElementById('pBizAge').value !== '' ? parseFloat(document.getElementById('pBizAge').value) : null,
         credit_rating: document.getElementById('pCredit').value,
-        debt_ratio: parseFloat(document.getElementById('pDebt').value) || null,
-        previous_subsidy_count: parseInt(document.getElementById('pPrevCount').value) || 0,
+        debt_ratio: document.getElementById('pDebt').value !== '' ? parseFloat(document.getElementById('pDebt').value) : null,
+        previous_subsidy_count: document.getElementById('pPrevCount').value !== '' ? parseInt(document.getElementById('pPrevCount').value) : 0,
         has_export: document.getElementById('pExport').checked ? 1 : 0,
         is_female_owned: document.getElementById('pFemale').checked ? 1 : 0,
         is_disabled_owned: document.getElementById('pDisabled').checked ? 1 : 0,
