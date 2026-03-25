@@ -313,9 +313,12 @@ function renderList() {
     document.getElementById('page-content').innerHTML = `
         <div class="page-header"><h1><i class="lucide-list"></i> 지원사업 목록</h1></div>
         <div class="search-box">
-            <select class="form-control" id="listCat" onchange="filterList()">
+            <select class="form-control" id="listCat" onchange="updateListSubcat();filterList()">
                 <option value="">전체 분야</option>
                 ${cats.map(c => `<option value="${c}">${c}</option>`).join('')}
+            </select>
+            <select class="form-control" id="listSubcat" onchange="filterList()" style="display:none;">
+                <option value="">전체 유형</option>
             </select>
             <select class="form-control" id="listStatus" onchange="filterList()">
                 <option value="">전체 상태</option>
@@ -330,13 +333,27 @@ function renderList() {
     filterList();
 }
 
+function updateListSubcat() {
+    const cat = document.getElementById('listCat').value;
+    const sel = document.getElementById('listSubcat');
+    if (cat && typeof SUBCATEGORIES !== 'undefined' && SUBCATEGORIES[cat]) {
+        sel.style.display = '';
+        sel.innerHTML = '<option value="">전체 유형</option>' + Object.keys(SUBCATEGORIES[cat]).map(sc => `<option value="${sc}">${sc}</option>`).join('');
+    } else {
+        sel.style.display = 'none';
+        sel.value = '';
+    }
+}
+
 function filterList() {
     const cat = document.getElementById('listCat').value;
+    const subcat = document.getElementById('listSubcat') ? document.getElementById('listSubcat').value : '';
     const status = document.getElementById('listStatus').value;
     const kw = document.getElementById('listKeyword').value.toLowerCase();
 
     let filtered = subsidies.filter(s => {
         if (cat && s.category !== cat) return false;
+        if (subcat && typeof classifySubcategory === 'function' && classifySubcategory(s) !== subcat) return false;
         if (status === 'active' && s.apply_end_date && s.apply_end_date < today) return false;
         if (status === 'expired' && (!s.apply_end_date || s.apply_end_date >= today)) return false;
         if (kw && !(s.title || '').toLowerCase().includes(kw) && !(s.organization || '').toLowerCase().includes(kw)
@@ -348,7 +365,7 @@ function filterList() {
     const shown = filtered.slice(0, 200);
     document.getElementById('listTable').innerHTML = `
         <table class="data-table">
-            <thead><tr><th style="width:60px">상태</th><th>사업명</th><th>분야</th><th>소관기관</th><th>신청시작</th><th>마감일</th></tr></thead>
+            <thead><tr><th style="width:60px">상태</th><th>사업명</th><th>분야</th><th>유형</th><th>소관기관</th><th>신청시작</th><th>마감일</th></tr></thead>
             <tbody>
                 ${shown.map(s => {
                     const st = getStatus(s.apply_end_date);
@@ -356,6 +373,7 @@ function filterList() {
                         <td><span class="tag ${st.cls}">${st.text}</span></td>
                         <td title="${escHtml(s.title)}">${escHtml(s.title).slice(0, 55)}</td>
                         <td>${escHtml(s.category)}</td>
+                        <td style="font-size:12px;">${typeof classifySubcategory === 'function' ? escHtml(classifySubcategory(s)) : ''}</td>
                         <td title="${escHtml(s.organization)}">${escHtml(s.organization).slice(0, 12)}</td>
                         <td>${s.apply_start_date || '-'}</td>
                         <td>${s.apply_end_date || '-'}</td>
@@ -376,7 +394,7 @@ function showDetail(id) {
     let detailHtml = `
         <div class="detail-grid">
             <div class="detail-label">상태</div><div class="detail-value"><span class="tag ${st.cls}">${st.text}</span></div>
-            <div class="detail-label">분야</div><div class="detail-value">${escHtml(s.category)}</div>
+            <div class="detail-label">분야</div><div class="detail-value">${escHtml(s.category)}${typeof classifySubcategory === 'function' ? ' > ' + escHtml(classifySubcategory(s)) : ''}</div>
             <div class="detail-label">소관기관</div><div class="detail-value">${escHtml(s.organization)}</div>
             <div class="detail-label">수행기관</div><div class="detail-value">${escHtml(s.executor)}</div>
             <div class="detail-label">신청기간</div><div class="detail-value">${s.apply_start_date || '-'} ~ ${s.apply_end_date || '-'}</div>
@@ -452,9 +470,12 @@ function renderMatching() {
             </div>
         </div>
         <div style="display:flex;gap:12px;align-items:center;margin-bottom:16px;">
-            <select class="form-control" id="matchCat" style="max-width:200px;">
+            <select class="form-control" id="matchCat" style="max-width:200px;" onchange="updateMatchSubcat()">
                 <option value="">전체 분야</option>
                 ${cats.map(c => `<option value="${c}">${c}</option>`).join('')}
+            </select>
+            <select class="form-control" id="matchSubcat" style="max-width:200px;display:none;">
+                <option value="">전체 유형</option>
             </select>
             <label style="font-size:14px;">최소 확률:</label>
             <input type="range" id="matchMin" min="0" max="50" value="10" style="width:120px;"
@@ -468,11 +489,25 @@ function renderMatching() {
     if (matchResults.length) renderMatchResults();
 }
 
+function updateMatchSubcat() {
+    const cat = document.getElementById('matchCat').value;
+    const sel = document.getElementById('matchSubcat');
+    if (sel && cat && typeof SUBCATEGORIES !== 'undefined' && SUBCATEGORIES[cat]) {
+        sel.style.display = '';
+        sel.innerHTML = '<option value="">전체 유형</option>' + Object.keys(SUBCATEGORIES[cat]).map(sc => `<option value="${sc}">${sc}</option>`).join('');
+    } else if (sel) {
+        sel.style.display = 'none';
+        sel.value = '';
+    }
+}
+
 function runMatching() {
     const cat = document.getElementById('matchCat').value;
+    const subcat = document.getElementById('matchSubcat') ? document.getElementById('matchSubcat').value : '';
     const minProb = parseInt(document.getElementById('matchMin').value);
     const target = subsidies.filter(s => {
         if (cat && s.category !== cat) return false;
+        if (subcat && typeof classifySubcategory === 'function' && classifySubcategory(s) !== subcat) return false;
         return !s.apply_end_date || s.apply_end_date >= today;
     });
 
@@ -513,7 +548,7 @@ function renderMatchResults() {
                 <div>
                     <div class="match-title">#${i + 1}. ${escHtml(r.subsidy_title).slice(0, 60)}</div>
                     <div class="match-meta">
-                        ${escHtml(r.category)} · ${escHtml(r.organization)} · 마감: ${r.apply_end_date || '-'}
+                        ${escHtml(r.category)}${r.subcategory ? ' > '+escHtml(r.subcategory) : ''} · ${escHtml(r.organization)} · 마감: ${r.apply_end_date || '-'}
                         · 신뢰도: ${r.confidence_level}
                     </div>
                 </div>
@@ -542,7 +577,7 @@ function renderMatchResults() {
                             <strong>추천사항</strong>
                             <ul class="recommendations">${(r.recommendations || []).map(rec => `<li>${rec}</li>`).join('')}</ul>
                             <strong style="display:block;margin-top:12px;">매칭 세부</strong>
-                            ${Object.entries({업종: d.industry_match, 규모: d.scale_match, 목적: d.purpose_match, 지역: d.region_match, 자격: d.qualification_match})
+                            ${Object.entries({업종: d.industry_match, 규모: d.scale_match, 목적: d.purpose_match, 지역: d.region_match, 자격: d.qualification_match, 사업설명: d.description_match})
                                 .map(([l, v]) => `<span style="margin-right:12px;font-size:13px;">${l}: <strong>${(v||0).toFixed(0)}</strong></span>`)
                                 .join('')}
                         </div>
@@ -567,9 +602,15 @@ function renderSearch() {
                 </div>
                 <div class="form-group">
                     <label class="form-label">분야</label>
-                    <select class="form-control" id="srchCat">
+                    <select class="form-control" id="srchCat" onchange="updateSrchSubcat()">
                         <option value="">전체</option>
                         ${cats.map(c => `<option value="${c}">${c}</option>`).join('')}
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">유형</label>
+                    <select class="form-control" id="srchSubcat">
+                        <option value="">전체</option>
                     </select>
                 </div>
                 <div class="form-group">
@@ -587,13 +628,25 @@ function renderSearch() {
     `;
 }
 
+function updateSrchSubcat() {
+    const cat = document.getElementById('srchCat').value;
+    const sel = document.getElementById('srchSubcat');
+    if (sel && cat && typeof SUBCATEGORIES !== 'undefined' && SUBCATEGORIES[cat]) {
+        sel.innerHTML = '<option value="">전체</option>' + Object.keys(SUBCATEGORIES[cat]).map(sc => `<option value="${sc}">${sc}</option>`).join('');
+    } else if (sel) {
+        sel.innerHTML = '<option value="">전체</option>';
+    }
+}
+
 function doSearch() {
     const kw = document.getElementById('srchKw').value.toLowerCase();
     const cat = document.getElementById('srchCat').value;
+    const subcat = document.getElementById('srchSubcat') ? document.getElementById('srchSubcat').value : '';
     const status = document.getElementById('srchStatus').value;
 
     const results = subsidies.filter(s => {
         if (cat && s.category !== cat) return false;
+        if (subcat && typeof classifySubcategory === 'function' && classifySubcategory(s) !== subcat) return false;
         if (status === 'active' && s.apply_end_date && s.apply_end_date < today) return false;
         if (status === 'expired' && (!s.apply_end_date || s.apply_end_date >= today)) return false;
         if (kw) {
@@ -1374,6 +1427,11 @@ function renderSettings() {
                         <input class="form-control" type="number" id="pPrevCount" value="${p.previous_subsidy_count || 0}" min="0">
                     </div>
                 </div>
+                <div class="form-group" style="margin-top:12px;">
+                    <label class="form-label">사업장 설명</label>
+                    <textarea class="form-control" id="pBizDesc" rows="4" placeholder="사업장의 주요 업무, 제품/서비스, 기술 역량 등을 입력하세요. (선정확률 산출에 활용)" style="resize:vertical;min-height:80px;">${escHtml(p.business_description || '')}</textarea>
+                    <div style="font-size:12px;color:var(--text-secondary);margin-top:4px;">입력된 내용에서 키워드를 추출하여 공고문과 매칭합니다.</div>
+                </div>
                 <div class="form-row" style="margin-top:12px;">
                     <div>
                         <div class="form-check"><input type="checkbox" id="pExport" ${p.has_export?'checked':''}><label for="pExport">수출 여부</label></div>
@@ -1425,6 +1483,7 @@ function saveProfile() {
         credit_rating: document.getElementById('pCredit').value,
         debt_ratio: document.getElementById('pDebt').value !== '' ? parseFloat(document.getElementById('pDebt').value) : null,
         previous_subsidy_count: document.getElementById('pPrevCount').value !== '' ? parseInt(document.getElementById('pPrevCount').value) : 0,
+        business_description: document.getElementById('pBizDesc') ? document.getElementById('pBizDesc').value : '',
         has_export: document.getElementById('pExport').checked ? 1 : 0,
         is_female_owned: document.getElementById('pFemale').checked ? 1 : 0,
         is_disabled_owned: document.getElementById('pDisabled').checked ? 1 : 0,
