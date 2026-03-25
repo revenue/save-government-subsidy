@@ -1,19 +1,20 @@
 /**
- * 선정확률 엔진 v2.0
+ * 선정확률 엔진 v3.0
  * 소상공인 맞춤형 정부지원사업 매칭 및 선정확률 계산
  *
- * 개선사항:
- *  - 이력데이터 부재 시 카테고리별 통계적 기본 경쟁률 적용
- *  - 공고 데이터 풍부도(data completeness)에 따른 신뢰도 가중치
- *  - 정규화 수식 개선으로 5~95% 범위에 걸친 실질적 분포 생성
- *  - 타이틀 키워드 분석 기반 세밀한 매칭
+ * v3.0 개선사항:
+ *  - 베이지안 오즈 업데이트 (Bayesian Odds Update) 구조로 전환
+ *  - 사전확률(Prior) = 카테고리별 실제 선정률 기반
+ *  - 우도비(Likelihood Ratio)로 적합도 점수를 확률로 변환
+ *  - 자격요건 Gate: 부적격 시 즉시 3% 이하 반환
+ *  - 신뢰구간(probability_range) 표시
  *
  * 5단계 알고리즘:
- *  1. 자격요건 필터링 (Eligibility Screening)
+ *  1. 자격요건 Gate (Eligibility Gate) - Pass/Fail/Partial
  *  2. 조건 매칭 점수 (Weighted Scoring)
- *  3. 경쟁률 기반 조정 (Competition Adjustment)
- *  4. 이력 기반 보정 (Historical Calibration)
- *  5. 최종 확률 산출 (Bayesian Integration)
+ *  3. 사전확률 산출 (Prior from Competition/Base Rate)
+ *  4. 이력 기반 우도비 (Historical Likelihood Ratio)
+ *  5. 베이지안 오즈 업데이트 (Bayesian Odds Update)
  */
 
 const INDUSTRY_CATEGORIES = {
@@ -34,11 +35,21 @@ const INDUSTRY_CATEGORIES = {
 const REGIONS = ['서울','경기','인천','부산','대구','대전','광주','울산','세종',
                  '강원','충북','충남','전북','전남','경북','경남','제주'];
 
-// 카테고리별 통계적 기본 경쟁률 (공공데이터 기반 추정치)
-const DEFAULT_CATEGORY_RATES = {
-    '금융': 35, '기술': 25, '창업': 20, '수출': 40,
-    '인력': 45, '경영': 38, '내수': 42, '정책': 30,
-    '기타': 33, '에너지': 28, '환경': 30, '문화': 22,
+// 카테고리별 실제 평균 선정률 (정부 공개 데이터 + 업계 통계 기반)
+// 경쟁률 데이터 없을 때 사전확률(prior)로 사용
+const BASE_SELECTION_RATES = {
+    '창업': 0.20,   // 창업 지원: 경쟁률 3:1~10:1, 평균 선정률 ~20%
+    '기술': 0.25,   // R&D/기술: 경쟁률 3:1~5:1, 평균 선정률 ~25%
+    '금융': 0.50,   // 정책자금 융자: 요건 충족 시 비교적 높은 선정률
+    '수출': 0.30,   // 수출 지원: 경쟁률 2:1~5:1
+    '인력': 0.35,   // 인력 지원: 중간 수준
+    '경영': 0.40,   // 경영 지원: 비교적 넓은 선정 범위
+    '내수': 0.35,   // 내수 지원: 중간 수준
+    '정책': 0.30,   // 정책 일반: 중간 수준
+    '기타': 0.30,   // 기본값
+    '에너지': 0.28,
+    '환경': 0.30,
+    '문화': 0.22,
 };
 
 class ProbabilityEngine {
@@ -57,17 +68,40 @@ class ProbabilityEngine {
         }
         for (const [cat, records] of Object.entries(this.historyByCategory)) {
             const rates = records.filter(r => r.selection_rate).map(r => r.selection_rate);
-            this.avgRateByCategory[cat] = rates.length ? rates.reduce((a, b) => a + b, 0) / rates.length : (DEFAULT_CATEGORY_RATES[cat] || 33);
+            this.avgRateByCategory[cat] = rates.length ? rates.reduce((a, b) => a + b, 0) / rates.length : ((BASE_SELECTION_RATES[cat] || 0.30) * 100);
         }
     }
 
     calculate(subsidy, profile) {
         const eligibility = this._checkEligibility(subsidy, profile);
+
+        // Gate: 부적격 시 즉시 낮은 확률 반환
+        if (eligibility.disqualified) {
+            const confidence = this._confidence(subsidy, profile);
+            const recommendations = this._recommend(subsidy, profile, eligibility, {score: 0, details: {}});
+            return {
+                subsidy_id: subsidy.id,
+                subsidy_title: subsidy.title,
+                category: subsidy.category,
+                organization: subsidy.organization,
+                apply_end_date: subsidy.apply_end_date,
+                eligibility_score: Math.round(eligibility.score * 10) / 10,
+                matching_score: 0,
+                competition_score: 0,
+                historical_score: 0,
+                final_probability: Math.round(Math.max(3, eligibility.score * 0.1) * 10) / 10,
+                probability_range: { low: 1, high: 5 },
+                confidence_level: confidence,
+                recommendations,
+                matching_details: {},
+                disqualified: true,
+            };
+        }
+
         const matching = this._calcMatching(subsidy, profile);
         const competition = this._calcCompetition(subsidy);
         const historical = this._calcHistorical(subsidy, profile);
-        const dataQuality = this._dataQuality(subsidy, profile);
-        const final = this._integrate(eligibility, matching, competition, historical, subsidy, dataQuality);
+        const { probability: final, range } = this._integrate(eligibility, matching, competition, historical, subsidy, profile);
         const confidence = this._confidence(subsidy, profile);
         const recommendations = this._recommend(subsidy, profile, eligibility, matching);
 
@@ -82,10 +116,11 @@ class ProbabilityEngine {
             competition_score: Math.round(competition.score * 10) / 10,
             historical_score: Math.round(historical.score * 10) / 10,
             final_probability: Math.round(final * 10) / 10,
+            probability_range: range,
             confidence_level: confidence,
             recommendations,
             matching_details: matching.details || {},
-            disqualified: eligibility.disqualified,
+            disqualified: false,
         };
     }
 
@@ -152,7 +187,7 @@ class ProbabilityEngine {
             if (uCats.length > 0 && tCats.length > 0) {
                 return uCats.some(c => tCats.includes(c)) ? 95 : 55;
             }
-            return 65; // 정보 없으면 중립보다 약간 위
+            return 40; // 업종제한 없어도 미매칭 시 낮게 평가
         }
         const text = `${req} ${sub.target||''} ${sub.title||''}`;
         if (user && text.includes(user)) return 100;
@@ -192,13 +227,13 @@ class ProbabilityEngine {
                 if (title.includes('소기업') && rev <= 12e9) return 80;
                 if (title.includes('중소기업') && rev <= 150e9) return 80;
             }
-            return 60; // 정보 없으면 중립
+            return 30; // 미입력: 판단 불가 → 낮게
         }
-        if (rev == null) return 40;
+        if (rev == null) return 25; // 공고에 조건이 있는데 매출 미입력 → 더 낮게
         if (text.includes('소상공인')) return rev <= 12e9 ? 95 : 20;
         if (text.includes('소기업')) return rev <= 12e9 ? 90 : rev <= 30e9 ? 60 : 20;
         if (text.includes('중소기업')) return rev <= 150e9 ? 90 : 30;
-        return 60;
+        return 50;
     }
 
     _chkEmployee(sub, prof) {
@@ -210,12 +245,12 @@ class ProbabilityEngine {
                 if (title.includes('소상공인') && cnt < 10) return 85;
                 if (title.includes('소기업') && cnt < 50) return 80;
             }
-            return 60;
+            return 30; // 미입력: 판단 불가 → 낮게
         }
-        if (cnt == null) return 40;
+        if (cnt == null) return 25; // 공고에 조건이 있는데 종업원 미입력 → 더 낮게
         if (text.includes('소상공인')) return cnt < 10 ? 95 : cnt < 50 ? 50 : 20;
         if (text.includes('소기업')) return cnt < 50 ? 90 : 30;
-        return 65;
+        return 55;
     }
 
     _chkAge(sub, prof) {
@@ -234,7 +269,7 @@ class ProbabilityEngine {
     }
 
     _chkSpecial(sub, prof) {
-        let score = 50; // 기본값을 50으로 낮춤 (70 → 50)
+        let score = 35; // 기본값: 가산점 없으면 불리하게
         const text = `${sub.target||''} ${sub.title||''} ${sub.special_conditions||''} ${sub.description||''}`;
         if (text.includes('여성') && prof.is_female_owned) score += 25;
         if (text.includes('장애인') && prof.is_disabled_owned) score += 25;
@@ -281,7 +316,7 @@ class ProbabilityEngine {
 
     _matchScale(text, prof) {
         const rev = prof.annual_revenue || 0, emp = prof.employee_count || 0;
-        if (!rev && !emp) return 40;
+        if (!rev && !emp) return 25; // 매출·종업원 둘 다 미입력 → 판단 불가
         if (text.includes('소상공인')) return (rev <= 1e9 && emp < 5) ? 95 : (rev <= 5e9 && emp < 10) ? 75 : 30;
         if (text.includes('소기업')) return (rev <= 5e9 && emp < 50) ? 85 : 45;
         if (text.includes('중소기업')) return rev <= 30e9 ? 80 : 35;
@@ -330,7 +365,7 @@ class ProbabilityEngine {
     }
 
     _matchQual(text, prof) {
-        let score = 45; // 기본 45로 낮춤
+        let score = 30; // 자격요건 기본: 인증/자격 없으면 낮게
         if (prof.is_venture_certified && text.includes('벤처')) score += 20;
         if (prof.is_social_enterprise && text.includes('사회적')) score += 15;
         if (prof.technology_grade && (text.includes('기술') || text.includes('R&D'))) score += 15;
@@ -341,30 +376,47 @@ class ProbabilityEngine {
         return Math.min(100, Math.max(5, score));
     }
 
-    // 3단계: 경쟁률 (이력 없을 때 카테고리 기반 기본 경쟁률 적용)
+    // 3단계: 사전확률(Prior) 산출 - 경쟁률 기반 실제 선정률
     _calcCompetition(sub) {
         const cat = sub.category || '기타';
-        const rate = this.avgRateByCategory[cat] || DEFAULT_CATEGORY_RATES[cat] || 33;
+        const competitionRate = sub.competition_rate;
+        let selectionRate, source;
 
-        // 공고 특성 기반 경쟁률 조정
-        let adjusted = rate;
+        if (competitionRate != null && competitionRate > 0) {
+            selectionRate = (1 / competitionRate) * 100;
+            source = 'direct';
+        } else if (this.avgRateByCategory[cat]) {
+            selectionRate = this.avgRateByCategory[cat];
+            source = 'historical_avg';
+        } else {
+            selectionRate = (BASE_SELECTION_RATES[cat] || 0.30) * 100;
+            source = 'base_rate';
+        }
+
+        // 공고 특성 기반 선정률 조정
+        let adjusted = selectionRate;
         const title = sub.title || '';
-        // 전국 공고는 경쟁 치열
+        // 전국 공고는 경쟁 치열 → 선정률 감소
         if (!sub.region || sub.region === '전국') adjusted *= 0.85;
-        // 특수 대상 한정 공고는 경쟁 완화
+        // 특수 대상 한정 공고는 경쟁 완화 → 선정률 증가
         if (title.includes('여성') || title.includes('장애인')) adjusted *= 1.2;
         if (title.includes('청년') || title.includes('시니어')) adjusted *= 1.1;
-        // 마감 임박 공고는 지원자 적어 경쟁 완화
+        // 마감 임박 공고는 지원자 적어 선정률 증가
         if (sub.apply_end_date) {
             const days = Math.ceil((new Date(sub.apply_end_date) - new Date()) / 86400000);
             if (days >= 0 && days <= 3) adjusted *= 1.3;
             else if (days <= 7) adjusted *= 1.1;
         }
 
-        adjusted = Math.max(10, Math.min(80, adjusted));
-        // 로지스틱 함수로 0-100 스케일 변환
-        const score = 100 / (1 + Math.exp(-0.08 * (adjusted - 33)));
-        return { score: Math.round(score * 10) / 10, selection_rate: Math.round(adjusted * 10) / 10 };
+        adjusted = Math.max(5, Math.min(80, adjusted));
+        const prior = adjusted / 100;
+
+        return {
+            score: Math.round(adjusted * 10) / 10,
+            selection_rate: Math.round(adjusted * 10) / 10,
+            prior_probability: Math.round(prior * 1000) / 1000,
+            source,
+        };
     }
 
     // 4단계: 이력 (데이터 없을 때 프로필-공고 적합도 추정)
@@ -374,8 +426,8 @@ class ProbabilityEngine {
 
         if (!records.length) {
             // 이력 데이터가 없으므로 프로필 완성도 + 카테고리 친화도로 대체
-            let score = 40; // 기본 불확실
-            // 프로필이 풍부할수록 점수 상승
+            let score = 25; // 이력 없음 = 낮은 출발
+            // 프로필이 풍부할수록 점수 상승 (최대 +35 → 60)
             if (prof.business_type) score += 5;
             if (prof.industry_name) score += 8;
             if (prof.annual_revenue) score += 7;
@@ -429,62 +481,79 @@ class ProbabilityEngine {
         return { score, factors };
     }
 
-    // 5단계: 통합 (v2 - 넓은 분포 생성)
-    _integrate(elig, match, comp, hist, sub, dataQuality) {
-        if (elig.disqualified) return Math.max(5, elig.score * 0.2);
+    // 5단계: 베이지안 오즈 업데이트
+    // P(선정|사용자) = Prior × LR_total / (Prior × LR_total + (1-Prior))
+    _integrate(elig, match, comp, hist, sub, profile) {
+        // --- 사전확률 (Prior) ---
+        let prior = comp.prior_probability;
+        if (prior == null) {
+            const cat = sub.category || '기타';
+            prior = BASE_SELECTION_RATES[cat] || 0.30;
+        }
+        prior = Math.max(0.02, Math.min(0.98, prior));
 
-        const cat = sub.category || '기타';
-        const w = this._catWeights(cat);
+        // --- 우도비 (Likelihood Ratios) ---
+        // 핵심 원칙: 50점(=모름/중립) → LR=1.0, Prior 변동 없음
+        //           100점(=완벽 적합) → LR=3.0, Prior 크게 상승
+        //           0점(=완전 부적합) → LR=0.15, Prior 크게 하락
+        // 공식: LR = exp((score - 50) / 50 * ln(3)) → 50→1.0, 100→3.0, 0→0.33
+        //       추가로 0점 근처를 더 가파르게: 2구간 선형보간
+        //       [0, 50] → [0.15, 1.0]  /  [50, 100] → [1.0, 3.0]
 
-        // 가중합산 (각 점수 0-100)
-        const raw = elig.score * w.eligibility
-                   + match.score * w.matching
-                   + comp.score * w.competition
-                   + hist.score * w.historical;
+        // LR_eligibility
+        const eligScore = elig.score / 100;
+        const lrElig = eligScore <= 0.5
+            ? 0.15 + (eligScore / 0.5) * (1.0 - 0.15)       // 0→0.15, 50→1.0
+            : 1.0 + ((eligScore - 0.5) / 0.5) * (3.0 - 1.0); // 50→1.0, 100→3.0
 
-        // 데이터 풍부도 보정
-        const uncertainty = 1 - dataQuality;
+        // LR_matching (동일 곡선)
+        const matchScore = match.score / 100;
+        const lrMatch = matchScore <= 0.5
+            ? 0.15 + (matchScore / 0.5) * (1.0 - 0.15)
+            : 1.0 + ((matchScore - 0.5) / 0.5) * (3.0 - 1.0);
 
-        // 카테고리 기반 기본 선정률을 중앙 기준으로 사용
-        const baseRate = DEFAULT_CATEGORY_RATES[cat] || 33;
+        // LR_historical: 이력 기반 우도비
+        const histScore = hist.score / 100;
+        const histRecords = (this.historyByCategory[sub.category || '기타'] || []).length;
+        let lrHist;
+        if (histRecords > 0) {
+            const dataConf = Math.min(1.0, histRecords / 5);
+            const lrRaw = histScore <= 0.5
+                ? 0.15 + (histScore / 0.5) * (1.0 - 0.15)
+                : 1.0 + ((histScore - 0.5) / 0.5) * (3.0 - 1.0);
+            lrHist = 1.0 + (lrRaw - 1.0) * dataConf;
+        } else {
+            lrHist = 1.0; // 이력 없으면 중립
+        }
 
-        // Quantile rank stretching
-        // 실측 raw 분포: ~30(하위) ~ ~75(상위), 중앙 ~55, 사실상 분산이 작음
-        // 작은 점수차이도 의미있게 확대해야 함
-        const rawCenter = 55;
-        const rawSpread = 8; // 매우 좁게 → 작은 차이도 크게 반영
+        // --- 베이지안 업데이트 (오즈 형태) ---
+        const priorOdds = prior / (1 - prior);
+        const combinedLR = lrElig * lrMatch * lrHist;
+        const posteriorOdds = priorOdds * combinedLR;
+        const posterior = posteriorOdds / (1 + posteriorOdds);
 
-        // z-score
-        const z = (raw - rawCenter) / rawSpread;
+        const finalProb = Math.max(3, Math.min(95, posterior * 100));
 
-        // Sigmoid → 0~1 (분산 확대)
-        const sigmoid = 1 / (1 + Math.exp(-z * 1.6));
-        const mapped = 8 + sigmoid * 84; // 8 ~ 92
+        // --- 신뢰구간 산출 ---
+        const range = this._calcProbRange(finalProb, sub, profile, histRecords);
 
-        // baseRate 방향으로 불확실성 보정 (데이터 부족 시)
-        const shrink = 0.12 * uncertainty;
-        const final = mapped * (1 - shrink) + baseRate * shrink;
-
-        return Math.max(5, Math.min(95, Math.round(final * 10) / 10));
+        return { probability: finalProb, range };
     }
 
-    _catWeights(cat) {
-        // 이력 데이터 없을 때는 자격+매칭 비중 확대, 경쟁률+이력 축소
-        const hasHistory = (this.historyByCategory[cat] || []).length > 0;
-        if (hasHistory) {
-            const map = {
-                '금융': { eligibility: 0.35, matching: 0.25, competition: 0.20, historical: 0.20 },
-                '기술': { eligibility: 0.25, matching: 0.30, competition: 0.20, historical: 0.25 },
-                '창업': { eligibility: 0.30, matching: 0.30, competition: 0.15, historical: 0.25 },
-                '수출': { eligibility: 0.25, matching: 0.35, competition: 0.20, historical: 0.20 },
-                '인력': { eligibility: 0.35, matching: 0.25, competition: 0.25, historical: 0.15 },
-                '경영': { eligibility: 0.30, matching: 0.25, competition: 0.25, historical: 0.20 },
-                '내수': { eligibility: 0.30, matching: 0.25, competition: 0.25, historical: 0.20 },
-            };
-            return map[cat] || { eligibility: 0.30, matching: 0.25, competition: 0.25, historical: 0.20 };
-        }
-        // 이력 없으면 자격+매칭 중심
-        return { eligibility: 0.40, matching: 0.35, competition: 0.15, historical: 0.10 };
+    // 신뢰구간: 데이터 불확실성에 비례하여 폭 결정
+    _calcProbRange(center, sub, profile, histCount) {
+        const sFields = ['description','detail_content','hwp_content','target','region','support_amount'];
+        const sComp = sFields.filter(f => sub[f]).length / sFields.length;
+        const pFields = ['business_type','industry_name','annual_revenue','employee_count','region_sido','business_age_years'];
+        const pComp = pFields.filter(f => profile[f] != null && profile[f] !== '').length / pFields.length;
+        const histFactor = Math.min(1.0, histCount / 5);
+        const quality = (sComp + pComp) / 2 * 0.6 + histFactor * 0.4;
+        // 불확실성: 데이터 풍부하면 ±5%, 부족하면 ±20%
+        const margin = 20 - quality * 15;
+        return {
+            low: Math.round(Math.max(1, center - margin) * 10) / 10,
+            high: Math.round(Math.min(99, center + margin) * 10) / 10,
+        };
     }
 
     _getIndustryCats(text) {

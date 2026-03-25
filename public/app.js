@@ -517,7 +517,10 @@ function renderMatchResults() {
                         · 신뢰도: ${r.confidence_level}
                     </div>
                 </div>
-                <div class="match-prob ${level}">${r.final_probability.toFixed(0)}%</div>
+                <div class="match-prob ${level}">
+                            ${r.final_probability.toFixed(0)}%
+                            ${r.probability_range ? `<div style="font-size:11px;font-weight:400;opacity:0.7;">${r.probability_range.low.toFixed(0)}~${r.probability_range.high.toFixed(0)}%</div>` : ''}
+                        </div>
             </div>
             <div style="margin-top:8px;">
                 <button class="btn" onclick="this.nextElementSibling.classList.toggle('show');this.textContent=this.textContent==='상세 분석 ▼'?'접기 ▲':'상세 분석 ▼'">상세 분석 ▼</button>
@@ -526,7 +529,7 @@ function renderMatchResults() {
                         <div>
                             <strong>점수 분석</strong>
                             ${[['자격요건 적합도', r.eligibility_score], ['조건 매칭도', r.matching_score],
-                               ['경쟁률 점수', r.competition_score], ['이력 기반 점수', r.historical_score]]
+                               ['선정률 (사전확률)', r.competition_score], ['이력 기반 점수', r.historical_score]]
                                 .map(([l, v]) => `
                                     <div class="score-row">
                                         <span class="score-label">${l}</span>

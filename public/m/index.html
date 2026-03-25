@@ -185,9 +185,10 @@
         .match-title { font-size: 14px; font-weight: 700; color: var(--heading); line-height: 1.4;
             display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
         .match-prob {
-            min-width: 48px; height: 48px; border-radius: 14px; display: flex; align-items: center; justify-content: center;
-            font-size: 16px; font-weight: 800; flex-shrink: 0;
+            min-width: 48px; height: auto; min-height: 48px; border-radius: 14px; display: flex; flex-direction: column; align-items: center; justify-content: center;
+            font-size: 16px; font-weight: 800; flex-shrink: 0; padding: 4px 6px;
         }
+        .match-prob .prob-range { font-size: 9px; font-weight: 500; opacity: 0.6; margin-top: 1px; }
         .match-prob.high { background: #dbeafe; color: #1d4ed8; }
         .match-prob.medium { background: #dbeafe; color: #2563eb; }
         .match-prob.low { background: #eff6ff; color: #3b82f6; }
@@ -639,7 +640,10 @@ function renderMatchingUI(profile) {
                 <div style="font-size:12px;color:var(--text-secondary);margin-bottom:4px;"><i class="lucide-building-2" style="font-size:12px;vertical-align:-1px;"></i> ${esc(r.organization)}</div>
                 <div style="display:flex;align-items:center;gap:8px;">
                     <span class="tag ${ddayCls}">${dday}</span>
-                    <div class="match-prob ${level}" style="min-width:auto;height:auto;border-radius:8px;padding:4px 10px;font-size:14px;">${r.final_probability.toFixed(0)}%</div>
+                    <div class="match-prob ${level}" style="min-width:auto;min-height:auto;border-radius:8px;padding:4px 10px;font-size:14px;">
+                        ${r.final_probability.toFixed(0)}%
+                        ${r.probability_range ? '<div class="prob-range">'+r.probability_range.low.toFixed(0)+'~'+r.probability_range.high.toFixed(0)+'%</div>' : ''}
+                    </div>
                 </div>
                 ${kws.length ? '<div class="banner-kw">' + kws.map(k => '<span>' + esc(k) + '</span>').join('') + '</div>' : ''}
             </div>`;
@@ -667,7 +671,10 @@ function renderMatchingUI(profile) {
                         ${kws.map(k => '<span style="background:var(--bg);padding:1px 5px;border-radius:3px;font-size:10px;color:var(--text-tertiary);">' + esc(k) + '</span>').join('')}
                     </div>
                 </div>
-                <div class="match-prob ${level}" style="min-width:42px;height:42px;border-radius:12px;font-size:14px;">${r.final_probability.toFixed(0)}%</div>
+                <div class="match-prob ${level}" style="min-width:42px;min-height:42px;border-radius:12px;font-size:14px;">
+                    ${r.final_probability.toFixed(0)}%
+                    ${r.probability_range ? '<div class="prob-range">'+r.probability_range.low.toFixed(0)+'~'+r.probability_range.high.toFixed(0)+'%</div>' : ''}
+                </div>
             </div>`;
         });
         html += '</div>';
@@ -831,13 +838,16 @@ function renderList() {
         document.getElementById('listCount').textContent = '총 ' + filtered.length + '건';
 
         const probMap = {};
-        if (matchResults.length > 0) matchResults.forEach(r => { probMap[r.id] = r.final_probability; });
+        const rangeMap = {};
+        if (matchResults.length > 0) matchResults.forEach(r => { probMap[r.id || r.subsidy_id] = r.final_probability; rangeMap[r.id || r.subsidy_id] = r.probability_range; });
 
         let res = '';
         filtered.slice(0, 100).forEach(s => {
             const st = getStatus(s.apply_end_date, s.apply_start_date);
             const prob = probMap[s.id];
-            const probHtml = prob !== undefined ? '<span style="font-size:11px;font-weight:700;color:#1d4ed8;background:#dbeafe;padding:2px 6px;border-radius:4px;">'+prob.toFixed(0)+'%</span>' : '';
+            const range = rangeMap[s.id];
+            const rangeStr = (range && prob !== undefined) ? '<span style="font-size:9px;opacity:0.7;margin-left:2px;">'+range.low.toFixed(0)+'~'+range.high.toFixed(0)+'%</span>' : '';
+            const probHtml = prob !== undefined ? '<span style="font-size:11px;font-weight:700;color:#1d4ed8;background:#dbeafe;padding:2px 6px;border-radius:4px;">'+prob.toFixed(0)+'% '+rangeStr+'</span>' : '';
             res += '<div class="subsidy-item" onclick="showDetail('+s.id+')"><div class="subsidy-item-title">'+esc(s.title)+'</div><div class="subsidy-item-meta">'+esc(s.organization)+' · <span class="tag '+st.cls+'">'+st.text+'</span> '+probHtml+'</div></div>';
         });
         if (!res) res = '<div class="empty-state"><i class="lucide-search"></i><p>검색 결과가 없습니다</p></div>';
@@ -1040,7 +1050,7 @@ function renderStats() {
 
             <div style="background:rgba(255,255,255,0.7);border-radius:var(--radius);padding:14px;margin-bottom:12px;">
                 <div style="font-size:12px;font-weight:700;color:var(--heading);margin-bottom:10px;display:flex;align-items:center;gap:4px;"><i class="lucide-radar" style="font-size:14px;color:var(--primary);"></i> 점수 요인 분석</div>
-                ${[['자격요건 적합도',avgElig,'#1e3a5f'],['조건 매칭도',avgMatch,'#1d4ed8'],['경쟁률 점수',avgComp,'#3b82f6'],['이력 보정',avgHist,'#93bbfd']].map(([l,v,c]) =>
+                ${[['자격요건 적합도',avgElig,'#1e3a5f'],['조건 매칭도',avgMatch,'#1d4ed8'],['선정률 (사전확률)',avgComp,'#3b82f6'],['이력 보정',avgHist,'#93bbfd']].map(([l,v,c]) =>
                     '<div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;"><span style="min-width:85px;font-size:11px;color:var(--text-secondary);">'+l+'</span><div style="flex:1;height:8px;background:var(--border-light);border-radius:4px;overflow:hidden;"><div style="height:100%;width:'+v.toFixed(0)+'%;background:'+c+';border-radius:4px;transition:width 0.5s;"></div></div><span style="min-width:30px;font-size:12px;font-weight:700;color:var(--heading);text-align:right;">'+v.toFixed(0)+'</span></div>'
                 ).join('')}
             </div>
@@ -1245,8 +1255,9 @@ function showSubsidyDetail(id) {
     const srcNames = { bizinfo:'기업마당', mss:'중소벤처기업부', kstartup:'K-스타트업', smes:'중소벤처24' };
 
     // Match probability if available
-    const mr = matchResults.find(r => r.id === id);
-    const probHtml = mr ? '<div style="display:flex;align-items:center;gap:8px;margin-bottom:12px;padding:10px 14px;background:#dbeafe;border-radius:var(--radius);"><i class="lucide-target" style="font-size:18px;color:#1d4ed8;"></i><div><div style="font-size:20px;font-weight:800;color:#1d4ed8;">'+mr.final_probability.toFixed(1)+'%</div><div style="font-size:11px;color:#3b82f6;">나의 선정 확률</div></div></div>' : '';
+    const mr = matchResults.find(r => r.id === id || r.subsidy_id === numId);
+    const probRange = (mr && mr.probability_range) ? '<div style="font-size:12px;color:#3b82f6;margin-top:2px;">추정 범위: '+mr.probability_range.low.toFixed(0)+'% ~ '+mr.probability_range.high.toFixed(0)+'%</div>' : '';
+    const probHtml = mr ? '<div style="display:flex;align-items:center;gap:8px;margin-bottom:12px;padding:10px 14px;background:#dbeafe;border-radius:var(--radius);"><i class="lucide-target" style="font-size:18px;color:#1d4ed8;"></i><div><div style="font-size:20px;font-weight:800;color:#1d4ed8;">'+mr.final_probability.toFixed(1)+'%</div><div style="font-size:11px;color:#3b82f6;">나의 선정 확률 · 신뢰도: '+mr.confidence_level+'</div>'+probRange+'</div></div>' : '';
 
     // Date info
     let dateInfo = '';
@@ -1326,7 +1337,7 @@ function showSubsidyDetail(id) {
         const scores = [
             ['자격요건 적합도', mr.eligibility_score, '#1e3a5f'],
             ['조건 매칭도', mr.matching_score, '#1d4ed8'],
-            ['경쟁률 점수', mr.competition_score, '#3b82f6'],
+            ['선정률 (사전확률)', mr.competition_score, '#3b82f6'],
             ['이력 보정', mr.historical_score, '#93bbfd']
         ];
         scores.forEach(([label, val, color]) => {
