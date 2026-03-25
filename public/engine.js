@@ -52,6 +52,105 @@ const BASE_SELECTION_RATES = {
     '문화': 0.22,
 };
 
+// 분야별 하위 카테고리 (subcategory) 체계
+// 공고 타이틀/본문에서 키워드 매칭으로 자동 분류
+const SUBCATEGORIES = {
+    '금융': {
+        '정책자금 대출': ['정책자금','융자','대출','운전자금','시설자금','긴급자금','경영안정자금','특례보증'],
+        '보증 지원': ['보증','신용보증','기술보증','특례보증','보증서','보증료','이차보전'],
+        '투자 유치': ['투자','엔젤','벤처캐피탈','VC','투자유치','지분투자','모태펀드'],
+        '이자 보전': ['이자보전','이차보전','이자차액','이자지원','금리우대'],
+        '긴급 경영자금': ['긴급','재해','피해','경영위기','회생','재기']
+    },
+    '기술': {
+        'R&D 지원': ['R&D','연구개발','기술개발','연구과제','기술혁신','기술고도화'],
+        '기술 바우처': ['바우처','기술바우처','혁신바우처','서비스바우처'],
+        '특허/지식재산': ['특허','지식재산','IP','실용신안','디자인등록','상표'],
+        '시제품 제작': ['시제품','프로토타입','시작품','금형','3D프린팅'],
+        '기술 인증': ['인증','KC인증','CE인증','ISO','시험','검사','품질'],
+        '기술 이전': ['기술이전','기술사업화','기술거래','기술중개']
+    },
+    '창업': {
+        '창업 교육': ['창업교육','아카데미','캠프','멘토링','창업스쿨','인큐베이팅'],
+        '사업화 지원': ['사업화','창업사업화','초기창업','예비창업','창업도약'],
+        '창업 공간': ['창업공간','입주','보육','액셀러레이터','창업센터','오피스'],
+        '창업 자금': ['창업자금','시드','초기자금','창업지원금'],
+        '창업 경진대회': ['경진대회','공모전','아이디어','데모데이','IR피칭']
+    },
+    '수출': {
+        '해외 마케팅': ['해외마케팅','수출마케팅','해외홍보','글로벌마케팅','해외광고'],
+        '전시회/박람회': ['전시회','박람회','엑스포','해외전시','무역전시'],
+        '수출 물류': ['수출물류','물류비','EMS','국제배송','통관','FTA'],
+        '수출 바우처': ['수출바우처','글로벌바우처','해외진출바우처'],
+        '수출 인증': ['수출인증','해외인증','CE','FDA','해외규격','적합성'],
+        '해외 입점': ['해외입점','크로스보더','아마존','해외 온라인','해외 플랫폼']
+    },
+    '인력': {
+        '채용 지원': ['채용','고용','일자리','채용장려금','고용장려금','인턴'],
+        '직업 훈련': ['훈련','직업훈련','직무교육','재직자교육','역량강화'],
+        '인건비 지원': ['인건비','임금','급여지원','임금보전','인력지원금'],
+        '전문인력 매칭': ['전문인력','인력매칭','구인구직','취업연계'],
+        '청년 고용': ['청년','청년채용','청년일자리','청년고용','MZ']
+    },
+    '경영': {
+        '컨설팅': ['컨설팅','자문','진단','경영진단','경영자문','전문가활용'],
+        '교육/세미나': ['교육','세미나','워크숍','아카데미','역량강화교육'],
+        '디자인 지원': ['디자인','브랜딩','BI','CI','패키지디자인','포장'],
+        '마케팅 지원': ['마케팅','홍보','광고','판촉','프로모션','SNS마케팅'],
+        '경영 혁신': ['혁신','스마트화','디지털전환','DX','자동화','AI도입'],
+        '법률/회계': ['법률','회계','세무','노무','법무','특허상담']
+    },
+    '내수': {
+        '온라인 판로': ['온라인','e커머스','전자상거래','쇼핑몰','라이브커머스','입점'],
+        '오프라인 판로': ['판로','판매','직매장','팝업','대형마트입점','납품'],
+        '소상공인 지원': ['소상공인','전통시장','골목상권','상권활성화','상점가'],
+        '프랜차이즈': ['프랜차이즈','가맹','체인','브랜드화'],
+        '지역 축제/행사': ['축제','행사','박람회','페어','페스티벌']
+    },
+    '정책': {
+        '규제 특례': ['규제','특례','샌드박스','규제혁신','특구'],
+        '인허가 지원': ['인허가','허가','등록','신고','면허'],
+        '정보 제공': ['정보','안내','가이드','설명회','간담회','정보제공'],
+        '네트워킹': ['네트워킹','교류','협력','협의체','클러스터','동반성장'],
+        '포상/인증': ['포상','시상','인증','선정','지정','표창']
+    },
+    '기타': {
+        '복합 지원': ['복합','통합','패키지','원스톱'],
+        '기타': []
+    }
+};
+
+// 공고 텍스트에서 subcategory 자동 분류
+function classifySubcategory(subsidy) {
+    const cat = subsidy.category || '기타';
+    const subMap = SUBCATEGORIES[cat];
+    if (!subMap) return '기타';
+    const text = [subsidy.title, subsidy.description, subsidy.target, subsidy.detail_content]
+        .filter(Boolean).join(' ');
+    let bestMatch = '기타';
+    let bestCount = 0;
+    for (const [subcat, keywords] of Object.entries(subMap)) {
+        const count = keywords.filter(kw => text.includes(kw)).length;
+        if (count > bestCount) { bestCount = count; bestMatch = subcat; }
+    }
+    return bestMatch;
+}
+
+// 사업장 설명에서 주요 키워드 추출
+function extractBusinessKeywords(description) {
+    if (!description || description.length < 2) return [];
+    const stops = ['있습니다','합니다','하고','입니다','됩니다','것입니다','하는','되는','위한','통한','대한','관련','현재','최근','매우','정도','약간','계속','항상','자주','때문','그리고','하지만','그래서','또한','그런데','따라서','이를','저희','우리','사업','업체','회사','기업','사업장','운영','진행','제공','서비스','목표','준비','예정','주요','제품'];
+    // 한국어 조사/어미 제거
+    const clean = description.replace(/[^가-힣a-zA-Z0-9\s]/g, ' ')
+        .replace(/(을|를|이|가|은|는|의|에|에서|으로|로|와|과|하여|하는|하고|이며|으며|입니다|합니다|됩니다|중이며|중입니다)/g, ' ');
+    const words = clean.split(/\s+/)
+        .filter(w => w.length >= 2 && !stops.includes(w));
+    // 빈도순 정렬 후 상위 키워드 반환
+    const freq = {};
+    words.forEach(w => { freq[w] = (freq[w] || 0) + 1; });
+    return Object.entries(freq).sort((a, b) => b[1] - a[1]).slice(0, 15).map(e => e[0]);
+}
+
 class ProbabilityEngine {
     constructor(history = []) {
         this.history = history;
@@ -98,6 +197,7 @@ class ProbabilityEngine {
                 confidence_level: confidence,
                 recommendations,
                 matching_details: {},
+                subcategory: classifySubcategory(subsidy),
                 disqualified: true,
             };
         }
@@ -124,6 +224,7 @@ class ProbabilityEngine {
             confidence_level: confidence,
             recommendations,
             matching_details: matching.details || {},
+            subcategory: classifySubcategory(subsidy),
             disqualified: false,
         };
     }
@@ -345,10 +446,28 @@ class ProbabilityEngine {
             region_match: this._matchRegion(text, prof),
             purpose_match: this._matchPurpose(sub, prof),
             qualification_match: this._matchQual(text, prof),
+            description_match: this._matchDescription(text, prof),
         };
-        const weights = { industry_match: 0.30, scale_match: 0.20, purpose_match: 0.25, region_match: 0.10, qualification_match: 0.15 };
+        // 사업장 설명이 있으면 가중치 재배분 (description_match 0.15 추가)
+        const hasDesc = prof.business_description && prof.business_description.length >= 10;
+        const weights = hasDesc
+            ? { industry_match: 0.25, scale_match: 0.15, purpose_match: 0.20, region_match: 0.10, qualification_match: 0.15, description_match: 0.15 }
+            : { industry_match: 0.30, scale_match: 0.20, purpose_match: 0.25, region_match: 0.10, qualification_match: 0.15, description_match: 0.00 };
         const score = Object.entries(weights).reduce((s, [k, w]) => s + (details[k] || 0) * w, 0);
         return { score, details };
+    }
+
+    // 사업장 설명 키워드 매칭
+    _matchDescription(text, prof) {
+        const desc = prof.business_description || '';
+        if (!desc || desc.length < 10) return 0; // 미입력 시 0 (가중치도 0이므로 영향 없음)
+        const keywords = extractBusinessKeywords(desc);
+        if (keywords.length === 0) return 30;
+        // 키워드 매칭 비율
+        const matched = keywords.filter(kw => text.includes(kw)).length;
+        const ratio = matched / keywords.length;
+        // 0% 매칭 → 20, 50% → 60, 100% → 100
+        return Math.round(20 + ratio * 80);
     }
 
     _matchIndustry(text, prof) {

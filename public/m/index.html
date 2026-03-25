@@ -723,11 +723,14 @@ let listFilterCat = '';
 let listFilterStatus = '';
 let listFilterOrg = '';
 let listFilterRegion = '';
+let listFilterSubcat = '';
 let listQuery = '';
 
 function renderList() {
     const el = document.getElementById('page-list');
     const cats = [...new Set(subsidies.map(s => s.category))].sort();
+    // 하위 카테고리 옵션 (선택된 분야에 따라 동적)
+    const getSubcats = (cat) => cat && SUBCATEGORIES[cat] ? Object.keys(SUBCATEGORIES[cat]) : [];
     const orgsAll = [...new Set(subsidies.map(s => s.organization))].sort();
     const SIDO_LIST = ['서울','부산','대구','인천','광주','대전','울산','세종','경기','강원','충북','충남','전북','전남','경북','경남','제주'];
     const getSubsidyRegion = (s) => {
@@ -770,6 +773,10 @@ function renderList() {
                 <option value="">분야 전체</option>
                 ${cats.map(c => '<option value="'+esc(c)+'" '+(listFilterCat===c?'selected':'')+'>'+esc(c)+'</option>').join('')}
             </select>
+            <select id="listFilterSubcat" style="font-size:12px;padding:6px 10px;border:1.5px solid var(--border);border-radius:8px;background:#fff;color:var(--heading);font-weight:600;min-width:max-content;${listFilterCat ? '' : 'display:none;'}">
+                <option value="">유형 전체</option>
+                ${getSubcats(listFilterCat).map(sc => '<option value="'+esc(sc)+'" '+(listFilterSubcat===sc?'selected':'')+'>'+esc(sc)+'</option>').join('')}
+            </select>
             <select id="listFilterOrg" style="font-size:12px;padding:6px 10px;border:1.5px solid var(--border);border-radius:8px;background:#fff;color:var(--heading);font-weight:600;min-width:max-content;">
                 <option value="">기관 전체</option>
                 ${orgsAll.map(o => '<option value="'+esc(o)+'" '+(listFilterOrg===o?'selected':'')+'>'+esc(o)+'</option>').join('')}
@@ -786,9 +793,24 @@ function renderList() {
         listFilterStatus = document.getElementById('listFilterStatus').value;
         listFilterCat = document.getElementById('listFilterCat').value;
         listFilterOrg = document.getElementById('listFilterOrg').value;
+        const subcatEl = document.getElementById('listFilterSubcat');
+        listFilterSubcat = subcatEl ? subcatEl.value : '';
         const regionEl = document.getElementById('listFilterRegion');
         listFilterRegion = regionEl ? regionEl.value : '';
         const q = listQuery.toLowerCase();
+
+        // 분야 변경 시 하위 카테고리 select 동적 업데이트
+        if (subcatEl) {
+            const subcats = getSubcats(listFilterCat);
+            if (listFilterCat && subcats.length > 0) {
+                subcatEl.style.display = '';
+                subcatEl.innerHTML = '<option value="">유형 전체</option>' + subcats.map(sc => '<option value="'+esc(sc)+'" '+(listFilterSubcat===sc?'selected':'')+'>'+esc(sc)+'</option>').join('');
+            } else {
+                subcatEl.style.display = 'none';
+                subcatEl.value = '';
+                listFilterSubcat = '';
+            }
+        }
 
         let filtered = subsidies.filter(s => {
             // Text search
@@ -798,6 +820,8 @@ function renderList() {
             }
             // Category filter
             if (listFilterCat && s.category !== listFilterCat) return false;
+            // Subcategory filter
+            if (listFilterSubcat && classifySubcategory(s) !== listFilterSubcat) return false;
             // Org filter
             if (listFilterOrg && s.organization !== listFilterOrg) return false;
             // Region filter
@@ -848,7 +872,9 @@ function renderList() {
             const range = rangeMap[s.id];
             const rangeStr = (range && prob !== undefined) ? '<span style="font-size:9px;opacity:0.7;margin-left:2px;">'+range.low.toFixed(0)+'~'+range.high.toFixed(0)+'%</span>' : '';
             const probHtml = prob !== undefined ? '<span style="font-size:11px;font-weight:700;color:#1d4ed8;background:#dbeafe;padding:2px 6px;border-radius:4px;">'+prob.toFixed(0)+'% '+rangeStr+'</span>' : '';
-            res += '<div class="subsidy-item" onclick="showDetail('+s.id+')"><div class="subsidy-item-title">'+esc(s.title)+'</div><div class="subsidy-item-meta">'+esc(s.organization)+' · <span class="tag '+st.cls+'">'+st.text+'</span> '+probHtml+'</div></div>';
+            const subcat = classifySubcategory(s);
+            const subcatTag = subcat !== '기타' ? ' <span style="font-size:9px;background:var(--primary-bg);color:var(--primary);padding:1px 5px;border-radius:3px;">'+esc(subcat)+'</span>' : '';
+            res += '<div class="subsidy-item" onclick="showDetail('+s.id+')"><div class="subsidy-item-title">'+esc(s.title)+'</div><div class="subsidy-item-meta">'+esc(s.organization)+' · <span class="tag '+st.cls+'">'+st.text+'</span>'+subcatTag+' '+probHtml+'</div></div>';
         });
         if (!res) res = '<div class="empty-state"><i class="lucide-search"></i><p>검색 결과가 없습니다</p></div>';
         document.getElementById('listResults').innerHTML = res;
@@ -858,6 +884,8 @@ function renderList() {
     document.getElementById('listSortSel').addEventListener('change', applyListFilter);
     document.getElementById('listFilterStatus').addEventListener('change', applyListFilter);
     document.getElementById('listFilterCat').addEventListener('change', applyListFilter);
+    const subcatEl2 = document.getElementById('listFilterSubcat');
+    if (subcatEl2) subcatEl2.addEventListener('change', applyListFilter);
     document.getElementById('listFilterOrg').addEventListener('change', applyListFilter);
     const regionEl = document.getElementById('listFilterRegion');
     if (regionEl) regionEl.addEventListener('change', applyListFilter);
@@ -928,6 +956,25 @@ function renderStats() {
                 const clr = blues[Math.min(i, blues.length-1)];
                 return '<div class="stat-bar"><div class="stat-bar-label">'+esc(c)+'</div><div class="stat-bar-track"><div class="stat-bar-fill" style="width:'+pct+'%;background:'+clr+';"></div></div><div class="stat-bar-value">'+n+'건</div></div>';
             }).join('')}
+        </div>
+
+        <div class="chart-container">
+            <div class="chart-title"><i class="lucide-layers"></i> 지원 유형별 분포</div>
+            ${(() => {
+                const subcatCounts = {};
+                subsidies.forEach(s => {
+                    const sc = classifySubcategory(s);
+                    const key = s.category + ' > ' + sc;
+                    subcatCounts[key] = (subcatCounts[key] || 0) + 1;
+                });
+                const sorted = Object.entries(subcatCounts).sort((a,b) => b[1] - a[1]).slice(0, 12);
+                const maxSc = sorted.length > 0 ? sorted[0][1] : 1;
+                const blues = ['#1e3a5f','#1d4ed8','#2563eb','#3b82f6','#60a5fa','#93bbfd','#bfdbfe','#dbeafe','#eff6ff','#f0f7ff','#fafbfe','#f5f5f5'];
+                return sorted.map(([k, n], i) => {
+                    const pct = (n / maxSc * 100).toFixed(0);
+                    return '<div class="stat-bar"><div class="stat-bar-label" style="min-width:100px;font-size:10px;">'+esc(k)+'</div><div class="stat-bar-track"><div class="stat-bar-fill" style="width:'+pct+'%;background:'+blues[Math.min(i, blues.length-1)]+';"></div></div><div class="stat-bar-value">'+n+'건</div></div>';
+                }).join('');
+            })()}
         </div>
 
         <div class="chart-container">
@@ -1178,6 +1225,13 @@ function renderSettings() {
                 <input class="form-input" type="number" id="pPrevCount" placeholder="0~" min="0" value="${profile.previous_subsidy_count || 0}">
             </div>
 
+            <div class="form-group" style="margin-top:12px;">
+                <label class="form-label">사업장 설명</label>
+                <textarea class="form-input" id="pBizDesc" rows="4" placeholder="사업장의 주요 업무, 제품/서비스, 기술 역량, 경쟁력 등을 자유롭게 입력하세요. (선정확률 산출에 활용됩니다)"
+                    style="resize:vertical;min-height:80px;line-height:1.5;">${esc(profile.business_description || '')}</textarea>
+                <div style="font-size:11px;color:var(--text-tertiary);margin-top:4px;">입력된 내용에서 주요 키워드를 추출하여 공고문과 매칭합니다.</div>
+            </div>
+
             <div style="margin-top:16px;padding-top:16px;border-top:1px solid var(--border);">
                 <label class="form-label">특성</label>
                 <div class="form-checkbox">
@@ -1234,6 +1288,7 @@ function doSaveProfile() {
         credit_rating: document.getElementById('pCredit').value,
         debt_ratio: document.getElementById('pDebt').value ? parseFloat(document.getElementById('pDebt').value) : null,
         previous_subsidy_count: parseInt(document.getElementById('pPrevCount').value) || 0,
+        business_description: document.getElementById('pBizDesc').value,
         has_export: document.getElementById('pExport').checked,
         is_female_owned: document.getElementById('pFemale').checked,
         is_disabled_owned: document.getElementById('pDisabled').checked,
