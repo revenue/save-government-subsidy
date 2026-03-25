@@ -638,6 +638,7 @@ function renderMatchingUI(profile) {
                 <div class="banner-rank">${i + 1}</div>
                 <div style="font-size:14px;font-weight:700;color:var(--heading);line-height:1.4;margin-bottom:6px;padding-right:32px;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;">${esc(r.subsidy_title)}</div>
                 <div style="font-size:12px;color:var(--text-secondary);margin-bottom:4px;"><i class="lucide-building-2" style="font-size:12px;vertical-align:-1px;"></i> ${esc(r.organization)}</div>
+                <div style="font-size:10px;color:var(--primary);margin-bottom:4px;">${esc(r.category||'')}${r.subcategory && r.subcategory !== '기타' ? ' > '+esc(r.subcategory) : ''}</div>
                 <div style="display:flex;align-items:center;gap:8px;">
                     <span class="tag ${ddayCls}">${dday}</span>
                     <div class="match-prob ${level}" style="min-width:auto;min-height:auto;border-radius:8px;padding:4px 10px;font-size:14px;">
@@ -668,6 +669,7 @@ function renderMatchingUI(profile) {
                     <div class="subsidy-item-title">${esc(r.subsidy_title)}</div>
                     <div class="subsidy-item-meta" style="display:flex;align-items:center;gap:4px;flex-wrap:wrap;">
                         ${esc(r.organization)} · <span class="tag ${ddayCls}" style="font-size:9px;padding:2px 6px;">${dday}</span>
+                        ${r.subcategory && r.subcategory !== '기타' ? '<span style="background:var(--primary-bg);color:var(--primary);padding:1px 5px;border-radius:3px;font-size:9px;font-weight:600;">'+esc(r.subcategory)+'</span>' : ''}
                         ${kws.map(k => '<span style="background:var(--bg);padding:1px 5px;border-radius:3px;font-size:10px;color:var(--text-tertiary);">' + esc(k) + '</span>').join('')}
                     </div>
                 </div>
@@ -1044,6 +1046,14 @@ function renderStats() {
         mr.forEach(r => { mCatCounts[r.category] = (mCatCounts[r.category]||0)+1; });
         const mCats = Object.entries(mCatCounts).sort((a,b)=>b[1]-a[1]);
 
+        // Subcategory distribution in matches
+        const mSubcatCounts = {};
+        mr.forEach(r => {
+            const key = (r.category||'기타') + ' > ' + (r.subcategory||'기타');
+            mSubcatCounts[key] = (mSubcatCounts[key]||0)+1;
+        });
+        const mSubcats = Object.entries(mSubcatCounts).sort((a,b)=>b[1]-a[1]);
+
         // Org distribution
         const mOrgCounts = {};
         mr.forEach(r => { mOrgCounts[r.organization] = (mOrgCounts[r.organization]||0)+1; });
@@ -1108,6 +1118,15 @@ function renderStats() {
                     const pct = (n/mr.length*100).toFixed(0);
                     const blues = ['#1e3a5f','#1d4ed8','#2563eb','#3b82f6','#60a5fa'];
                     return '<div style="display:flex;align-items:center;gap:8px;margin-bottom:6px;"><span style="min-width:70px;font-size:11px;color:var(--text-secondary);">'+esc(c)+'</span><div style="flex:1;height:8px;background:var(--border-light);border-radius:4px;overflow:hidden;"><div style="height:100%;width:'+pct+'%;background:'+blues[i]+';border-radius:4px;"></div></div><span style="font-size:11px;font-weight:600;color:var(--heading);">'+n+'건 ('+pct+'%)</span></div>';
+                }).join('')}
+            </div>
+
+            <div style="background:rgba(255,255,255,0.7);border-radius:var(--radius);padding:14px;margin-bottom:12px;">
+                <div style="font-size:12px;font-weight:700;color:var(--heading);margin-bottom:10px;display:flex;align-items:center;gap:4px;"><i class="lucide-layers" style="font-size:14px;color:var(--primary);"></i> 매칭 지원유형 집중도</div>
+                ${mSubcats.slice(0,8).map(([k,n],i) => {
+                    const pct = (n/mr.length*100).toFixed(0);
+                    const blues = ['#1e3a5f','#1d4ed8','#2563eb','#3b82f6','#60a5fa','#93bbfd','#bfdbfe','#dbeafe'];
+                    return '<div style="display:flex;align-items:center;gap:8px;margin-bottom:5px;"><span style="min-width:90px;font-size:10px;color:var(--text-secondary);">'+esc(k)+'</span><div style="flex:1;height:7px;background:var(--border-light);border-radius:4px;overflow:hidden;"><div style="height:100%;width:'+pct+'%;background:'+blues[i]+';border-radius:4px;"></div></div><span style="font-size:10px;font-weight:600;color:var(--heading);">'+n+'건</span></div>';
                 }).join('')}
             </div>
 
@@ -1332,7 +1351,8 @@ function showSubsidyDetail(id) {
     html += '<div class="detail-section"><div class="detail-section-title"><i class="lucide-info"></i> 기본 정보</div>';
     html += '<div class="detail-row"><div class="detail-label">상태</div><div class="detail-value"><span class="tag '+st.cls+'">'+st.text+'</span></div></div>';
     html += '<div class="detail-row"><div class="detail-label">사업명</div><div class="detail-value" style="font-weight:700;">'+esc(s.title)+'</div></div>';
-    html += '<div class="detail-row"><div class="detail-label">분야</div><div class="detail-value"><span class="tag tag-blue">'+esc(s.category)+'</span></div></div>';
+    const detailSubcat = classifySubcategory(s);
+    html += '<div class="detail-row"><div class="detail-label">분야</div><div class="detail-value"><span class="tag tag-blue">'+esc(s.category)+'</span>'+(detailSubcat !== '기타' ? ' <span class="tag tag-blue" style="opacity:0.7;">'+esc(detailSubcat)+'</span>' : '')+'</div></div>';
     html += '<div class="detail-row"><div class="detail-label">소관기관</div><div class="detail-value">'+esc(s.organization)+'</div></div>';
     if (s.executor) html += '<div class="detail-row"><div class="detail-label">수행기관</div><div class="detail-value">'+esc(s.executor)+'</div></div>';
     html += '<div class="detail-row"><div class="detail-label">출처</div><div class="detail-value">'+(srcNames[s.source]||esc(s.source))+'</div></div>';

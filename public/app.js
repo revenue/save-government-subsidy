@@ -661,7 +661,7 @@ function doSearch() {
         <p style="margin:16px 0;font-size:14px;"><strong>검색 결과: ${results.length}건</strong></p>
         <div class="table-container">
             <table class="data-table">
-                <thead><tr><th>상태</th><th>사업명</th><th>분야</th><th>소관기관</th><th>지원대상</th><th>마감일</th></tr></thead>
+                <thead><tr><th>상태</th><th>사업명</th><th>분야</th><th>유형</th><th>소관기관</th><th>지원대상</th><th>마감일</th></tr></thead>
                 <tbody>
                     ${results.map(s => {
                         const st = getStatus(s.apply_end_date);
@@ -669,6 +669,7 @@ function doSearch() {
                             <td><span class="tag ${st.cls}">${st.text}</span></td>
                             <td title="${escHtml(s.title)}">${escHtml(s.title).slice(0, 45)}</td>
                             <td>${escHtml(s.category)}</td>
+                            <td style="font-size:12px;">${typeof classifySubcategory === 'function' ? escHtml(classifySubcategory(s)) : ''}</td>
                             <td>${escHtml(s.organization).slice(0, 12)}</td>
                             <td title="${escHtml(s.target)}">${escHtml(s.target || '').slice(0, 20)}</td>
                             <td>${s.apply_end_date || '-'}</td>
@@ -691,11 +692,19 @@ function renderStats() {
     const deadlineSubs = [];
     const kwCounts = {};
 
+    const subcatCounts = {};
     subsidies.forEach(s => {
         catCounts[s.category] = (catCounts[s.category] || 0) + 1;
         orgCounts[s.organization || '기타'] = (orgCounts[s.organization || '기타'] || 0) + 1;
         srcCounts[s.source || 'unknown'] = (srcCounts[s.source || 'unknown'] || 0) + 1;
         if (s.executor) execCounts[s.executor] = (execCounts[s.executor] || 0) + 1;
+
+        // 하위 카테고리 집계
+        if (typeof classifySubcategory === 'function') {
+            const sc = classifySubcategory(s);
+            const key = (s.category || '기타') + ' > ' + sc;
+            subcatCounts[key] = (subcatCounts[key] || 0) + 1;
+        }
 
         const org = s.organization || '기타';
         if (!orgCatMatrix[org]) orgCatMatrix[org] = {};
@@ -892,6 +901,19 @@ function renderStats() {
                 <div class="card-title"><i class="lucide-map"></i> 분야별 비중 (트리맵)</div>
                 <p style="font-size:11px;color:var(--text-tertiary);margin-bottom:8px;">면적이 넓을수록 해당 분야의 지원사업이 많습니다</p>
                 <div class="chart-wrap" style="flex:1;display:flex;align-items:center;">${svgTreemap(cats, 'category')}</div>
+            </div>
+        </div>
+
+        <!-- 하위 카테고리(지원유형)별 분포 -->
+        <div class="card" style="margin-bottom:16px;">
+            <div class="card-title"><i class="lucide-layers"></i> 지원유형별 분포 (상위 15)</div>
+            <p style="font-size:11px;color:var(--text-tertiary);margin-bottom:8px;">분야 > 유형 기준으로 자동 분류한 결과입니다</p>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
+                ${Object.entries(subcatCounts).sort((a,b) => b[1] - a[1]).slice(0, 15).map(([k, n], i) => {
+                    const pct = Math.round(n / subsidies.length * 100);
+                    const colors = ['#1e3a5f','#1d4ed8','#2563eb','#3b82f6','#60a5fa','#93bbfd','#bfdbfe','#dbeafe','#1e3a5f','#1d4ed8','#2563eb','#3b82f6','#60a5fa','#93bbfd','#bfdbfe'];
+                    return '<div style="display:flex;align-items:center;gap:6px;"><span style="min-width:120px;font-size:11px;color:var(--text-secondary);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;" title="'+escHtml(k)+'">'+escHtml(k)+'</span><div style="flex:1;height:8px;background:#f0f0f0;border-radius:4px;overflow:hidden;"><div style="height:100%;width:'+pct+'%;min-width:2px;background:'+colors[i]+';border-radius:4px;"></div></div><span style="font-size:11px;font-weight:600;min-width:35px;text-align:right;">'+n+'건</span></div>';
+                }).join('')}
             </div>
         </div>
 

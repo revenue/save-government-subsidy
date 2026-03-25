@@ -504,9 +504,9 @@ class ProbabilityEngine {
         const cat = sub.category || '';
         const age = prof.business_age_years;
         const title = sub.title || '';
+        const userInd = prof.industry_name || '';
 
         // 타이틀 키워드 기반 정밀 매칭
-        const userInd = prof.industry_name || '';
         const titleCats = this._getIndustryCats(title);
         const userCats = this._getIndustryCats(userInd);
         let titleBonus = 0;
@@ -529,6 +529,19 @@ class ProbabilityEngine {
         else if (cat === '내수') base = 55;
         else if (cat === '정책') base = 50;
         else base = 45;
+
+        // 하위 카테고리 매칭 보너스: 사업장 설명 키워드가 하위유형 키워드와 매칭
+        const subcat = classifySubcategory(sub);
+        const desc = prof.business_description || '';
+        if (desc.length >= 10 && subcat !== '기타') {
+            const subcatMap = SUBCATEGORIES[cat];
+            if (subcatMap && subcatMap[subcat]) {
+                const subcatKws = subcatMap[subcat];
+                const descKws = extractBusinessKeywords(desc);
+                const subcatHit = subcatKws.some(kw => desc.includes(kw) || descKws.some(dk => kw.includes(dk) || dk.includes(kw)));
+                if (subcatHit) base = Math.min(100, base + 15); // 하위유형-설명 매칭 시 +15
+            }
+        }
 
         return Math.max(5, Math.min(100, base + titleBonus));
     }
