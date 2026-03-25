@@ -606,7 +606,8 @@ function getDday(endDate) {
 
 function renderMatchingUI(profile) {
     const el = document.getElementById('page-matching');
-    const filtered = [...matchResults];
+    // 마감된 공고 제외
+    const filtered = matchResults.filter(r => !r.apply_end_date || r.apply_end_date >= today);
     let displayList = filtered;
 
     // Search bar
