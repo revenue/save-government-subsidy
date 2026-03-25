@@ -170,13 +170,21 @@ class ProbabilityEngine {
     _chkRegion(sub, prof) {
         let req = sub.region_required || sub.region || '';
         const user = prof.region_sido || '';
+        const userSigungu = prof.region_sigungu || '';
 
-        // 타이틀에서 [지역명] 패턴 추출 (예: "[전남] 2026년 ...")
-        if (!req) {
-            const titleMatch = (sub.title || '').match(/^\[([가-힣]+)\]/);
-            if (titleMatch) {
-                req = titleMatch[1]; // "전남", "서울", "경기" 등
-            }
+        // 타이틀에서 [시도] + 시/군/구 추출
+        // 예: "[경기] 수원시 2026년 ..." → sido="경기", sigungu="수원시"
+        let titleSido = '';
+        let titleSigungu = '';
+        const titleMatch = (sub.title || '').match(/^\[([가-힣]+)\]\s*([가-힣]+[시군구])?/);
+        if (titleMatch) {
+            titleSido = titleMatch[1];           // "경기", "전남" 등
+            titleSigungu = titleMatch[2] || '';   // "수원시", "강진군" 등
+        }
+
+        // req가 비어있으면 타이틀에서 추출한 시/도 사용
+        if (!req && titleSido) {
+            req = titleSido;
         }
 
         if (!req || ['전국','해당없음','-',''].includes(req)) return 80;
@@ -190,11 +198,22 @@ class ProbabilityEngine {
             '전북':'전북특별자치도','전남':'전라남도',
             '경북':'경상북도','경남':'경상남도','제주':'제주특별자치도',
         };
-        // req가 약칭이면 풀네임으로도 비교
+
         for (const [short, full] of Object.entries(regionMap)) {
             if (req.includes(short) || req.includes(full)) {
-                if (user && (user.includes(short) || user.includes(full))) return 100;
-                return user ? 0 : 30; // 지역 특정됨 + 불일치 → 0
+                // 시/도 불일치 → 0
+                if (user && !(user.includes(short) || user.includes(full))) return 0;
+                // 시/도 일치 → 시/군/구 체크
+                if (user && (user.includes(short) || user.includes(full))) {
+                    // 공고에 특정 시/군/구가 있으면 세부 매칭
+                    if (titleSigungu) {
+                        if (userSigungu && userSigungu === titleSigungu) return 100; // 시/군/구 완전 일치
+                        if (userSigungu && userSigungu !== titleSigungu) return 0;   // 같은 도 다른 시 → 0
+                        return 30; // 사용자 시/군/구 미입력
+                    }
+                    return 100; // 시/도 일치 + 시/군/구 특정 없음
+                }
+                return 30; // 사용자 시/도 미입력
             }
         }
 
