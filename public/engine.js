@@ -168,9 +168,36 @@ class ProbabilityEngine {
     }
 
     _chkRegion(sub, prof) {
-        const req = sub.region_required || sub.region || '';
+        let req = sub.region_required || sub.region || '';
         const user = prof.region_sido || '';
-        if (!req || ['전국','해당없음','-',''].includes(req)) return 80; // 전국 → 약간 유리하지만 지역특화보다 낮음
+
+        // 타이틀에서 [지역명] 패턴 추출 (예: "[전남] 2026년 ...")
+        if (!req) {
+            const titleMatch = (sub.title || '').match(/^\[([가-힣]+)\]/);
+            if (titleMatch) {
+                req = titleMatch[1]; // "전남", "서울", "경기" 등
+            }
+        }
+
+        if (!req || ['전국','해당없음','-',''].includes(req)) return 80;
+
+        // 지역명 정규화 매칭 (약칭 ↔ 풀네임)
+        const regionMap = {
+            '서울':'서울특별시','경기':'경기도','인천':'인천광역시',
+            '부산':'부산광역시','대구':'대구광역시','대전':'대전광역시',
+            '광주':'광주광역시','울산':'울산광역시','세종':'세종특별자치시',
+            '강원':'강원특별자치도','충북':'충청북도','충남':'충청남도',
+            '전북':'전북특별자치도','전남':'전라남도',
+            '경북':'경상북도','경남':'경상남도','제주':'제주특별자치도',
+        };
+        // req가 약칭이면 풀네임으로도 비교
+        for (const [short, full] of Object.entries(regionMap)) {
+            if (req.includes(short) || req.includes(full)) {
+                if (user && (user.includes(short) || user.includes(full))) return 100;
+                return user ? 0 : 30; // 지역 특정됨 + 불일치 → 0
+            }
+        }
+
         if (user && (req.includes(user) || user.includes(req))) return 100;
         if (req.includes(',') || req.includes('·') || req.includes('/')) {
             const regions = req.split(/[,·/\s]+/);
