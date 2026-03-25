@@ -731,8 +731,16 @@ let listQuery = '';
 function renderList() {
     const el = document.getElementById('page-list');
     const cats = [...new Set(subsidies.map(s => s.category))].sort();
-    // 하위 카테고리 옵션 (선택된 분야에 따라 동적)
-    const getSubcats = (cat) => cat && SUBCATEGORIES[cat] ? Object.keys(SUBCATEGORIES[cat]) : [];
+    // 하위 카테고리 옵션: 분야 미선택 시 전체 유형, 선택 시 해당 분야만
+    const getSubcats = (cat) => {
+        if (cat && SUBCATEGORIES[cat]) return Object.keys(SUBCATEGORIES[cat]);
+        // 전체 분야의 모든 하위 유형 (중복 제거)
+        const all = [];
+        for (const [c, map] of Object.entries(SUBCATEGORIES)) {
+            for (const sc of Object.keys(map)) { if (!all.includes(sc)) all.push(sc); }
+        }
+        return all;
+    };
     const orgsAll = [...new Set(subsidies.map(s => s.organization))].sort();
     const SIDO_LIST = ['서울','부산','대구','인천','광주','대전','울산','세종','경기','강원','충북','충남','전북','전남','경북','경남','제주'];
     const getSubsidyRegion = (s) => {
@@ -775,7 +783,7 @@ function renderList() {
                 <option value="">분야 전체</option>
                 ${cats.map(c => '<option value="'+esc(c)+'" '+(listFilterCat===c?'selected':'')+'>'+esc(c)+'</option>').join('')}
             </select>
-            <select id="listFilterSubcat" style="font-size:12px;padding:6px 10px;border:1.5px solid var(--border);border-radius:8px;background:#fff;color:var(--heading);font-weight:600;min-width:max-content;${listFilterCat ? '' : 'display:none;'}">
+            <select id="listFilterSubcat" style="font-size:12px;padding:6px 10px;border:1.5px solid var(--border);border-radius:8px;background:#fff;color:var(--heading);font-weight:600;min-width:max-content;">
                 <option value="">유형 전체</option>
                 ${getSubcats(listFilterCat).map(sc => '<option value="'+esc(sc)+'" '+(listFilterSubcat===sc?'selected':'')+'>'+esc(sc)+'</option>').join('')}
             </select>
@@ -804,14 +812,7 @@ function renderList() {
         // 분야 변경 시 하위 카테고리 select 동적 업데이트
         if (subcatEl) {
             const subcats = getSubcats(listFilterCat);
-            if (listFilterCat && subcats.length > 0) {
-                subcatEl.style.display = '';
-                subcatEl.innerHTML = '<option value="">유형 전체</option>' + subcats.map(sc => '<option value="'+esc(sc)+'" '+(listFilterSubcat===sc?'selected':'')+'>'+esc(sc)+'</option>').join('');
-            } else {
-                subcatEl.style.display = 'none';
-                subcatEl.value = '';
-                listFilterSubcat = '';
-            }
+            subcatEl.innerHTML = '<option value="">유형 전체</option>' + subcats.map(sc => '<option value="'+esc(sc)+'" '+(listFilterSubcat===sc?'selected':'')+'>'+esc(sc)+'</option>').join('');
         }
 
         let filtered = subsidies.filter(s => {

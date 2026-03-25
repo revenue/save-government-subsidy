@@ -317,8 +317,9 @@ function renderList() {
                 <option value="">전체 분야</option>
                 ${cats.map(c => `<option value="${c}">${c}</option>`).join('')}
             </select>
-            <select class="form-control" id="listSubcat" onchange="filterList()" style="display:none;">
+            <select class="form-control" id="listSubcat" onchange="filterList()">
                 <option value="">전체 유형</option>
+                ${typeof SUBCATEGORIES !== 'undefined' ? Object.values(SUBCATEGORIES).flatMap(m => Object.keys(m)).filter((v,i,a) => a.indexOf(v)===i).map(sc => `<option value="${sc}">${sc}</option>`).join('') : ''}
             </select>
             <select class="form-control" id="listStatus" onchange="filterList()">
                 <option value="">전체 상태</option>
@@ -336,13 +337,14 @@ function renderList() {
 function updateListSubcat() {
     const cat = document.getElementById('listCat').value;
     const sel = document.getElementById('listSubcat');
-    if (cat && typeof SUBCATEGORIES !== 'undefined' && SUBCATEGORIES[cat]) {
-        sel.style.display = '';
-        sel.innerHTML = '<option value="">전체 유형</option>' + Object.keys(SUBCATEGORIES[cat]).map(sc => `<option value="${sc}">${sc}</option>`).join('');
+    if (!sel || typeof SUBCATEGORIES === 'undefined') return;
+    let opts = [];
+    if (cat && SUBCATEGORIES[cat]) {
+        opts = Object.keys(SUBCATEGORIES[cat]);
     } else {
-        sel.style.display = 'none';
-        sel.value = '';
+        opts = Object.values(SUBCATEGORIES).flatMap(m => Object.keys(m)).filter((v,i,a) => a.indexOf(v)===i);
     }
+    sel.innerHTML = '<option value="">전체 유형</option>' + opts.map(sc => `<option value="${sc}">${sc}</option>`).join('');
 }
 
 function filterList() {
@@ -474,8 +476,9 @@ function renderMatching() {
                 <option value="">전체 분야</option>
                 ${cats.map(c => `<option value="${c}">${c}</option>`).join('')}
             </select>
-            <select class="form-control" id="matchSubcat" style="max-width:200px;display:none;">
+            <select class="form-control" id="matchSubcat" style="max-width:200px;">
                 <option value="">전체 유형</option>
+                ${typeof SUBCATEGORIES !== 'undefined' ? Object.values(SUBCATEGORIES).flatMap(m => Object.keys(m)).filter((v,i,a) => a.indexOf(v)===i).map(sc => `<option value="${sc}">${sc}</option>`).join('') : ''}
             </select>
             <label style="font-size:14px;">최소 확률:</label>
             <input type="range" id="matchMin" min="0" max="50" value="10" style="width:120px;"
@@ -492,13 +495,14 @@ function renderMatching() {
 function updateMatchSubcat() {
     const cat = document.getElementById('matchCat').value;
     const sel = document.getElementById('matchSubcat');
-    if (sel && cat && typeof SUBCATEGORIES !== 'undefined' && SUBCATEGORIES[cat]) {
-        sel.style.display = '';
-        sel.innerHTML = '<option value="">전체 유형</option>' + Object.keys(SUBCATEGORIES[cat]).map(sc => `<option value="${sc}">${sc}</option>`).join('');
-    } else if (sel) {
-        sel.style.display = 'none';
-        sel.value = '';
+    if (!sel || typeof SUBCATEGORIES === 'undefined') return;
+    let opts = [];
+    if (cat && SUBCATEGORIES[cat]) {
+        opts = Object.keys(SUBCATEGORIES[cat]);
+    } else {
+        opts = Object.values(SUBCATEGORIES).flatMap(m => Object.keys(m)).filter((v,i,a) => a.indexOf(v)===i);
     }
+    sel.innerHTML = '<option value="">전체 유형</option>' + opts.map(sc => `<option value="${sc}">${sc}</option>`).join('');
 }
 
 function runMatching() {
@@ -611,6 +615,7 @@ function renderSearch() {
                     <label class="form-label">유형</label>
                     <select class="form-control" id="srchSubcat">
                         <option value="">전체</option>
+                        ${typeof SUBCATEGORIES !== 'undefined' ? Object.values(SUBCATEGORIES).flatMap(m => Object.keys(m)).filter((v,i,a) => a.indexOf(v)===i).map(sc => `<option value="${sc}">${sc}</option>`).join('') : ''}
                     </select>
                 </div>
                 <div class="form-group">
@@ -631,11 +636,14 @@ function renderSearch() {
 function updateSrchSubcat() {
     const cat = document.getElementById('srchCat').value;
     const sel = document.getElementById('srchSubcat');
-    if (sel && cat && typeof SUBCATEGORIES !== 'undefined' && SUBCATEGORIES[cat]) {
-        sel.innerHTML = '<option value="">전체</option>' + Object.keys(SUBCATEGORIES[cat]).map(sc => `<option value="${sc}">${sc}</option>`).join('');
-    } else if (sel) {
-        sel.innerHTML = '<option value="">전체</option>';
+    if (!sel || typeof SUBCATEGORIES === 'undefined') return;
+    let opts = [];
+    if (cat && SUBCATEGORIES[cat]) {
+        opts = Object.keys(SUBCATEGORIES[cat]);
+    } else {
+        opts = Object.values(SUBCATEGORIES).flatMap(m => Object.keys(m)).filter((v,i,a) => a.indexOf(v)===i);
     }
+    sel.innerHTML = '<option value="">전체</option>' + opts.map(sc => `<option value="${sc}">${sc}</option>`).join('');
 }
 
 function doSearch() {
