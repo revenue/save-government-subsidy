@@ -77,6 +77,10 @@ class ProbabilityEngine {
 
         // Gate: 부적격 시 즉시 낮은 확률 반환
         if (eligibility.disqualified) {
+            // 지역 불일치 시 1% 강제
+            const regionFail = eligibility.checks.region && eligibility.checks.region.score === 0;
+            const gateProb = regionFail ? 1 : Math.round(Math.max(3, eligibility.score * 0.1) * 10) / 10;
+            const gateRange = regionFail ? { low: 1, high: 1 } : { low: 1, high: 5 };
             const confidence = this._confidence(subsidy, profile);
             const recommendations = this._recommend(subsidy, profile, eligibility, {score: 0, details: {}});
             return {
@@ -89,8 +93,8 @@ class ProbabilityEngine {
                 matching_score: 0,
                 competition_score: 0,
                 historical_score: 0,
-                final_probability: Math.round(Math.max(3, eligibility.score * 0.1) * 10) / 10,
-                probability_range: { low: 1, high: 5 },
+                final_probability: gateProb,
+                probability_range: gateRange,
                 confidence_level: confidence,
                 recommendations,
                 matching_details: {},
