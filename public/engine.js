@@ -259,13 +259,62 @@ class ProbabilityEngine {
             ['employee', this._chkEmployee(sub, prof), 10],
             ['business_age', this._chkAge(sub, prof), 10],
             ['special', this._chkSpecial(sub, prof), 15],
+            ['target_fit', this._chkTargetFit(sub, prof), 20],
         ];
         const totalW = checks.reduce((s, c) => s + c[2], 0);
         const wSum = checks.reduce((s, c) => s + c[1] * c[2], 0);
         let score = totalW > 0 ? wSum / totalW : 0;
-        const disqualified = checks.some(c => c[1] === 0 && c[2] >= 15 && ['region','industry','business_type'].includes(c[0]));
+        const disqualified = checks.some(c => c[1] === 0 && c[2] >= 15 && ['region','industry','business_type','target_fit'].includes(c[0]));
         if (disqualified) score = Math.min(score, 15);
         return { score, disqualified, checks: Object.fromEntries(checks.map(c => [c[0], {score: c[1], weight: c[2]}])) };
+    }
+
+    // 대상 적합도: 공고에 특정 자격/시설/경험이 요구되는데 사용자가 해당하지 않으면 감점
+    _chkTargetFit(sub, prof) {
+        const text = [sub.title, sub.target, sub.description, sub.detail_content]
+            .filter(Boolean).join(' ');
+        const userDesc = (prof.business_description || '').toLowerCase();
+        const userInd = (prof.industry_name || '').toLowerCase();
+        const userAll = (userDesc + ' ' + userInd).toLowerCase();
+
+        // 특수 자격 키워드: [키워드 그룹, 관련 업종/키워드]
+        // 공고에 키워드가 있으면 사용자도 관련 키워드를 가져야 함
+        const requirements = [
+            { keywords: ['스마트공장','스마트 공장','smart factory'], related: ['공장','제조','생산','스마트공장','factory','제조업'] },
+            { keywords: ['수출실적','수출 실적','수출기업'], related: ['수출','export','해외','무역'] },
+            { keywords: ['제조기업','제조 기업','제조업체','제조업 영위'], related: ['제조','생산','공장','가공','조립'] },
+            { keywords: ['농업인','농업경영체','영농'], related: ['농업','농산물','축산','임업','어업','영농'] },
+            { keywords: ['사회적경제조직','사회적기업','마을기업','협동조합 기본법'], related: ['사회적기업','협동조합','마을기업','자활기업'] },
+            { keywords: ['벤처기업 확인','벤처확인','벤처인증기업'], related: ['벤처','venture','벤처인증'] },
+            { keywords: ['특허 보유','지식재산 보유','IP 보유'], related: ['특허','지식재산','IP','patent'] },
+            { keywords: ['프랜차이즈 가맹','가맹사업'], related: ['프랜차이즈','가맹','체인','FC'] },
+            { keywords: ['연구소 보유','기업부설연구소','연구개발전담부서'], related: ['연구소','연구개발','R&D','연구원'] },
+            { keywords: ['의료기기','의약품','임상시험'], related: ['의료','의약','바이오','임상','제약'] },
+            { keywords: ['건설업 등록','건설업체'], related: ['건설','건축','시공','인테리어'] },
+            { keywords: ['물류센터','물류 시설','창고업'], related: ['물류','창고','운송','택배','배송'] },
+            { keywords: ['콘텐츠 제작','영상 제작','방송 프로그램'], related: ['콘텐츠','영상','방송','미디어','게임'] },
+            { keywords: ['관광사업자','관광업','여행업'], related: ['관광','여행','숙박','호텔','펜션'] },
+        ];
+
+        let hasRequirement = false;
+        let meetsRequirement = true;
+
+        for (const req of requirements) {
+            const found = req.keywords.some(kw => text.includes(kw));
+            if (found) {
+                hasRequirement = true;
+                const userHas = req.related.some(r => userAll.includes(r));
+                // 프로필 체크박스로도 충족 가능
+                if (req.keywords.some(k => k.includes('벤처')) && prof.is_venture_certified) continue;
+                if (req.keywords.some(k => k.includes('사회적')) && prof.is_social_enterprise) continue;
+                if (req.keywords.some(k => k.includes('수출')) && prof.has_export) continue;
+                if (!userHas) { meetsRequirement = false; break; }
+            }
+        }
+
+        if (hasRequirement && !meetsRequirement) return 0; // 부적격
+        if (hasRequirement && meetsRequirement) return 100; // 완벽 적합
+        return 50; // 특수 요건 없음 → 중립
     }
 
     _chkRegion(sub, prof) {
