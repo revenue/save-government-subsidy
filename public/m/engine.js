@@ -269,7 +269,7 @@ class ProbabilityEngine {
         return { score, disqualified, checks: Object.fromEntries(checks.map(c => [c[0], {score: c[1], weight: c[2]}])) };
     }
 
-    // 대상 적합도: 공고에 특정 자격/시설/경험이 요구되는데 사용자가 해당하지 않으면 감점
+    // 대상 적합도: 공고가 특정 대상/자격/시설을 요구하는데 사용자가 해당 안 되면 부적격
     _chkTargetFit(sub, prof) {
         const text = [sub.title, sub.target, sub.description, sub.detail_content]
             .filter(Boolean).join(' ');
@@ -277,44 +277,57 @@ class ProbabilityEngine {
         const userInd = (prof.industry_name || '').toLowerCase();
         const userAll = (userDesc + ' ' + userInd).toLowerCase();
 
-        // 특수 자격 키워드: [키워드 그룹, 관련 업종/키워드]
-        // 공고에 키워드가 있으면 사용자도 관련 키워드를 가져야 함
+        // ── A. 명시적 자격 요건 매칭 (키워드 → 관련 키워드/프로필 플래그) ──
         const requirements = [
-            { keywords: ['스마트공장','스마트 공장','smart factory'], related: ['공장','제조','생산','스마트공장','factory','제조업'] },
-            { keywords: ['수출실적','수출 실적','수출기업'], related: ['수출','export','해외','무역'] },
-            { keywords: ['제조기업','제조 기업','제조업체','제조업 영위'], related: ['제조','생산','공장','가공','조립'] },
-            { keywords: ['농업인','농업경영체','영농'], related: ['농업','농산물','축산','임업','어업','영농'] },
-            { keywords: ['사회적경제조직','사회적기업','마을기업','협동조합 기본법'], related: ['사회적기업','협동조합','마을기업','자활기업'] },
-            { keywords: ['벤처기업 확인','벤처확인','벤처인증기업'], related: ['벤처','venture','벤처인증'] },
-            { keywords: ['특허 보유','지식재산 보유','IP 보유'], related: ['특허','지식재산','IP','patent'] },
-            { keywords: ['프랜차이즈 가맹','가맹사업'], related: ['프랜차이즈','가맹','체인','FC'] },
-            { keywords: ['연구소 보유','기업부설연구소','연구개발전담부서'], related: ['연구소','연구개발','R&D','연구원'] },
-            { keywords: ['의료기기','의약품','임상시험'], related: ['의료','의약','바이오','임상','제약'] },
-            { keywords: ['건설업 등록','건설업체'], related: ['건설','건축','시공','인테리어'] },
+            // 시설/인프라 요건
+            { keywords: ['스마트공장','스마트 공장'], related: ['공장','제조','생산','스마트공장','제조업'] },
             { keywords: ['물류센터','물류 시설','창고업'], related: ['물류','창고','운송','택배','배송'] },
-            { keywords: ['콘텐츠 제작','영상 제작','방송 프로그램'], related: ['콘텐츠','영상','방송','미디어','게임'] },
-            { keywords: ['관광사업자','관광업','여행업'], related: ['관광','여행','숙박','호텔','펜션'] },
+            { keywords: ['연구소 보유','기업부설연구소','연구개발전담부서'], related: ['연구소','연구개발','R&D','연구원'] },
+            // 업종 한정
+            { keywords: ['제조기업','제조 기업','제조업체','제조업 영위'], related: ['제조','생산','공장','가공','조립','제조업'] },
+            { keywords: ['농업인','농업경영체','영농','농어업인'], related: ['농업','농산물','축산','임업','어업','영농','농림'] },
+            { keywords: ['건설업 등록','건설업체','건설사업자'], related: ['건설','건축','시공','인테리어'] },
+            { keywords: ['의료기기','의약품','임상시험','제약회사'], related: ['의료','의약','바이오','임상','제약','헬스케어'] },
+            { keywords: ['관광사업자','관광업','여행업','관광진흥법'], related: ['관광','여행','숙박','호텔','펜션','관광업'] },
+            { keywords: ['콘텐츠 제작','영상 제작','방송 프로그램','방송사업자'], related: ['콘텐츠','영상','방송','미디어','게임','엔터'] },
+            { keywords: ['프랜차이즈 가맹','가맹사업','가맹본부'], related: ['프랜차이즈','가맹','체인','FC'] },
+            // 인증/자격 요건
+            { keywords: ['수출실적','수출 실적','수출기업','수출 기업'], related: ['수출','export','해외','무역'], flag: 'has_export' },
+            { keywords: ['벤처기업 확인','벤처확인','벤처인증기업','벤처기업확인서'], related: ['벤처','venture'], flag: 'is_venture_certified' },
+            { keywords: ['이노비즈 인증','이노비즈기업'], related: ['이노비즈','innobiz'], flag: 'is_innobiz' },
+            { keywords: ['특허 보유','지식재산 보유','IP 보유','특허권자'], related: ['특허','지식재산','IP','patent'] },
+            // 대상자 한정
+            { keywords: ['장애인 표준사업장','장애인표준사업장'], related: ['장애인','표준사업장','장애인기업'], flag: 'is_disabled_owned' },
+            { keywords: ['장애인기업','장애인 기업'], related: ['장애인','장애인기업'], flag: 'is_disabled_owned' },
+            { keywords: ['여성기업','여성 기업','여성기업확인서'], related: ['여성기업','여성'], flag: 'is_female_owned' },
+            { keywords: ['사회적경제조직','사회적기업','마을기업','협동조합 기본법','자활기업'], related: ['사회적기업','협동조합','마을기업','자활기업'], flag: 'is_social_enterprise' },
+            { keywords: ['청년창업','청년 창업','청년기업','청년 대표'], related: ['청년'], check: () => prof.representative_age && prof.representative_age <= 39 },
+            { keywords: ['시니어 창업','시니어창업','장년 창업'], related: ['시니어','장년'], check: () => prof.representative_age && prof.representative_age >= 50 },
         ];
 
-        let hasRequirement = false;
-        let meetsRequirement = true;
+        let failCount = 0;
+        let matchCount = 0;
+        let checkCount = 0;
 
         for (const req of requirements) {
             const found = req.keywords.some(kw => text.includes(kw));
-            if (found) {
-                hasRequirement = true;
-                const userHas = req.related.some(r => userAll.includes(r));
-                // 프로필 체크박스로도 충족 가능
-                if (req.keywords.some(k => k.includes('벤처')) && prof.is_venture_certified) continue;
-                if (req.keywords.some(k => k.includes('사회적')) && prof.is_social_enterprise) continue;
-                if (req.keywords.some(k => k.includes('수출')) && prof.has_export) continue;
-                if (!userHas) { meetsRequirement = false; break; }
-            }
+            if (!found) continue;
+            checkCount++;
+
+            // 프로필 플래그 체크
+            if (req.flag && prof[req.flag]) { matchCount++; continue; }
+            // 커스텀 체크 함수
+            if (req.check && req.check()) { matchCount++; continue; }
+            // 텍스트 매칭
+            if (req.related.some(r => userAll.includes(r))) { matchCount++; continue; }
+
+            failCount++;
         }
 
-        if (hasRequirement && !meetsRequirement) return 0; // 부적격
-        if (hasRequirement && meetsRequirement) return 100; // 완벽 적합
-        return 50; // 특수 요건 없음 → 중립
+        if (checkCount === 0) return 50; // 특수 요건 없음 → 중립
+        if (failCount > 0) return 0;     // 하나라도 불일치 → 부적격
+        return 100;                       // 모든 요건 충족
+
     }
 
     _chkRegion(sub, prof) {
