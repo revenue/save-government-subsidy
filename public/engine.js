@@ -351,6 +351,7 @@ class ProbabilityEngine {
             // 대상자 한정
             { keywords: ['장애인 표준사업장','장애인표준사업장'], related: ['장애인','표준사업장','장애인기업'], flag: 'is_disabled_owned' },
             { keywords: ['장애인기업','장애인 기업'], related: ['장애인','장애인기업'], flag: 'is_disabled_owned' },
+            { keywords: ['장애인고용','장애인 고용','장애인근로자'], related: ['장애인','장애인고용'], flag: 'is_disabled_owned' },
             { keywords: ['여성기업','여성 기업','여성기업확인서'], related: ['여성기업','여성'], flag: 'is_female_owned' },
             { keywords: ['사회적경제조직','사회적기업','마을기업','협동조합 기본법','자활기업'], related: ['사회적기업','협동조합','마을기업','자활기업'], flag: 'is_social_enterprise' },
             { keywords: ['청년창업','청년 창업','청년기업','청년 대표'], related: ['청년'], check: () => prof.representative_age && prof.representative_age <= 39 },
