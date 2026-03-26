@@ -136,6 +136,47 @@ function classifySubcategory(subsidy) {
     return bestMatch;
 }
 
+// 공고에서 지원금 유무 및 유형 추출
+function extractSupportAmount(subsidy) {
+    const text = [subsidy.title, subsidy.description, subsidy.target, subsidy.support_amount, subsidy.detail_content]
+        .filter(Boolean).join(' ');
+
+    // 금액 패턴 추출 (예: "최대 3억원", "1,000만원", "5백만원")
+    const amountMatch = text.match(/(?:최대\s*)?([0-9,]+(?:\.[0-9]+)?)\s*(억원|억|백만원|천만원|만원|원)/);
+    let amountText = '';
+    if (amountMatch) {
+        amountText = amountMatch[0].replace(/\s+/g, '');
+    }
+
+    // 지원금 유형 판별
+    const types = [
+        { type: '융자', keywords: ['융자','대출','정책자금','운전자금','시설자금'] },
+        { type: '바우처', keywords: ['바우처','voucher'] },
+        { type: '보조금', keywords: ['보조금','보조사업','지원금','출연금'] },
+        { type: '보증', keywords: ['보증','보증서','보증료','이차보전'] },
+        { type: '장려금', keywords: ['장려금','포상금','보상금','인센티브'] },
+        { type: '인건비', keywords: ['인건비','급여','임금','인력지원금'] },
+        { type: '임차료', keywords: ['임차료','임대료','사무실','공간지원'] },
+        { type: '감면', keywords: ['감면','면제','세제혜택','세액공제','조세지원'] },
+    ];
+
+    let supportType = '';
+    for (const t of types) {
+        if (t.keywords.some(kw => text.includes(kw))) { supportType = t.type; break; }
+    }
+
+    // 지원금 유무 판별
+    const hasSupport = !!(amountText || supportType);
+
+    // 표시 텍스트 생성
+    let displayText = '';
+    if (supportType && amountText) displayText = supportType + ' ' + amountText;
+    else if (supportType) displayText = supportType;
+    else if (amountText) displayText = amountText;
+
+    return { hasSupport, supportType, amountText, displayText };
+}
+
 // 사업장 설명에서 주요 키워드 추출
 function extractBusinessKeywords(description) {
     if (!description || description.length < 2) return [];
@@ -198,6 +239,7 @@ class ProbabilityEngine {
                 recommendations,
                 matching_details: {},
                 subcategory: classifySubcategory(subsidy),
+            support: extractSupportAmount(subsidy),
                 disqualified: true,
             };
         }
@@ -225,6 +267,7 @@ class ProbabilityEngine {
             recommendations,
             matching_details: matching.details || {},
             subcategory: classifySubcategory(subsidy),
+            support: extractSupportAmount(subsidy),
             disqualified: false,
         };
     }
@@ -233,7 +276,16 @@ class ProbabilityEngine {
         return subsidies
             .map(s => { try { return this.calculate(s, profile); } catch(e) { return null; } })
             .filter(r => r && r.final_probability >= minProb)
-            .sort((a, b) => b.final_probability - a.final_probability);
+            .sort((a, b) => {
+                // 동일 확률 시 지원금 있는 공고 우선
+                const diff = b.final_probability - a.final_probability;
+                if (Math.abs(diff) < 0.5) {
+                    const aHas = a.support && a.support.hasSupport ? 1 : 0;
+                    const bHas = b.support && b.support.hasSupport ? 1 : 0;
+                    return bHas - aHas;
+                }
+                return diff;
+            });
     }
 
     // === 데이터 풍부도 평가 ===

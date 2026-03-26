@@ -640,8 +640,9 @@ function renderMatchingUI(profile) {
                 <div style="font-size:14px;font-weight:700;color:var(--heading);line-height:1.4;margin-bottom:6px;padding-right:32px;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;">${esc(r.subsidy_title)}</div>
                 <div style="font-size:12px;color:var(--text-secondary);margin-bottom:4px;"><i class="lucide-building-2" style="font-size:12px;vertical-align:-1px;"></i> ${esc(r.organization)}</div>
                 <div style="font-size:10px;color:var(--primary);margin-bottom:4px;">${esc(r.category||'')}${r.subcategory && r.subcategory !== '기타' ? ' > '+esc(r.subcategory) : ''}</div>
-                <div style="display:flex;align-items:center;gap:8px;">
+                <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
                     <span class="tag ${ddayCls}">${dday}</span>
+                    ${r.support && r.support.hasSupport ? '<span style="font-size:10px;background:#f0fdf4;color:#16a34a;padding:2px 6px;border-radius:4px;font-weight:600;">'+esc(r.support.displayText)+'</span>' : ''}
                     <div class="match-prob ${level}" style="min-width:auto;min-height:auto;border-radius:8px;padding:4px 10px;font-size:14px;">
                         ${r.final_probability.toFixed(0)}%
                         ${r.probability_range ? '<div class="prob-range">'+r.probability_range.low.toFixed(0)+'~'+r.probability_range.high.toFixed(0)+'%</div>' : ''}
@@ -671,6 +672,7 @@ function renderMatchingUI(profile) {
                     <div class="subsidy-item-meta" style="display:flex;align-items:center;gap:4px;flex-wrap:wrap;">
                         ${esc(r.organization)} · <span class="tag ${ddayCls}" style="font-size:9px;padding:2px 6px;">${dday}</span>
                         ${r.subcategory && r.subcategory !== '기타' ? '<span style="background:var(--primary-bg);color:var(--primary);padding:1px 5px;border-radius:3px;font-size:9px;font-weight:600;">'+esc(r.subcategory)+'</span>' : ''}
+                        ${r.support && r.support.hasSupport ? '<span style="background:#f0fdf4;color:#16a34a;padding:1px 5px;border-radius:3px;font-size:9px;font-weight:600;">'+esc(r.support.displayText)+'</span>' : ''}
                         ${kws.map(k => '<span style="background:var(--bg);padding:1px 5px;border-radius:3px;font-size:10px;color:var(--text-tertiary);">' + esc(k) + '</span>').join('')}
                     </div>
                 </div>
@@ -778,6 +780,10 @@ function renderList() {
                 <option value="always" ${listFilterStatus==='always'?'selected':''}>상시</option>
                 <option value="closed" ${listFilterStatus==='closed'?'selected':''}>마감</option>
             </select>
+            <select id="listFilterSupport" style="font-size:12px;padding:6px 10px;border:1.5px solid var(--border);border-radius:8px;background:#fff;color:var(--heading);font-weight:600;min-width:max-content;">
+                <option value="">지원금 전체</option>
+                <option value="has">지원금 있음</option>
+            </select>
         </div>
         <div style="display:flex;gap:6px;margin-bottom:10px;overflow-x:auto;-webkit-overflow-scrolling:touch;padding-bottom:2px;">
             <select id="listFilterCat" style="font-size:12px;padding:6px 10px;border:1.5px solid var(--border);border-radius:8px;background:#fff;color:var(--heading);font-weight:600;min-width:max-content;">
@@ -808,6 +814,8 @@ function renderList() {
         listFilterSubcat = subcatEl ? subcatEl.value : '';
         const regionEl = document.getElementById('listFilterRegion');
         listFilterRegion = regionEl ? regionEl.value : '';
+        const supportEl = document.getElementById('listFilterSupport');
+        const listFilterSupport = supportEl ? supportEl.value : '';
         const q = listQuery.toLowerCase();
 
         // 분야 변경 시 하위 카테고리 select 동적 업데이트
@@ -838,6 +846,8 @@ function renderList() {
                 if (listFilterStatus === 'always' && st.text !== '상시') return false;
                 if (listFilterStatus === 'closed' && st.text !== '마감') return false;
             }
+            // Support amount filter
+            if (listFilterSupport === 'has' && !extractSupportAmount(s).hasSupport) return false;
             return true;
         });
 
@@ -878,7 +888,9 @@ function renderList() {
             const probHtml = prob !== undefined ? '<span style="font-size:11px;font-weight:700;color:#1d4ed8;background:#dbeafe;padding:2px 6px;border-radius:4px;">'+prob.toFixed(0)+'% '+rangeStr+'</span>' : '';
             const subcat = classifySubcategory(s);
             const subcatTag = subcat !== '기타' ? ' <span style="font-size:9px;background:var(--primary-bg);color:var(--primary);padding:1px 5px;border-radius:3px;">'+esc(subcat)+'</span>' : '';
-            res += '<div class="subsidy-item" onclick="showDetail('+s.id+')"><div class="subsidy-item-title">'+esc(s.title)+'</div><div class="subsidy-item-meta">'+esc(s.organization)+' · <span class="tag '+st.cls+'">'+st.text+'</span>'+subcatTag+' '+probHtml+'</div></div>';
+            const sup = extractSupportAmount(s);
+            const supTag = sup.hasSupport ? ' <span style="font-size:9px;background:#f0fdf4;color:#16a34a;padding:1px 5px;border-radius:3px;font-weight:600;">'+esc(sup.displayText)+'</span>' : '';
+            res += '<div class="subsidy-item" onclick="showDetail('+s.id+')"><div class="subsidy-item-title">'+esc(s.title)+'</div><div class="subsidy-item-meta">'+esc(s.organization)+' · <span class="tag '+st.cls+'">'+st.text+'</span>'+subcatTag+supTag+' '+probHtml+'</div></div>';
         });
         if (!res) res = '<div class="empty-state"><i class="lucide-search"></i><p>검색 결과가 없습니다</p></div>';
         document.getElementById('listResults').innerHTML = res;
@@ -891,6 +903,8 @@ function renderList() {
     const subcatEl2 = document.getElementById('listFilterSubcat');
     if (subcatEl2) subcatEl2.addEventListener('change', applyListFilter);
     document.getElementById('listFilterOrg').addEventListener('change', applyListFilter);
+    const supportFilterEl = document.getElementById('listFilterSupport');
+    if (supportFilterEl) supportFilterEl.addEventListener('change', applyListFilter);
     const regionEl = document.getElementById('listFilterRegion');
     if (regionEl) regionEl.addEventListener('change', applyListFilter);
 
