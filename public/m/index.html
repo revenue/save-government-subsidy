@@ -583,7 +583,13 @@ function renderMatching() {
         el.innerHTML = '<div style="text-align:center;padding:60px 20px;"><div class="spinner"></div><p style="font-size:13px;color:var(--text-secondary);margin-top:12px;">선정확률 분석 중...</p></div>';
         setTimeout(() => {
             const engine = new ProbabilityEngine(history);
-            const target = subsidies.filter(s => !s.apply_end_date || s.apply_end_date >= today);
+            const cy = new Date().getFullYear().toString();
+            const target = subsidies.filter(s => {
+                if (s.apply_end_date) return s.apply_end_date >= today;
+                const ym = (s.title||'').match(/(20\d{2})년/);
+                if (ym && ym[1] !== cy) return false;
+                return true;
+            });
             matchResults = engine.calculateAll(target, profile, 5);
             renderMatchingUI(profile);
         }, 200);
@@ -606,8 +612,16 @@ function getDday(endDate) {
 
 function renderMatchingUI(profile) {
     const el = document.getElementById('page-matching');
-    // 마감된 공고 제외
-    const filtered = matchResults.filter(r => !r.apply_end_date || r.apply_end_date >= today);
+    // 마감 공고 제외 + 상시 공고 중 올해 아닌 항목 제외
+    const currentYear = new Date().getFullYear().toString();
+    const filtered = matchResults.filter(r => {
+        // 마감일이 있으면 마감 여부 체크
+        if (r.apply_end_date) return r.apply_end_date >= today;
+        // 상시(마감일 없음): 타이틀에서 연도 추출, 올해가 아니면 제외
+        const yearMatch = (r.subsidy_title || '').match(/(20\d{2})년/);
+        if (yearMatch && yearMatch[1] !== currentYear) return false;
+        return true;
+    });
     let displayList = filtered;
 
     // Search bar
