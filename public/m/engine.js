@@ -827,7 +827,23 @@ class ProbabilityEngine {
         const priorOdds = prior / (1 - prior);
         const combinedLR = lrElig * lrMatch * lrHist;
         const posteriorOdds = priorOdds * combinedLR;
-        const posterior = posteriorOdds / (1 + posteriorOdds);
+        let posterior = posteriorOdds / (1 + posteriorOdds);
+
+        // --- 공고 데이터 빈도 페널티 ---
+        // target, description, detail_content가 모두 비어있으면
+        // 자격요건/지원내용 판단이 불가능하므로 확률을 보수적으로 조정
+        const hasTarget = !!(sub.target && sub.target.trim());
+        const hasDesc = !!(sub.description && sub.description.trim());
+        const hasDetail = !!(sub.detail_content && sub.detail_content.trim());
+        const hasHwp = !!(sub.hwp_content && sub.hwp_content.trim());
+        const contentCount = [hasTarget, hasDesc, hasDetail, hasHwp].filter(Boolean).length;
+        if (contentCount === 0) {
+            // 데이터 매우 부족: Prior 쪽으로 60% 수축 (확률 과대평가 방지)
+            posterior = posterior * 0.4 + prior * 0.6;
+        } else if (contentCount === 1) {
+            // 데이터 부족: Prior 쪽으로 30% 수축
+            posterior = posterior * 0.7 + prior * 0.3;
+        }
 
         const finalProb = Math.max(3, Math.min(95, posterior * 100));
 
