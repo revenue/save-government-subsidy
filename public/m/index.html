@@ -929,165 +929,65 @@ function renderList() {
 function renderStats() {
     const profile = loadProfile();
     const el = document.getElementById('page-stats');
-
-    const catCounts = {}, orgCounts = {}, srcCounts = {};
+    const catCounts = {}, orgCounts = {};
     let deadlineSubs = [];
-    const srcNames = { bizinfo:'기업마당', mss:'중소벤처기업부', kstartup:'K-스타트업', smes:'중소벤처24' };
     subsidies.forEach(s => {
-        catCounts[s.category] = (catCounts[s.category] || 0) + 1;
-        orgCounts[s.organization || '기타'] = (orgCounts[s.organization || '기타'] || 0) + 1;
-        srcCounts[s.source || 'unknown'] = (srcCounts[s.source || 'unknown'] || 0) + 1;
+        catCounts[s.category] = (catCounts[s.category]||0)+1;
+        orgCounts[s.organization||'기타'] = (orgCounts[s.organization||'기타']||0)+1;
         if (s.apply_end_date) {
-            const diff = Math.ceil((new Date(s.apply_end_date) - new Date()) / 86400000);
+            const diff = Math.ceil((new Date(s.apply_end_date)-new Date())/86400000);
             if (diff >= 0 && diff <= 30) deadlineSubs.push({...s, daysLeft: diff});
         }
     });
-
-    const cats = Object.entries(catCounts).sort((a, b) => b[1] - a[1]);
-    const orgs = Object.entries(orgCounts).sort((a, b) => b[1] - a[1]).slice(0, 10);
-    const srcs = Object.entries(srcCounts).sort((a, b) => b[1] - a[1]);
+    const cats = Object.entries(catCounts).sort((a,b)=>b[1]-a[1]);
+    const orgs = Object.entries(orgCounts).sort((a,b)=>b[1]-a[1]).slice(0,10);
     const totalSub = subsidies.length;
-    const maxCat = cats[0] ? cats[0][1] : 1;
-    const maxOrg = orgs[0] ? orgs[0][1] : 1;
+    const maxOrg = orgs[0]?orgs[0][1]:1;
+    deadlineSubs.sort((a,b)=>a.daysLeft-b.daysLeft);
+    const hasMatch = matchResults.length > 0;
+    const openCount = subsidies.filter(s=>!s.apply_end_date||s.apply_end_date>=today).length;
+    const urgentCount = deadlineSubs.filter(s=>s.daysLeft<=7).length;
+    const supportCount = subsidies.filter(s=>extractSupportAmount(s).hasSupport).length;
+    const subcatCnts = {};
+    subsidies.forEach(s=>{const k=s.category+' > '+classifySubcategory(s);subcatCnts[k]=(subcatCnts[k]||0)+1;});
+    const topSubcats = Object.entries(subcatCnts).sort((a,b)=>b[1]-a[1]).slice(0,10);
 
-    // HHI
-    const hhi = cats.reduce((s, [, n]) => s + Math.pow(n / totalSub * 100, 2), 0);
-    const hhiLabel = hhi > 2500 ? '고집중' : hhi > 1500 ? '중집중' : '분산';
-    // Shannon
-    const shannon = -Object.values(orgCounts).reduce((s, n) => { const p=n/totalSub; return s+(p>0?p*Math.log2(p):0); }, 0);
-    const maxEntropy = Math.log2(Object.keys(orgCounts).length);
-    const evenness = maxEntropy > 0 ? (shannon / maxEntropy * 100).toFixed(1) : 0;
-    // CR4
-    const cr4 = orgs.slice(0,4).reduce((s,[,n])=>s+n,0) / totalSub * 100;
+    // ── 탭 헤더 ──
+    let html = '<div style="display:flex;border-bottom:2px solid var(--border);margin-bottom:16px;">' +
+        '<button onclick="switchStatsTab(\'my\')" id="statsTabMy" style="flex:1;padding:10px 0;font-size:13px;font-weight:700;border:none;background:none;cursor:pointer;margin-bottom:-2px;color:' + (hasMatch?'var(--primary)':'var(--text-tertiary)') + ';border-bottom:' + (hasMatch?'2px solid var(--primary)':'none') + ';' + (hasMatch?'':'opacity:0.5;') + '"><i class="lucide-sparkles" style="font-size:14px;vertical-align:-2px;"></i> 나의 맞춤분석</button>' +
+        '<button onclick="switchStatsTab(\'all\')" id="statsTabAll" style="flex:1;padding:10px 0;font-size:13px;font-weight:700;border:none;background:none;cursor:pointer;margin-bottom:-2px;color:' + (hasMatch?'var(--text-secondary)':'var(--primary)') + ';border-bottom:' + (hasMatch?'none':'2px solid var(--primary)') + '"><i class="lucide-bar-chart-3" style="font-size:14px;vertical-align:-2px;"></i> 종합 통계</button>' +
+        '</div>';
 
-    deadlineSubs.sort((a, b) => a.daysLeft - b.daysLeft);
-
-    // 접수중 / 마감임박 계산
-    const openCount = subsidies.filter(s => {
-        if (!s.apply_end_date) return true;
-        return s.apply_end_date >= today;
-    }).length;
-    const urgentCount = deadlineSubs.filter(s => s.daysLeft <= 7).length;
-
-    // 지원금 있는 공고 수
-    const supportCount = subsidies.filter(s => extractSupportAmount(s).hasSupport).length;
-
-    // 하위카테고리 집계
-    const subcatCounts = {};
-    subsidies.forEach(s => {
-        const sc = classifySubcategory(s);
-        const key = s.category + ' > ' + sc;
-        subcatCounts[key] = (subcatCounts[key] || 0) + 1;
-    });
-    const topSubcats = Object.entries(subcatCounts).sort((a,b) => b[1] - a[1]).slice(0, 10);
-
-    deadlineSubs.sort((a, b) => a.daysLeft - b.daysLeft);
-
-    let html = `
-        <div class="section-title"><i class="lucide-bar-chart-3"></i> 종합 통계</div>
-
-        <div style="display:grid;grid-template-columns:repeat(2,1fr);gap:8px;margin-bottom:12px;">
-            <div class="stat-card"><div class="stat-value">${totalSub.toLocaleString()}<span class="stat-suffix">건</span></div><div class="stat-label">전체 지원사업</div></div>
-            <div class="stat-card"><div class="stat-value">${openCount.toLocaleString()}<span class="stat-suffix">건</span></div><div class="stat-label">접수중</div></div>
-            <div class="stat-card"><div class="stat-value" style="color:var(--error);">${urgentCount}<span class="stat-suffix">건</span></div><div class="stat-label">7일 내 마감</div></div>
-            <div class="stat-card"><div class="stat-value" style="color:var(--success);">${supportCount}<span class="stat-suffix">건</span></div><div class="stat-label">지원금 있음</div></div>
-        </div>
-        <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:16px;">
-            <div class="stat-card"><div class="stat-value">${cats.length}</div><div class="stat-label">분야</div></div>
-            <div class="stat-card"><div class="stat-value">${Object.keys(orgCounts).length}</div><div class="stat-label">기관</div></div>
-            <div class="stat-card"><div class="stat-value">${Object.keys(srcCounts).length}</div><div class="stat-label">출처</div></div>
-        </div>
-
-        <div class="chart-container">
-            <div class="chart-title"><i class="lucide-pie-chart"></i> 분야별 구성</div>
-            ${cats.map(([c, n], i) => {
-                const pct = (n / totalSub * 100).toFixed(1);
-                const blues = ['#1e3a5f','#1d4ed8','#2563eb','#3b82f6','#60a5fa','#93bbfd','#bfdbfe','#dbeafe','#eff6ff'];
-                return '<div style="display:flex;align-items:center;gap:8px;margin-bottom:6px;"><span style="min-width:50px;font-size:12px;font-weight:600;color:var(--heading);">'+esc(c)+'</span><div style="flex:1;height:10px;background:var(--border-light);border-radius:5px;overflow:hidden;"><div style="height:100%;width:'+pct+'%;background:'+blues[Math.min(i,8)]+';border-radius:5px;transition:width 0.5s;"></div></div><span style="min-width:55px;font-size:11px;color:var(--text-secondary);text-align:right;">'+n+'건 ('+pct+'%)</span></div>';
-            }).join('')}
-        </div>
-
-        <div class="chart-container">
-            <div class="chart-title"><i class="lucide-layers"></i> 지원 유형 Top 10</div>
-            ${topSubcats.map(([k, n], i) => {
-                const pct = (n / (topSubcats[0][1]||1) * 100).toFixed(0);
-                const blues = ['#1e3a5f','#1d4ed8','#2563eb','#3b82f6','#60a5fa','#93bbfd','#bfdbfe','#dbeafe','#eff6ff','#f0f7ff'];
-                return '<div style="display:flex;align-items:center;gap:6px;margin-bottom:5px;"><span style="min-width:95px;font-size:10px;color:var(--text-secondary);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">'+esc(k)+'</span><div style="flex:1;height:8px;background:var(--border-light);border-radius:4px;overflow:hidden;"><div style="height:100%;width:'+pct+'%;background:'+blues[Math.min(i,9)]+';border-radius:4px;"></div></div><span style="min-width:35px;font-size:10px;font-weight:600;text-align:right;">'+n+'건</span></div>';
-            }).join('')}
-        </div>
-
-        <div class="chart-container">
-            <div class="chart-title"><i class="lucide-building-2"></i> 주요 기관 Top 10</div>
-            ${orgs.map(([o, n], i) => {
-                const pct = (n / maxOrg * 100).toFixed(0);
-                const blues = ['#1e3a5f','#1d4ed8','#2563eb','#3b82f6','#60a5fa','#93bbfd','#bfdbfe','#dbeafe','#eff6ff','#f0f7ff'];
-                return '<div style="display:flex;align-items:center;gap:6px;margin-bottom:5px;"><span style="min-width:70px;font-size:11px;color:var(--text-secondary);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">'+esc(o).substring(0,10)+'</span><div style="flex:1;height:8px;background:var(--border-light);border-radius:4px;overflow:hidden;"><div style="height:100%;width:'+pct+'%;background:'+blues[Math.min(i,9)]+';border-radius:4px;"></div></div><span style="min-width:35px;font-size:11px;font-weight:600;text-align:right;">'+n+'건</span></div>';
-            }).join('')}
-        </div>
-
-        <div class="chart-container">
-            <div class="chart-title"><i class="lucide-clock"></i> 마감 임박</div>
-            ${deadlineSubs.length ? deadlineSubs.slice(0, 6).map(s => {
-                const urgColor = s.daysLeft <= 3 ? 'var(--error)' : s.daysLeft <= 7 ? 'var(--warning)' : 'var(--primary)';
-                return '<div class="subsidy-item" onclick="showSubsidyDetail(\''+s.id+'\')" style="display:flex;align-items:center;gap:10px;"><span style="font-size:13px;font-weight:800;color:'+urgColor+';min-width:36px;">D-'+s.daysLeft+'</span><div style="flex:1;min-width:0;"><div class="subsidy-item-title">'+esc(s.title).slice(0,40)+'</div><div class="subsidy-item-meta">'+esc(s.organization)+'</div></div></div>';
-            }).join('') : '<div style="text-align:center;color:var(--text-tertiary);padding:16px;font-size:13px;">마감 임박 사업 없음</div>'}
-        </div>
-    `;
-
-    // ===== Personalized Stats from matchResults =====
-    if (matchResults.length > 0) {
+    // ── 나의 맞춤분석 탭 ──
+    html += '<div id="statsTabMyContent" style="' + (hasMatch?'':'display:none;') + '">';
+    if (hasMatch) {
         const mr = matchResults.slice(0, 100);
-        const probs = mr.map(r => r.final_probability);
+        const probs = mr.map(r=>r.final_probability);
         const avgProb = probs.reduce((a,b)=>a+b,0)/probs.length;
         const maxProb = Math.max(...probs);
         const minProb = Math.min(...probs);
         const high = probs.filter(p=>p>=70).length;
         const mid = probs.filter(p=>p>=40&&p<70).length;
         const low = probs.filter(p=>p<40).length;
-
-        // Category distribution in matches
-        const mCatCounts = {};
-        mr.forEach(r => { mCatCounts[r.category] = (mCatCounts[r.category]||0)+1; });
-        const mCats = Object.entries(mCatCounts).sort((a,b)=>b[1]-a[1]);
-
-        // Subcategory distribution in matches
-        const mSubcatCounts = {};
-        mr.forEach(r => {
-            const key = (r.category||'기타') + ' > ' + (r.subcategory||'기타');
-            mSubcatCounts[key] = (mSubcatCounts[key]||0)+1;
-        });
-        const mSubcats = Object.entries(mSubcatCounts).sort((a,b)=>b[1]-a[1]);
-
-        // Org distribution
-        const mOrgCounts = {};
-        mr.forEach(r => { mOrgCounts[r.organization] = (mOrgCounts[r.organization]||0)+1; });
-        const mOrgs = Object.entries(mOrgCounts).sort((a,b)=>b[1]-a[1]).slice(0,5);
-
-        // Score factor averages
+        const median = (probs.slice().sort((a,b)=>a-b)[Math.floor(probs.length/2)]||0);
+        const mCatCnts = {};
+        mr.forEach(r=>{mCatCnts[r.category]=(mCatCnts[r.category]||0)+1;});
+        const mCats = Object.entries(mCatCnts).sort((a,b)=>b[1]-a[1]);
+        const mSubcatCnts = {};
+        mr.forEach(r=>{const k=(r.category||'기타')+' > '+(r.subcategory||'기타');mSubcatCnts[k]=(mSubcatCnts[k]||0)+1;});
+        const mSubcats = Object.entries(mSubcatCnts).sort((a,b)=>b[1]-a[1]);
+        const mOrgCnts = {};
+        mr.forEach(r=>{mOrgCnts[r.organization]=(mOrgCnts[r.organization]||0)+1;});
+        const mOrgs = Object.entries(mOrgCnts).sort((a,b)=>b[1]-a[1]).slice(0,5);
         const avgElig = mr.reduce((s,r)=>s+r.eligibility_score,0)/mr.length;
         const avgMatch = mr.reduce((s,r)=>s+r.matching_score,0)/mr.length;
         const avgComp = mr.reduce((s,r)=>s+r.competition_score,0)/mr.length;
         const avgHist = mr.reduce((s,r)=>s+r.historical_score,0)/mr.length;
-
-        // Urgency for matched items
-        const matchUrgent = mr.filter(r => {
-            if (!r.apply_end_date) return false;
-            const d = Math.ceil((new Date(r.apply_end_date)-new Date())/86400000);
-            return d >= 0 && d <= 14;
-        }).length;
-
-        // Probability distribution buckets
-        const buckets = [0,0,0,0,0]; // 0-20, 20-40, 40-60, 60-80, 80-100
-        probs.forEach(p => { buckets[Math.min(4, Math.floor(p/20))]++; });
+        const buckets = [0,0,0,0,0];
+        probs.forEach(p=>{buckets[Math.min(4,Math.floor(p/20))]++;});
         const maxBucket = Math.max(...buckets, 1);
 
-        const median = (probs.slice().sort((a,b)=>a-b)[Math.floor(probs.length/2)]||0);
-
-        html += `
-        <div class="personalized-section">
-            <div style="font-size:14px;font-weight:800;color:var(--heading);margin-bottom:4px;display:flex;align-items:center;gap:6px;"><i class="lucide-sparkles" style="font-size:16px;color:#1d4ed8;"></i> 나의 맞춤 분석</div>
-            <p style="font-size:11px;color:var(--text-secondary);margin-bottom:14px;">매칭 결과 ${mr.length}건 기반</p>
-
+        html += `<p style="font-size:11px;color:var(--text-secondary);margin-bottom:14px;">매칭 결과 ${mr.length}건 기반 개인화 분석</p>
             <div style="display:grid;grid-template-columns:repeat(2,1fr);gap:8px;margin-bottom:12px;">
                 <div class="stat-card" style="background:rgba(255,255,255,0.8);"><div class="stat-value" style="color:#1d4ed8;">${avgProb.toFixed(0)}<span class="stat-suffix">%</span></div><div class="stat-label">평균 선정확률</div></div>
                 <div class="stat-card" style="background:rgba(255,255,255,0.8);"><div class="stat-value" style="color:#2563eb;">${median.toFixed(0)}<span class="stat-suffix">%</span></div><div class="stat-label">중앙값</div></div>
@@ -1097,7 +997,6 @@ function renderStats() {
                 <div class="stat-card" style="background:rgba(255,255,255,0.8);"><div class="stat-value" style="color:var(--warning);">${mid}</div><div class="stat-label">보통</div></div>
                 <div class="stat-card" style="background:rgba(255,255,255,0.8);"><div class="stat-value" style="color:var(--error);">${low}</div><div class="stat-label">낮음</div></div>
             </div>
-
             <div style="background:rgba(255,255,255,0.7);border-radius:var(--radius);padding:14px;margin-bottom:12px;">
                 <div style="font-size:12px;font-weight:700;color:var(--heading);margin-bottom:10px;"><i class="lucide-bar-chart" style="font-size:14px;color:var(--primary);vertical-align:-2px;"></i> 확률 분포</div>
                 <div style="display:flex;align-items:flex-end;gap:4px;height:80px;">
@@ -1107,192 +1006,83 @@ function renderStats() {
                         return '<div style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;height:100%;"><div style="font-size:9px;font-weight:700;color:'+colors[i]+';margin-bottom:2px;">'+buckets[i]+'</div><div style="width:100%;height:'+barH+'px;background:'+colors[i]+';border-radius:3px 3px 0 0;"></div><div style="font-size:8px;color:var(--text-tertiary);margin-top:3px;">'+label+'</div></div>';
                     }).join('')}
                 </div>
-                <div style="margin-top:8px;padding-top:8px;border-top:1px solid var(--border-light);display:flex;justify-content:space-between;font-size:10px;color:var(--text-secondary);">
-                    <span>최저 ${minProb.toFixed(0)}%</span><span>최고 ${maxProb.toFixed(0)}%</span>
-                </div>
+                <div style="margin-top:8px;padding-top:8px;border-top:1px solid var(--border-light);display:flex;justify-content:space-between;font-size:10px;color:var(--text-secondary);"><span>최저 ${minProb.toFixed(0)}%</span><span>최고 ${maxProb.toFixed(0)}%</span></div>
             </div>
-
             <div style="background:rgba(255,255,255,0.7);border-radius:var(--radius);padding:14px;margin-bottom:12px;">
                 <div style="font-size:12px;font-weight:700;color:var(--heading);margin-bottom:10px;"><i class="lucide-radar" style="font-size:14px;color:var(--primary);vertical-align:-2px;"></i> 점수 요인</div>
                 ${[['자격요건',avgElig,'#1e3a5f'],['매칭도',avgMatch,'#1d4ed8'],['선정률',avgComp,'#3b82f6'],['이력',avgHist,'#93bbfd']].map(([l,v,c]) =>
                     '<div style="display:flex;align-items:center;gap:6px;margin-bottom:6px;"><span style="min-width:45px;font-size:11px;color:var(--text-secondary);">'+l+'</span><div style="flex:1;height:8px;background:var(--border-light);border-radius:4px;overflow:hidden;"><div style="height:100%;width:'+v.toFixed(0)+'%;background:'+c+';border-radius:4px;"></div></div><span style="min-width:28px;font-size:11px;font-weight:700;text-align:right;">'+v.toFixed(0)+'</span></div>'
                 ).join('')}
             </div>
-
             <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px;">
                 <div style="background:rgba(255,255,255,0.7);border-radius:var(--radius);padding:12px;">
                     <div style="font-size:11px;font-weight:700;color:var(--heading);margin-bottom:8px;"><i class="lucide-pie-chart" style="font-size:12px;color:var(--primary);vertical-align:-1px;"></i> 분야</div>
-                    ${mCats.slice(0,4).map(([c,n],i) => {
-                        const pct = (n/mr.length*100).toFixed(0);
-                        return '<div style="display:flex;justify-content:space-between;font-size:10px;margin-bottom:3px;"><span style="color:var(--text-secondary);">'+esc(c)+'</span><span style="font-weight:600;">'+pct+'%</span></div>';
-                    }).join('')}
+                    ${mCats.slice(0,4).map(([c,n])=>'<div style="display:flex;justify-content:space-between;font-size:10px;margin-bottom:3px;"><span style="color:var(--text-secondary);">'+esc(c)+'</span><span style="font-weight:600;">'+(n/mr.length*100).toFixed(0)+'%</span></div>').join('')}
                 </div>
                 <div style="background:rgba(255,255,255,0.7);border-radius:var(--radius);padding:12px;">
                     <div style="font-size:11px;font-weight:700;color:var(--heading);margin-bottom:8px;"><i class="lucide-building-2" style="font-size:12px;color:var(--primary);vertical-align:-1px;"></i> 기관</div>
-                    ${mOrgs.slice(0,4).map(([o,n],i) => {
-                        return '<div style="display:flex;justify-content:space-between;font-size:10px;margin-bottom:3px;"><span style="color:var(--text-secondary);">'+esc(o).substring(0,8)+'</span><span style="font-weight:600;">'+n+'건</span></div>';
-                    }).join('')}
+                    ${mOrgs.slice(0,4).map(([o,n])=>'<div style="display:flex;justify-content:space-between;font-size:10px;margin-bottom:3px;"><span style="color:var(--text-secondary);">'+esc(o).substring(0,8)+'</span><span style="font-weight:600;">'+n+'건</span></div>').join('')}
                 </div>
             </div>
-
             <div style="background:rgba(255,255,255,0.7);border-radius:var(--radius);padding:12px;">
                 <div style="font-size:11px;font-weight:700;color:var(--heading);margin-bottom:8px;"><i class="lucide-layers" style="font-size:12px;color:var(--primary);vertical-align:-1px;"></i> 매칭 지원유형</div>
-                ${mSubcats.slice(0,6).map(([k,n],i) => {
-                    const pct = (n/mr.length*100).toFixed(0);
-                    const blues = ['#1e3a5f','#1d4ed8','#2563eb','#3b82f6','#60a5fa','#93bbfd'];
-                    return '<div style="display:flex;align-items:center;gap:6px;margin-bottom:4px;"><span style="min-width:80px;font-size:9px;color:var(--text-secondary);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">'+esc(k)+'</span><div style="flex:1;height:6px;background:var(--border-light);border-radius:3px;overflow:hidden;"><div style="height:100%;width:'+pct+'%;background:'+blues[i]+';border-radius:3px;"></div></div><span style="font-size:9px;font-weight:600;min-width:25px;text-align:right;">'+n+'건</span></div>';
-                }).join('')}
-            </div>
-        </div>`;
+                ${mSubcats.slice(0,6).map(([k,n],i)=>{const blues=['#1e3a5f','#1d4ed8','#2563eb','#3b82f6','#60a5fa','#93bbfd'];return '<div style="display:flex;align-items:center;gap:6px;margin-bottom:4px;"><span style="min-width:80px;font-size:9px;color:var(--text-secondary);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">'+esc(k)+'</span><div style="flex:1;height:6px;background:var(--border-light);border-radius:3px;overflow:hidden;"><div style="height:100%;width:'+(n/mr.length*100).toFixed(0)+'%;background:'+blues[i]+';border-radius:3px;"></div></div><span style="font-size:9px;font-weight:600;min-width:25px;text-align:right;">'+n+'건</span></div>';}).join('')}
+            </div>`;
+    } else {
+        html += '<div style="text-align:center;padding:40px 20px;color:var(--text-tertiary);"><i class="lucide-sparkles" style="font-size:32px;display:block;margin-bottom:12px;opacity:0.3;"></i><p style="font-size:13px;">프로필을 설정하면<br>맞춤 분석을 확인할 수 있습니다</p><button onclick="navigateTo(\'settings\')" style="margin-top:12px;padding:8px 20px;border-radius:8px;border:1.5px solid var(--primary);background:none;color:var(--primary);font-size:12px;font-weight:600;cursor:pointer;">프로필 설정하기</button></div>';
     }
+    html += '</div>';
+
+    // ── 종합 통계 탭 ──
+    html += '<div id="statsTabAllContent" style="' + (hasMatch?'display:none;':'') + '">';
+    html += `
+        <div style="display:grid;grid-template-columns:repeat(2,1fr);gap:8px;margin-bottom:12px;">
+            <div class="stat-card"><div class="stat-value">${totalSub.toLocaleString()}<span class="stat-suffix">건</span></div><div class="stat-label">전체 지원사업</div></div>
+            <div class="stat-card"><div class="stat-value">${openCount.toLocaleString()}<span class="stat-suffix">건</span></div><div class="stat-label">접수중</div></div>
+            <div class="stat-card"><div class="stat-value" style="color:var(--error);">${urgentCount}<span class="stat-suffix">건</span></div><div class="stat-label">7일 내 마감</div></div>
+            <div class="stat-card"><div class="stat-value" style="color:var(--success);">${supportCount}<span class="stat-suffix">건</span></div><div class="stat-label">지원금 있음</div></div>
+        </div>
+        <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:16px;">
+            <div class="stat-card"><div class="stat-value">${cats.length}</div><div class="stat-label">분야</div></div>
+            <div class="stat-card"><div class="stat-value">${Object.keys(orgCounts).length}</div><div class="stat-label">기관</div></div>
+            <div class="stat-card"><div class="stat-value">${supportCount}</div><div class="stat-label">지원금</div></div>
+        </div>
+        <div class="chart-container">
+            <div class="chart-title"><i class="lucide-pie-chart"></i> 분야별 구성</div>
+            ${cats.map(([c,n],i)=>{const pct=(n/totalSub*100).toFixed(1);const blues=['#1e3a5f','#1d4ed8','#2563eb','#3b82f6','#60a5fa','#93bbfd','#bfdbfe','#dbeafe','#eff6ff'];return '<div style="display:flex;align-items:center;gap:8px;margin-bottom:6px;"><span style="min-width:50px;font-size:12px;font-weight:600;color:var(--heading);">'+esc(c)+'</span><div style="flex:1;height:10px;background:var(--border-light);border-radius:5px;overflow:hidden;"><div style="height:100%;width:'+pct+'%;background:'+blues[Math.min(i,8)]+';border-radius:5px;"></div></div><span style="min-width:55px;font-size:11px;color:var(--text-secondary);text-align:right;">'+n+'건 ('+pct+'%)</span></div>';}).join('')}
+        </div>
+        <div class="chart-container">
+            <div class="chart-title"><i class="lucide-layers"></i> 지원 유형 Top 10</div>
+            ${topSubcats.map(([k,n],i)=>{const pct=(n/(topSubcats[0][1]||1)*100).toFixed(0);const blues=['#1e3a5f','#1d4ed8','#2563eb','#3b82f6','#60a5fa','#93bbfd','#bfdbfe','#dbeafe','#eff6ff','#f0f7ff'];return '<div style="display:flex;align-items:center;gap:6px;margin-bottom:5px;"><span style="min-width:95px;font-size:10px;color:var(--text-secondary);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">'+esc(k)+'</span><div style="flex:1;height:8px;background:var(--border-light);border-radius:4px;overflow:hidden;"><div style="height:100%;width:'+pct+'%;background:'+blues[Math.min(i,9)]+';border-radius:4px;"></div></div><span style="min-width:35px;font-size:10px;font-weight:600;text-align:right;">'+n+'건</span></div>';}).join('')}
+        </div>
+        <div class="chart-container">
+            <div class="chart-title"><i class="lucide-building-2"></i> 주요 기관 Top 10</div>
+            ${orgs.map(([o,n],i)=>{const pct=(n/maxOrg*100).toFixed(0);const blues=['#1e3a5f','#1d4ed8','#2563eb','#3b82f6','#60a5fa','#93bbfd','#bfdbfe','#dbeafe','#eff6ff','#f0f7ff'];return '<div style="display:flex;align-items:center;gap:6px;margin-bottom:5px;"><span style="min-width:70px;font-size:11px;color:var(--text-secondary);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">'+esc(o).substring(0,10)+'</span><div style="flex:1;height:8px;background:var(--border-light);border-radius:4px;overflow:hidden;"><div style="height:100%;width:'+pct+'%;background:'+blues[Math.min(i,9)]+';border-radius:4px;"></div></div><span style="min-width:35px;font-size:11px;font-weight:600;text-align:right;">'+n+'건</span></div>';}).join('')}
+        </div>
+        <div class="chart-container">
+            <div class="chart-title"><i class="lucide-clock"></i> 마감 임박</div>
+            ${deadlineSubs.length ? deadlineSubs.slice(0,6).map(s=>{const urgColor=s.daysLeft<=3?'var(--error)':s.daysLeft<=7?'var(--warning)':'var(--primary)';return '<div class="subsidy-item" onclick="showSubsidyDetail(\''+s.id+'\')" style="display:flex;align-items:center;gap:10px;"><span style="font-size:13px;font-weight:800;color:'+urgColor+';min-width:36px;">D-'+s.daysLeft+'</span><div style="flex:1;min-width:0;"><div class="subsidy-item-title">'+esc(s.title).slice(0,40)+'</div><div class="subsidy-item-meta">'+esc(s.organization)+'</div></div></div>';}).join('') : '<div style="text-align:center;color:var(--text-tertiary);padding:16px;font-size:13px;">마감 임박 사업 없음</div>'}
+        </div>
+    </div>`;
 
     el.innerHTML = html;
 }
 
-// ===== Settings Page =====
-function renderSettings() {
-    const profile = loadProfile() || {};
-    const el = document.getElementById('page-settings');
-
-    let html = `
-        <div class="settings-section">
-            <h4><i class="lucide-clipboard-list"></i> 필수 정보</h4>
-        </div>
-        <div class="settings-required">
-            <div class="form-group">
-                <label class="form-label">프로필명 <span class="required">*</span></label>
-                <input class="form-input" id="pName" placeholder="예: 내 음식점" value="${esc(profile.profile_name || '')}">
-            </div>
-            <div class="form-row">
-                <div class="form-group">
-                    <label class="form-label">사업자 유형 <span class="required">*</span></label>
-                    <select class="form-select" id="pBizType">
-                        <option value="">선택</option>
-                        ${['개인사업자','법인사업자','예비창업자'].map(t => `<option value="${t}" ${profile.business_type===t?'selected':''}>${t}</option>`).join('')}
-                    </select>
-                </div>
-                <div class="form-group">
-                    <label class="form-label">업종명 <span class="required">*</span></label>
-                    <input class="form-input" id="pIndustry" placeholder="예: 음식점업" value="${esc(profile.industry_name || '')}">
-                </div>
-            </div>
-            <div class="form-row">
-                <div class="form-group">
-                    <label class="form-label">사업장 소재지 (시/도) <span class="required">*</span></label>
-                    <select class="form-select" id="pRegion">
-                        <option value="">선택</option>
-                        ${REGIONS_FULL.map(r => `<option value="${r}" ${profile.region_sido===r?'selected':''}>${r}</option>`).join('')}
-                    </select>
-                </div>
-            </div>
-        </div>
-
-        <div class="settings-section" style="margin-top:20px;">
-            <h4><i class="lucide-sliders"></i> 선택 정보</h4>
-        </div>
-        <div class="settings-optional">
-            <div class="form-row">
-                <div class="form-group">
-                    <label class="form-label">사업자등록번호</label>
-                    <input class="form-input" id="pRegNo" placeholder="- 제외" value="${esc(profile.business_registration_number || '')}">
-                </div>
-                <div class="form-group">
-                    <label class="form-label">업종코드</label>
-                    <input class="form-input" id="pIndCode" placeholder="한국표준산업분류" value="${esc(profile.industry_code || '')}">
-                </div>
-            </div>
-            <div class="form-row">
-                <div class="form-group">
-                    <label class="form-label">설립일</label>
-                    <input class="form-input" type="date" id="pEstDate" value="${profile.establishment_date || ''}">
-                </div>
-                <div class="form-group">
-                    <label class="form-label">시/군/구</label>
-                    <input class="form-input" id="pSigungu" placeholder="예: 강남구" value="${esc(profile.region_sigungu || '')}">
-                </div>
-            </div>
-            <div class="form-row">
-                <div class="form-group">
-                    <label class="form-label">대표자 연령</label>
-                    <input class="form-input" type="number" id="pAge" placeholder="15~100" min="15" max="100" value="${profile.representative_age || ''}">
-                </div>
-                <div class="form-group">
-                    <label class="form-label">연매출 (만원)</label>
-                    <input class="form-input" type="number" id="pRevenue" placeholder="0~" min="0" value="${profile.annual_revenue ? Math.round(profile.annual_revenue / 10000) : ''}">
-                </div>
-            </div>
-            <div class="form-row">
-                <div class="form-group">
-                    <label class="form-label">상시 종업원 수</label>
-                    <input class="form-input" type="number" id="pEmpCount" placeholder="0~" min="0" value="${profile.employee_count || ''}">
-                </div>
-                <div class="form-group">
-                    <label class="form-label">업력 (년)</label>
-                    <input class="form-input" type="number" id="pBizAge" placeholder="0~" min="0" step="0.5" value="${profile.business_age_years || ''}">
-                </div>
-            </div>
-            <div class="form-row">
-                <div class="form-group">
-                    <label class="form-label">신용등급</label>
-                    <select class="form-select" id="pCredit">
-                        <option value="">선택</option>
-                        ${[1,2,3,4,5,6,7,8,9,10].map(g => `<option value="${g}등급" ${profile.credit_rating===g+'등급'?'selected':''}>${g}등급</option>`).join('')}
-                    </select>
-                </div>
-                <div class="form-group">
-                    <label class="form-label">부채비율 (%)</label>
-                    <input class="form-input" type="number" id="pDebt" placeholder="0~100" min="0" max="100" step="0.1" value="${profile.debt_ratio || ''}">
-                </div>
-            </div>
-            <div class="form-group">
-                <label class="form-label">기존 수혜 건수</label>
-                <input class="form-input" type="number" id="pPrevCount" placeholder="0~" min="0" value="${profile.previous_subsidy_count || 0}">
-            </div>
-
-            <div class="form-group" style="margin-top:12px;">
-                <label class="form-label">사업장 설명</label>
-                <textarea class="form-input" id="pBizDesc" rows="4" placeholder="사업장의 주요 업무, 제품/서비스, 기술 역량, 경쟁력 등을 자유롭게 입력하세요. (선정확률 산출에 활용됩니다)"
-                    style="resize:vertical;min-height:80px;line-height:1.5;">${esc(profile.business_description || '')}</textarea>
-                <div style="font-size:11px;color:var(--text-tertiary);margin-top:4px;">입력된 내용에서 주요 키워드를 추출하여 공고문과 매칭합니다.</div>
-            </div>
-
-            <div style="margin-top:16px;padding-top:16px;border-top:1px solid var(--border);">
-                <label class="form-label">특성</label>
-                <div class="form-checkbox">
-                    <input type="checkbox" id="pExport" ${profile.has_export?'checked':''}>
-                    <label for="pExport">수출 여부</label>
-                </div>
-                <div class="form-checkbox">
-                    <input type="checkbox" id="pFemale" ${profile.is_female_owned?'checked':''}>
-                    <label for="pFemale">여성기업</label>
-                </div>
-                <div class="form-checkbox">
-                    <input type="checkbox" id="pDisabled" ${profile.is_disabled_owned?'checked':''}>
-                    <label for="pDisabled">장애인기업</label>
-                </div>
-                <div class="form-checkbox">
-                    <input type="checkbox" id="pSocial" ${profile.is_social_enterprise?'checked':''}>
-                    <label for="pSocial">사회적기업</label>
-                </div>
-                <div class="form-checkbox">
-                    <input type="checkbox" id="pVenture" ${profile.is_venture_certified?'checked':''}>
-                    <label for="pVenture">벤처인증</label>
-                </div>
-                <div class="form-checkbox">
-                    <input type="checkbox" id="pInnobiz" ${profile.is_innobiz?'checked':''}>
-                    <label for="pInnobiz">이노비즈(INNOBIZ)</label>
-                </div>
-                <div class="form-checkbox">
-                    <input type="checkbox" id="pInsurance" ${profile.has_employment_insurance !== false?'checked':''}>
-                    <label for="pInsurance">고용보험 가입</label>
-                </div>
-            </div>
-
-            <button class="btn-primary" onclick="doSaveProfile()" style="margin-top:20px;"><i class="lucide-save" style="margin-right:6px;"></i>프로필 저장</button>
-        </div>
-    `;
-
-    el.innerHTML = html;
+function switchStatsTab(tab) {
+    const myC = document.getElementById('statsTabMyContent');
+    const allC = document.getElementById('statsTabAllContent');
+    const myT = document.getElementById('statsTabMy');
+    const allT = document.getElementById('statsTabAll');
+    if (!myC||!allC) return;
+    if (tab === 'my') {
+        myC.style.display=''; allC.style.display='none';
+        myT.style.color='var(--primary)'; myT.style.borderBottom='2px solid var(--primary)'; myT.style.opacity='1';
+        allT.style.color='var(--text-secondary)'; allT.style.borderBottom='none';
+    } else {
+        myC.style.display='none'; allC.style.display='';
+        allT.style.color='var(--primary)'; allT.style.borderBottom='2px solid var(--primary)';
+        myT.style.color='var(--text-secondary)'; myT.style.borderBottom='none'; myT.style.opacity='1';
+    }
 }
 
 function doSaveProfile() {
