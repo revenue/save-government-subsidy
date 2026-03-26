@@ -1106,6 +1106,155 @@ function switchStatsTab(tab) {
     }
 }
 
+
+
+// ===== Settings Page =====
+function renderSettings() {
+    const profile = loadProfile() || {};
+    const el = document.getElementById('page-settings');
+
+    let html = `
+        <div class="settings-section">
+            <h4><i class="lucide-clipboard-list"></i> 필수 정보</h4>
+        </div>
+        <div class="settings-required">
+            <div class="form-group">
+                <label class="form-label">프로필명 <span class="required">*</span></label>
+                <input class="form-input" id="pName" placeholder="예: 내 음식점" value="${esc(profile.profile_name || '')}">
+            </div>
+            <div class="form-row">
+                <div class="form-group">
+                    <label class="form-label">사업자 유형 <span class="required">*</span></label>
+                    <select class="form-select" id="pBizType">
+                        <option value="">선택</option>
+                        ${['개인사업자','법인사업자','예비창업자'].map(t => `<option value="${t}" ${profile.business_type===t?'selected':''}>${t}</option>`).join('')}
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">업종명 <span class="required">*</span></label>
+                    <input class="form-input" id="pIndustry" placeholder="예: 음식점업" value="${esc(profile.industry_name || '')}">
+                </div>
+            </div>
+            <div class="form-row">
+                <div class="form-group">
+                    <label class="form-label">사업장 소재지 (시/도) <span class="required">*</span></label>
+                    <select class="form-select" id="pRegion">
+                        <option value="">선택</option>
+                        ${REGIONS_FULL.map(r => `<option value="${r}" ${profile.region_sido===r?'selected':''}>${r}</option>`).join('')}
+                    </select>
+                </div>
+            </div>
+        </div>
+
+        <div class="settings-section" style="margin-top:20px;">
+            <h4><i class="lucide-sliders"></i> 선택 정보</h4>
+        </div>
+        <div class="settings-optional">
+            <div class="form-row">
+                <div class="form-group">
+                    <label class="form-label">사업자등록번호</label>
+                    <input class="form-input" id="pRegNo" placeholder="- 제외" value="${esc(profile.business_registration_number || '')}">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">업종코드</label>
+                    <input class="form-input" id="pIndCode" placeholder="한국표준산업분류" value="${esc(profile.industry_code || '')}">
+                </div>
+            </div>
+            <div class="form-row">
+                <div class="form-group">
+                    <label class="form-label">설립일</label>
+                    <input class="form-input" type="date" id="pEstDate" value="${profile.establishment_date || ''}">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">시/군/구</label>
+                    <input class="form-input" id="pSigungu" placeholder="예: 강남구" value="${esc(profile.region_sigungu || '')}">
+                </div>
+            </div>
+            <div class="form-row">
+                <div class="form-group">
+                    <label class="form-label">대표자 연령</label>
+                    <input class="form-input" type="number" id="pAge" placeholder="15~100" min="15" max="100" value="${profile.representative_age || ''}">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">연매출 (만원)</label>
+                    <input class="form-input" type="number" id="pRevenue" placeholder="0~" min="0" value="${profile.annual_revenue ? Math.round(profile.annual_revenue / 10000) : ''}">
+                </div>
+            </div>
+            <div class="form-row">
+                <div class="form-group">
+                    <label class="form-label">상시 종업원 수</label>
+                    <input class="form-input" type="number" id="pEmpCount" placeholder="0~" min="0" value="${profile.employee_count || ''}">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">업력 (년)</label>
+                    <input class="form-input" type="number" id="pBizAge" placeholder="0~" min="0" step="0.5" value="${profile.business_age_years || ''}">
+                </div>
+            </div>
+            <div class="form-row">
+                <div class="form-group">
+                    <label class="form-label">신용등급</label>
+                    <select class="form-select" id="pCredit">
+                        <option value="">선택</option>
+                        ${[1,2,3,4,5,6,7,8,9,10].map(g => `<option value="${g}등급" ${profile.credit_rating===g+'등급'?'selected':''}>${g}등급</option>`).join('')}
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">부채비율 (%)</label>
+                    <input class="form-input" type="number" id="pDebt" placeholder="0~100" min="0" max="100" step="0.1" value="${profile.debt_ratio || ''}">
+                </div>
+            </div>
+            <div class="form-group">
+                <label class="form-label">기존 수혜 건수</label>
+                <input class="form-input" type="number" id="pPrevCount" placeholder="0~" min="0" value="${profile.previous_subsidy_count || 0}">
+            </div>
+
+            <div class="form-group" style="margin-top:12px;">
+                <label class="form-label">사업장 설명</label>
+                <textarea class="form-input" id="pBizDesc" rows="4" placeholder="사업장의 주요 업무, 제품/서비스, 기술 역량, 경쟁력 등을 자유롭게 입력하세요. (선정확률 산출에 활용됩니다)"
+                    style="resize:vertical;min-height:80px;line-height:1.5;">${esc(profile.business_description || '')}</textarea>
+                <div style="font-size:11px;color:var(--text-tertiary);margin-top:4px;">입력된 내용에서 주요 키워드를 추출하여 공고문과 매칭합니다.</div>
+            </div>
+
+            <div style="margin-top:16px;padding-top:16px;border-top:1px solid var(--border);">
+                <label class="form-label">특성</label>
+                <div class="form-checkbox">
+                    <input type="checkbox" id="pExport" ${profile.has_export?'checked':''}>
+                    <label for="pExport">수출 여부</label>
+                </div>
+                <div class="form-checkbox">
+                    <input type="checkbox" id="pFemale" ${profile.is_female_owned?'checked':''}>
+                    <label for="pFemale">여성기업</label>
+                </div>
+                <div class="form-checkbox">
+                    <input type="checkbox" id="pDisabled" ${profile.is_disabled_owned?'checked':''}>
+                    <label for="pDisabled">장애인기업</label>
+                </div>
+                <div class="form-checkbox">
+                    <input type="checkbox" id="pSocial" ${profile.is_social_enterprise?'checked':''}>
+                    <label for="pSocial">사회적기업</label>
+                </div>
+                <div class="form-checkbox">
+                    <input type="checkbox" id="pVenture" ${profile.is_venture_certified?'checked':''}>
+                    <label for="pVenture">벤처인증</label>
+                </div>
+                <div class="form-checkbox">
+                    <input type="checkbox" id="pInnobiz" ${profile.is_innobiz?'checked':''}>
+                    <label for="pInnobiz">이노비즈(INNOBIZ)</label>
+                </div>
+                <div class="form-checkbox">
+                    <input type="checkbox" id="pInsurance" ${profile.has_employment_insurance !== false?'checked':''}>
+                    <label for="pInsurance">고용보험 가입</label>
+                </div>
+            </div>
+
+            <button class="btn-primary" onclick="doSaveProfile()" style="margin-top:20px;"><i class="lucide-save" style="margin-right:6px;"></i>프로필 저장</button>
+        </div>
+    `;
+
+    el.innerHTML = html;
+}
+
+
 function doSaveProfile() {
     const p = {
         profile_name: document.getElementById('pName').value,
