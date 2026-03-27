@@ -1,6 +1,6 @@
 {
   "total": 1930,
-  "active": 1408,
+  "active": 1406,
   "categories": {
     "정책": 942,
     "경영": 277,
@@ -41,7 +41,7 @@
     "smes": 20,
     "kstartup": 10
   },
-  "last_updated": "2026-03-23T20:49:47.445898",
+  "last_updated": "2026-03-26T09:05:59.894749",
   "last_collected": "2026-02-05 11:22:47",
   "history_count": 0
 }
