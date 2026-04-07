@@ -1,0 +1,110 @@
+[
+  {
+    "source": "jeonbuk",
+    "total_collected": 10,
+    "new_count": 0,
+    "updated_count": 10,
+    "status": "success",
+    "error_message": null,
+    "collected_at": "2026-04-01 07:29:59"
+  },
+  {
+    "source": "ulsan",
+    "total_collected": 10,
+    "new_count": 0,
+    "updated_count": 10,
+    "status": "success",
+    "error_message": null,
+    "collected_at": "2026-04-01 07:29:48"
+  },
+  {
+    "source": "seoul",
+    "total_collected": 20,
+    "new_count": 0,
+    "updated_count": 20,
+    "status": "success",
+    "error_message": null,
+    "collected_at": "2026-04-01 07:29:43"
+  },
+  {
+    "source": "smes",
+    "total_collected": 20,
+    "new_count": 0,
+    "updated_count": 20,
+    "status": "success",
+    "error_message": null,
+    "collected_at": "2026-04-01 07:29:37"
+  },
+  {
+    "source": "kstartup",
+    "total_collected": 10,
+    "new_count": 0,
+    "updated_count": 10,
+    "status": "success",
+    "error_message": null,
+    "collected_at": "2026-04-01 07:29:37"
+  },
+  {
+    "source": "bizinfo",
+    "total_collected": 1050,
+    "new_count": 0,
+    "updated_count": 1050,
+    "status": "success",
+    "error_message": null,
+    "collected_at": "2026-04-01 07:29:34"
+  },
+  {
+    "source": "jeonbuk",
+    "total_collected": 10,
+    "new_count": 0,
+    "updated_count": 10,
+    "status": "success",
+    "error_message": null,
+    "collected_at": "2026-03-31 13:27:10"
+  },
+  {
+    "source": "ulsan",
+    "total_collected": 10,
+    "new_count": 0,
+    "updated_count": 10,
+    "status": "success",
+    "error_message": null,
+    "collected_at": "2026-03-31 13:27:05"
+  },
+  {
+    "source": "seoul",
+    "total_collected": 20,
+    "new_count": 0,
+    "updated_count": 20,
+    "status": "success",
+    "error_message": null,
+    "collected_at": "2026-03-31 13:26:59"
+  },
+  {
+    "source": "kstartup",
+    "total_collected": 10,
+    "new_count": 0,
+    "updated_count": 10,
+    "status": "success",
+    "error_message": null,
+    "collected_at": "2026-03-31 13:26:47"
+  },
+  {
+    "source": "smes",
+    "total_collected": 20,
+    "new_count": 0,
+    "updated_count": 20,
+    "status": "success",
+    "error_message": null,
+    "collected_at": "2026-03-31 13:26:46"
+  },
+  {
+    "source": "bizinfo",
+    "total_collected": 1050,
+    "new_count": 0,
+    "updated_count": 1050,
+    "status": "success",
+    "error_message": null,
+    "collected_at": "2026-03-31 13:26:43"
+  }
+]

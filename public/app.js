@@ -80,6 +80,7 @@ let savedProfile = null;
 let matchResults = [];
 let showExpired = false; // 마감 데이터 표시 여부
 let isCollecting = false; // 수집 진행 중 여부
+let collectionLogs = []; // 수집 이력 데이터
 
 const REGION_FULL_NAMES = [
     '서울특별시','부산광역시','대구광역시','인천광역시','광주광역시','대전광역시','울산광역시',
@@ -90,14 +91,16 @@ const REGION_FULL_NAMES = [
 // Data loading
 async function loadData() {
     try {
-        const [subRes, histRes, metaRes] = await Promise.all([
+        const [subRes, histRes, metaRes, logsRes] = await Promise.all([
             fetch('data/subsidies.json').then(r => r.json()),
             fetch('data/history.json').then(r => r.json()),
             fetch('data/meta.json').then(r => r.json()),
+            fetch('data/collection_logs.json').then(r => r.json()).catch(() => []),
         ]);
         allSubsidies = subRes;
         history = histRes;
         meta = metaRes;
+        collectionLogs = logsRes;
 
         // 마감 전 데이터만 기본 필터링
         subsidies = allSubsidies.filter(s => !s.apply_end_date || s.apply_end_date >= today);
@@ -137,13 +140,17 @@ async function triggerCollection() {
         });
         const data = await resp.json();
 
+        // 소스별 결과 표시
+        const srcSummary = Object.entries(data.sources || {})
+            .map(([k, v]) => `${v.name}: ${v.count}건${v.status === 'error' ? '(오류)' : ''}`)
+            .join(', ');
+
         if (data.success && data.items && data.items.length > 0) {
             // 수집된 데이터를 현재 화면에 병합
-            const newItems = data.items;
             const existingIds = new Set(allSubsidies.map(s => s.external_id));
             let addedCount = 0;
 
-            for (const item of newItems) {
+            for (const item of data.items) {
                 if (!existingIds.has(item.external_id)) {
                     allSubsidies.push(item);
                     existingIds.add(item.external_id);
@@ -156,18 +163,13 @@ async function triggerCollection() {
                 ? allSubsidies
                 : allSubsidies.filter(s => !s.apply_end_date || s.apply_end_date >= today);
 
-            // 소스별 결과 표시
-            const srcSummary = Object.entries(data.sources || {})
-                .map(([k, v]) => `${v.name}: ${v.count}건`)
-                .join(', ');
+            if (statusEl) statusEl.innerHTML = addedCount > 0
+                ? `<span style="color:var(--success);">수집 완료: ${data.total}건 수집, 신규 ${addedCount}건 추가 (${srcSummary})</span>`
+                : `<span style="color:var(--text-secondary);">수집 완료: ${data.total}건 확인, 신규 데이터 없음 (${srcSummary})</span>`;
 
-            if (statusEl) statusEl.innerHTML =
-                `<span style="color:var(--ant-success);">✅ 수집 완료! ${data.total}건 수집 (신규 ${addedCount}건 추가) — ${srcSummary}</span>`;
-
-            // 현재 페이지 새로고침
             navigateTo(currentPage);
         } else if (data.success) {
-            if (statusEl) statusEl.innerHTML = '<span style="color:var(--ant-warning);">수집 완료 — 새로운 데이터 없음</span>';
+            if (statusEl) statusEl.innerHTML = `<span style="color:var(--warning);">수집 완료: 데이터 0건 (${srcSummary})</span>`;
         } else {
             if (statusEl) statusEl.innerHTML = `<span style="color:var(--error);">수집 실패: ${data.error || '알 수 없는 오류'}</span>`;
         }
@@ -189,7 +191,8 @@ function navigateTo(page) {
     document.querySelectorAll('.nav-item').forEach(i => i.classList.toggle('active', i.dataset.page === page));
     const renderers = {
         dashboard: renderDashboard, list: renderList, matching: renderMatching,
-        search: renderSearch, stats: renderStats, settings: renderSettings,
+        search: renderSearch, stats: renderStats, 'collection-logs': renderCollectionLogs,
+        settings: renderSettings,
     };
     (renderers[page] || renderDashboard)();
 }
@@ -1364,6 +1367,129 @@ function closeKG() {
 document.addEventListener('keydown', e => { if (e.key === 'Escape') closeKG(); });
 
 // ===== Settings =====
+// ===== 수집 이력 =====
+const SOURCE_LABELS = {
+    bizinfo:'기업마당', mss:'중소벤처기업부', smes:'중소벤처24', kstartup:'K-스타트업',
+    mafra:'농림축산식품부', msit:'과학기술정보통신부', mohw:'보건복지부', mof:'해양수산부',
+    molit:'국토교통부', mcst:'문화체육관광부', me:'환경부', dapa:'방위사업청',
+    unikorea:'통일부', forest:'산림청', kipo:'특허청', fsc:'금융위원회', moj:'법무부', iris:'IRIS 범부처',
+    subsidy24:'보조금24', laiis:'내고장알리미',
+    seoul:'서울', busan:'부산', daegu:'대구', incheon:'인천', gwangju:'광주',
+    daejeon:'대전', ulsan:'울산', sejong:'세종', gg:'경기', gangwon:'강원',
+    chungbuk:'충북', chungnam:'충남', jeonbuk:'전북', jeonnam:'전남',
+    gb:'경북', gn:'경남', jeju:'제주', khidi:'보건산업진흥원', wbiz:'여성기업포털'
+};
+
+function renderCollectionLogs() {
+    if (!collectionLogs.length) {
+        document.getElementById('page-content').innerHTML = `
+            <div class="page-header"><h1><i class="lucide-history"></i> 수집 이력</h1></div>
+            <div class="empty-state"><div class="icon"><i class="lucide-inbox" style="font-size:48px;color:var(--primary);"></i></div>
+            <p>수집 이력이 없습니다.</p></div>`;
+        return;
+    }
+
+    // 날짜별 그룹핑
+    const byDate = {};
+    collectionLogs.forEach(log => {
+        const date = (log.collected_at || '').slice(0, 10);
+        if (!date) return;
+        if (!byDate[date]) byDate[date] = [];
+        byDate[date].push(log);
+    });
+    const sortedDates = Object.keys(byDate).sort((a, b) => b.localeCompare(a));
+
+    // 전체 통계
+    const totalRuns = sortedDates.length;
+    const totalCollected = collectionLogs.reduce((s, l) => s + (l.total_collected || 0), 0);
+    const totalNew = collectionLogs.reduce((s, l) => s + (l.new_count || 0), 0);
+    const errorCount = collectionLogs.filter(l => l.status === 'error').length;
+
+    // 일별 요약 테이블 HTML
+    let dailyRows = '';
+    sortedDates.forEach(date => {
+        const logs = byDate[date];
+        const successLogs = logs.filter(l => l.status === 'success');
+        const errorLogs = logs.filter(l => l.status === 'error');
+        const dayTotal = logs.reduce((s, l) => s + (l.total_collected || 0), 0);
+        const dayNew = logs.reduce((s, l) => s + (l.new_count || 0), 0);
+        const dayUpdated = logs.reduce((s, l) => s + (l.updated_count || 0), 0);
+        const sourceCount = new Set(logs.map(l => l.source)).size;
+        const time = (logs[0].collected_at || '').slice(11, 16) || '-';
+        const statusTag = errorLogs.length === 0
+            ? '<span class="tag tag-green">성공</span>'
+            : `<span class="tag tag-green">${successLogs.length}</span> <span class="tag tag-red">${errorLogs.length} 오류</span>`;
+
+        dailyRows += `<tr onclick="toggleDayDetail('${date}')" style="cursor:pointer;">
+            <td style="font-weight:600;">${date}</td>
+            <td>${time}</td>
+            <td>${sourceCount}개</td>
+            <td style="font-weight:700;">${dayTotal.toLocaleString()}</td>
+            <td style="color:var(--success);font-weight:600;">+${dayNew.toLocaleString()}</td>
+            <td>${dayUpdated.toLocaleString()}</td>
+            <td>${statusTag}</td>
+        </tr>
+        <tr id="day-${date}" style="display:none;">
+            <td colspan="7" style="padding:0;">
+                <div style="background:var(--bg);padding:12px 16px;max-height:360px;overflow-y:auto;">
+                    <table class="data-table" style="font-size:12px;">
+                        <thead><tr><th>출처</th><th>수집</th><th>신규</th><th>업데이트</th><th>상태</th></tr></thead>
+                        <tbody>
+                        ${logs.map(l => `<tr>
+                            <td>${escHtml(SOURCE_LABELS[l.source] || l.source)}</td>
+                            <td>${(l.total_collected || 0).toLocaleString()}</td>
+                            <td style="color:var(--success);">+${l.new_count || 0}</td>
+                            <td>${l.updated_count || 0}</td>
+                            <td>${l.status === 'success'
+                                ? '<span class="tag tag-green">성공</span>'
+                                : `<span class="tag tag-red" title="${escHtml(l.error_message || '')}">오류</span>`}
+                            </td>
+                        </tr>`).join('')}
+                        </tbody>
+                    </table>
+                </div>
+            </td>
+        </tr>`;
+    });
+
+    document.getElementById('page-content').innerHTML = `
+        <div class="page-header"><h1><i class="lucide-history"></i> 수집 이력</h1></div>
+        <div class="stat-grid">
+            <div class="stat-card">
+                <div class="stat-value">${totalRuns}<span class="stat-suffix">일</span></div>
+                <div class="stat-label">총 수집 일수</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value">${totalCollected.toLocaleString()}<span class="stat-suffix">건</span></div>
+                <div class="stat-label">총 수집 건수</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value" style="color:var(--success);">+${totalNew.toLocaleString()}<span class="stat-suffix">건</span></div>
+                <div class="stat-label">총 신규 건수</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value" style="color:${errorCount > 0 ? 'var(--error)' : 'var(--success)'};">${errorCount}<span class="stat-suffix">건</span></div>
+                <div class="stat-label">오류 건수</div>
+            </div>
+        </div>
+        <div class="card">
+            <div class="card-title"><i class="lucide-calendar"></i> 일별 수집 요약</div>
+            <div class="table-container" style="max-height:600px;overflow-y:auto;">
+                <table class="data-table">
+                    <thead><tr>
+                        <th>날짜</th><th>시각</th><th>출처</th><th>수집</th><th>신규</th><th>업데이트</th><th>상태</th>
+                    </tr></thead>
+                    <tbody>${dailyRows}</tbody>
+                </table>
+            </div>
+        </div>`;
+}
+
+function toggleDayDetail(date) {
+    const row = document.getElementById('day-' + date);
+    if (row) row.style.display = row.style.display === 'none' ? '' : 'none';
+}
+
 function renderSettings() {
     const p = savedProfile || {};
     document.getElementById('page-content').innerHTML = `
