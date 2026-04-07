@@ -6,6 +6,69 @@
     "updated_count": 10,
     "status": "success",
     "error_message": null,
+    "collected_at": "2026-04-07 17:21:43"
+  },
+  {
+    "source": "ulsan",
+    "total_collected": 10,
+    "new_count": 0,
+    "updated_count": 10,
+    "status": "success",
+    "error_message": null,
+    "collected_at": "2026-04-07 17:21:40"
+  },
+  {
+    "source": "seoul",
+    "total_collected": 20,
+    "new_count": 0,
+    "updated_count": 20,
+    "status": "success",
+    "error_message": null,
+    "collected_at": "2026-04-07 17:21:36"
+  },
+  {
+    "source": "smes",
+    "total_collected": 20,
+    "new_count": 0,
+    "updated_count": 20,
+    "status": "success",
+    "error_message": null,
+    "collected_at": "2026-04-07 17:21:31"
+  },
+  {
+    "source": "kstartup",
+    "total_collected": 10,
+    "new_count": 0,
+    "updated_count": 10,
+    "status": "success",
+    "error_message": null,
+    "collected_at": "2026-04-07 17:21:31"
+  },
+  {
+    "source": "mss",
+    "total_collected": 942,
+    "new_count": 0,
+    "updated_count": 942,
+    "status": "success",
+    "error_message": null,
+    "collected_at": "2026-04-07 17:21:29"
+  },
+  {
+    "source": "bizinfo",
+    "total_collected": 1050,
+    "new_count": 0,
+    "updated_count": 1050,
+    "status": "success",
+    "error_message": null,
+    "collected_at": "2026-04-07 17:18:59"
+  },
+  {
+    "source": "jeonbuk",
+    "total_collected": 10,
+    "new_count": 0,
+    "updated_count": 10,
+    "status": "success",
+    "error_message": null,
     "collected_at": "2026-04-01 07:29:59"
   },
   {
