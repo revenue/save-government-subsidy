@@ -326,6 +326,76 @@
         .detail-link-btn.outline:active { background: var(--primary-bg); }
         .detail-tags { display: flex; flex-wrap: wrap; gap: 4px; }
         .detail-tags .tag { font-size: 11px; }
+        .detail-link-btn.accent { background: linear-gradient(135deg, #175CD3 0%, #1570EF 100%); color: #fff; margin-top: 8px; position: relative; overflow: hidden; }
+        .detail-link-btn.accent::after { content: ''; position: absolute; right: 16px; top: 50%; transform: translateY(-50%); width: 20px; height: 20px; background: rgba(255,255,255,0.15); border-radius: 50%; }
+        .detail-link-btn.accent:active { background: linear-gradient(135deg, #0F4199 0%, #175CD3 100%); }
+
+        /* Full Detail Page */
+        .detail-page { display: none; position: absolute; top: 0; left: 0; right: 0; bottom: 0; z-index: 210; background: var(--bg); overflow-y: auto; -webkit-overflow-scrolling: touch; }
+        .detail-page.show { display: block; }
+        .detail-page-header { position: sticky; top: 0; z-index: 5; background: #fff; padding: 12px 16px; display: flex; align-items: center; gap: 12px; border-bottom: 1px solid var(--border-light); box-shadow: var(--shadow-xs); }
+        .detail-page-back { width: 36px; height: 36px; border-radius: 8px; border: 1px solid var(--border-light); background: #fff; display: flex; align-items: center; justify-content: center; cursor: pointer; color: var(--text-secondary); font-size: 16px; flex-shrink: 0; }
+        .detail-page-back:active { background: var(--bg); }
+        .detail-page-header-title { font-size: 15px; font-weight: 600; color: var(--heading); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; flex: 1; }
+        .detail-page-content { padding: 16px; }
+
+        .dp-hero { background: linear-gradient(135deg, #EFF8FF 0%, #F0F5FF 100%); border: 1px solid var(--primary-border); border-radius: var(--radius-lg); padding: 16px; margin-bottom: 16px; }
+        .dp-hero-title { font-size: 16px; font-weight: 700; color: var(--heading); line-height: 1.5; margin-bottom: 12px; word-break: keep-all; }
+        .dp-hero-meta { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 12px; }
+        .dp-hero-stats { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+        .dp-stat-card { background: #fff; border-radius: var(--radius); padding: 10px 12px; text-align: center; }
+        .dp-stat-label { font-size: 11px; color: var(--text-tertiary); font-weight: 500; margin-bottom: 2px; }
+        .dp-stat-value { font-size: 16px; font-weight: 800; color: var(--primary); }
+        .dp-stat-value.warn { color: var(--warning); }
+        .dp-stat-value.err { color: var(--error); }
+        .dp-stat-value.ok { color: var(--success); }
+
+        .dp-section { background: #fff; border-radius: var(--radius-lg); border: 1px solid var(--border-light); margin-bottom: 12px; overflow: hidden; box-shadow: var(--shadow-xs); }
+        .dp-section-header { display: flex; align-items: center; gap: 8px; padding: 14px 16px; border-bottom: 1px solid var(--border-light); background: #FCFCFD; }
+        .dp-section-header i { font-size: 16px; color: var(--primary); }
+        .dp-section-header span { font-size: 14px; font-weight: 700; color: var(--heading); }
+        .dp-section-body { padding: 14px 16px; }
+
+        .dp-info-row { display: flex; padding: 8px 0; border-bottom: 1px solid var(--border-light); }
+        .dp-info-row:last-child { border-bottom: none; }
+        .dp-info-label { min-width: 80px; font-size: 13px; color: var(--text-tertiary); font-weight: 600; padding-top: 1px; }
+        .dp-info-value { flex: 1; font-size: 14px; color: var(--heading); line-height: 1.6; word-break: keep-all; }
+
+        .dp-bullet-item { display: flex; gap: 10px; align-items: flex-start; padding: 10px 12px; background: var(--bg); border-radius: var(--radius); margin-bottom: 6px; border: 1px solid var(--border-light); }
+        .dp-bullet-icon { width: 22px; height: 22px; border-radius: 50%; background: var(--primary-bg); display: flex; align-items: center; justify-content: center; flex-shrink: 0; margin-top: 1px; }
+        .dp-bullet-icon i { font-size: 11px; color: var(--primary); }
+        .dp-bullet-text { font-size: 13px; color: var(--text); line-height: 1.7; flex: 1; }
+
+        .dp-step { display: flex; gap: 12px; align-items: flex-start; padding-bottom: 16px; position: relative; }
+        .dp-step:last-child { padding-bottom: 0; }
+        .dp-step::before { content: ''; position: absolute; left: 15px; top: 32px; bottom: 0; width: 2px; background: var(--border-light); }
+        .dp-step:last-child::before { display: none; }
+        .dp-step-num { width: 32px; height: 32px; border-radius: 50%; background: var(--primary); color: #fff; display: flex; align-items: center; justify-content: center; font-size: 14px; font-weight: 700; flex-shrink: 0; z-index: 1; }
+        .dp-step-content { flex: 1; background: #fff; border: 1px solid var(--border-light); border-radius: var(--radius); padding: 10px 14px; font-size: 13px; color: var(--text); line-height: 1.7; }
+
+        .dp-note { display: flex; gap: 8px; align-items: flex-start; padding: 10px 12px; background: var(--warning-bg); border-radius: var(--radius); border: 1px solid #FEF0C7; margin-bottom: 6px; }
+        .dp-note i { color: var(--warning); font-size: 14px; margin-top: 1px; flex-shrink: 0; }
+        .dp-note span { font-size: 12px; color: #93370D; line-height: 1.6; }
+
+        .dp-cta { display: flex; align-items: center; justify-content: center; gap: 10px; width: 100%; padding: 16px; border-radius: var(--radius-lg); background: linear-gradient(135deg, #175CD3 0%, #1570EF 100%); color: #fff; font-size: 16px; font-weight: 700; text-decoration: none; margin-bottom: 8px; box-shadow: 0 4px 12px rgba(21,112,239,0.25); }
+        .dp-cta:active { transform: scale(0.98); }
+        .dp-cta-outline { display: flex; align-items: center; justify-content: center; gap: 10px; width: 100%; padding: 14px; border-radius: var(--radius-lg); background: #fff; color: var(--primary); font-size: 15px; font-weight: 600; text-decoration: none; border: 1.5px solid var(--primary-border); margin-bottom: 8px; }
+        .dp-cta-outline:active { background: var(--primary-bg); }
+
+        .dp-text-block { font-size: 13px; line-height: 1.8; color: var(--text); white-space: pre-wrap; word-break: keep-all; }
+
+        .dp-tag-list { display: flex; flex-wrap: wrap; gap: 6px; }
+        .dp-tag { display: inline-flex; align-items: center; gap: 4px; padding: 4px 10px; background: var(--primary-bg); color: var(--primary-dark); border-radius: 20px; font-size: 12px; font-weight: 600; }
+
+        .dp-match-section { background: linear-gradient(135deg, #DBEAFE 0%, #EFF6FF 100%); border: 1px solid var(--primary-border); border-radius: var(--radius-lg); padding: 16px; margin-bottom: 12px; }
+        .dp-match-prob { display: flex; align-items: center; gap: 12px; margin-bottom: 12px; }
+        .dp-match-prob-num { font-size: 32px; font-weight: 800; color: var(--primary-dark); }
+        .dp-match-prob-label { font-size: 13px; color: var(--primary); font-weight: 600; }
+        .dp-match-bar { display: flex; align-items: center; gap: 8px; margin-bottom: 6px; }
+        .dp-match-bar-label { min-width: 80px; font-size: 11px; color: var(--text-secondary); font-weight: 600; }
+        .dp-match-bar-track { flex: 1; height: 8px; background: rgba(255,255,255,0.6); border-radius: 4px; overflow: hidden; }
+        .dp-match-bar-fill { height: 100%; border-radius: 4px; transition: width 0.5s ease; }
+        .dp-match-bar-val { min-width: 28px; font-size: 12px; font-weight: 700; color: var(--heading); text-align: right; }
 
         /* Empty State */
         .empty-state { text-align: center; padding: 40px 20px; }
@@ -434,6 +504,15 @@
             <button class="nav-tab" data-tab="list"><i class="icon-list"></i><span>지원사업</span></button>
             <button class="nav-tab" data-tab="stats"><i class="icon-bar-chart-3"></i><span>통계</span></button>
             <button class="nav-tab" data-tab="settings"><i class="icon-settings"></i><span>설정</span></button>
+        </div>
+
+        <!-- Full Detail Page -->
+        <div class="detail-page" id="detailPage">
+            <div class="detail-page-header">
+                <button class="detail-page-back" onclick="closeDetailPage()"><i class="icon-arrow-left"></i></button>
+                <div class="detail-page-header-title" id="detailPageTitle">공고 상세정보</div>
+            </div>
+            <div class="detail-page-content" id="detailPageContent"></div>
         </div>
 
         <!-- Detail Bottom Sheet (inside desktop-wrapper) -->
@@ -1388,6 +1467,8 @@ function showSubsidyDetail(id) {
 
     // Action Buttons
     html += '<div style="padding-top:8px;">';
+    // 공고 상세정보 버튼 (항상 표시)
+    html += '<button onclick="showDetailPage(\''+numId+'\')" class="detail-link-btn accent" style="margin-top:0;margin-bottom:8px;"><i class="icon-file-text" style="font-size:16px;"></i> 공고 상세정보 보기</button>';
     if (s.detail_url) {
         html += '<a href="'+esc(s.detail_url)+'" target="_blank" rel="noopener" class="detail-link-btn primary"><i class="icon-external-link" style="font-size:16px;"></i> 공고 원문 보기</a>';
         html += '<a href="'+esc(s.detail_url)+'" target="_blank" rel="noopener" class="detail-link-btn outline"><i class="icon-download" style="font-size:16px;"></i> 첨부파일 확인 (원문 페이지)</a>';
@@ -1419,6 +1500,251 @@ function showDetail(id) { showSubsidyDetail(id); }
 
 function closeDetail() {
     document.getElementById('detailModal').classList.remove('show');
+}
+
+// ===== Full Detail Page =====
+function showDetailPage(id) {
+    const numId = typeof id === 'string' ? parseInt(id, 10) : id;
+    const s = subsidies.find(x => x.id === numId || x.id === id);
+    if (!s) return;
+
+    const st = getStatus(s.apply_end_date, s.apply_start_date);
+    const srcNames = { bizinfo:'기업마당', mss:'중소벤처기업부', kstartup:'K-스타트업', smes:'중소벤처24' };
+    const mr = matchResults.find(r => r.id === id || r.subsidy_id === numId);
+    const detailSubcat = classifySubcategory(s);
+
+    // 텍스트를 불릿 단위로 파싱
+    function parseBullets(text) {
+        if (!text) return [];
+        const lines = text.replace(/\t+/g, ' ').replace(/ {3,}/g, ' ').split(/\n/).map(l => l.trim()).filter(Boolean);
+        const items = [];
+        for (const line of lines) {
+            const stepM = line.match(/^(\d+)[.)]\s*/);
+            const bulletM = line.match(/^[-·•☞○●◈▶◆◇▷■□→➜➤]\s*/);
+            const noteM = line.match(/^※\s*/);
+            if (stepM) items.push({ type: 'step', text: line.replace(stepM[0], '').trim(), num: parseInt(stepM[1]) });
+            else if (noteM) items.push({ type: 'note', text: line.replace(noteM[0], '').trim() });
+            else if (bulletM) items.push({ type: 'bullet', text: line.replace(bulletM[0], '').trim() });
+            else items.push({ type: 'text', text: line });
+        }
+        return items;
+    }
+
+    // URL을 링크로 변환
+    function linkify(text) {
+        return esc(text).replace(/(https?:\/\/[^\s<]+)/g, '<a href="$1" target="_blank" rel="noopener" style="color:var(--primary);word-break:break-all;">$1</a>');
+    }
+
+    // 날짜 계산
+    let dateInfo = '', dday = '', ddayColor = '';
+    if (s.apply_start_date && s.apply_end_date) dateInfo = s.apply_start_date + ' ~ ' + s.apply_end_date;
+    else if (s.apply_end_date) dateInfo = '~ ' + s.apply_end_date;
+    else if (s.apply_start_date) dateInfo = s.apply_start_date + ' ~';
+    else dateInfo = '상시 모집';
+    if (s.apply_end_date) {
+        const diff = Math.ceil((new Date(s.apply_end_date) - new Date()) / 86400000);
+        if (diff <= 0) { dday = '마감'; ddayColor = 'err'; }
+        else if (diff <= 7) { dday = 'D-' + diff; ddayColor = 'err'; }
+        else if (diff <= 30) { dday = 'D-' + diff; ddayColor = 'warn'; }
+        else { dday = 'D-' + diff; ddayColor = 'ok'; }
+    } else { dday = '상시'; ddayColor = 'ok'; }
+
+    // 지원 방식 감지
+    const allText = [s.title, s.description, s.detail_content, s.hwp_content].filter(Boolean).join(' ');
+    const supportTypes = [];
+    if (/보조금|지원금|지원비/.test(allText)) supportTypes.push('보조금');
+    if (/융자|대출|저금리/.test(allText)) supportTypes.push('융자');
+    if (/바우처/.test(allText)) supportTypes.push('바우처');
+    if (/컨설팅|전문가\s*지원/.test(allText)) supportTypes.push('컨설팅');
+    if (/멘토링/.test(allText)) supportTypes.push('멘토링');
+    if (/교육|훈련/.test(allText)) supportTypes.push('교육');
+    if (/R&D|연구\s*개발/.test(allText)) supportTypes.push('R&D');
+
+    let html = '';
+
+    // === Hero Section ===
+    html += '<div class="dp-hero">';
+    html += '<div class="dp-hero-title">' + esc(s.title) + '</div>';
+    html += '<div class="dp-hero-meta">';
+    html += '<span class="tag ' + st.cls + '">' + st.text + '</span>';
+    html += '<span class="tag tag-blue">' + esc(s.category) + '</span>';
+    if (detailSubcat !== '기타') html += '<span class="tag tag-blue" style="opacity:0.7;">' + esc(detailSubcat) + '</span>';
+    html += '</div>';
+    html += '<div class="dp-hero-stats">';
+    html += '<div class="dp-stat-card"><div class="dp-stat-label">마감일</div><div class="dp-stat-value ' + ddayColor + '">' + dday + '</div></div>';
+    if (mr) {
+        html += '<div class="dp-stat-card"><div class="dp-stat-label">선정 확률</div><div class="dp-stat-value">' + mr.final_probability.toFixed(0) + '%</div></div>';
+    } else if (s.support_amount) {
+        html += '<div class="dp-stat-card"><div class="dp-stat-label">지원금액</div><div class="dp-stat-value" style="font-size:13px;">' + esc(s.support_amount) + '</div></div>';
+    } else {
+        html += '<div class="dp-stat-card"><div class="dp-stat-label">기관</div><div class="dp-stat-value" style="font-size:12px;">' + esc(s.organization) + '</div></div>';
+    }
+    if (supportTypes.length > 0) {
+        html += '<div class="dp-stat-card"><div class="dp-stat-label">지원 방식</div><div class="dp-stat-value" style="font-size:12px;">' + supportTypes.join(' · ') + '</div></div>';
+    }
+    if (mr && s.support_amount) {
+        html += '<div class="dp-stat-card"><div class="dp-stat-label">지원금액</div><div class="dp-stat-value" style="font-size:13px;">' + esc(s.support_amount) + '</div></div>';
+    }
+    html += '</div></div>';
+
+    // === 매칭 분석 (확률 있을 때) ===
+    if (mr) {
+        html += '<div class="dp-match-section">';
+        html += '<div class="dp-match-prob"><div class="dp-match-prob-num">' + mr.final_probability.toFixed(1) + '%</div><div><div class="dp-match-prob-label">나의 선정 확률</div><div style="font-size:11px;color:var(--primary);">신뢰도: ' + mr.confidence_level + '</div></div></div>';
+        const bars = [
+            ['자격요건 적합도', mr.eligibility_score, '#175CD3'],
+            ['조건 매칭도', mr.matching_score, '#1570EF'],
+            ['선정률', mr.competition_score, '#2E90FA'],
+            ['이력 보정', mr.historical_score, '#53B1FD']
+        ];
+        bars.forEach(function(b) {
+            html += '<div class="dp-match-bar"><span class="dp-match-bar-label">' + b[0] + '</span><div class="dp-match-bar-track"><div class="dp-match-bar-fill" style="width:' + b[1].toFixed(0) + '%;background:' + b[2] + ';"></div></div><span class="dp-match-bar-val">' + b[1].toFixed(0) + '</span></div>';
+        });
+        if (mr.probability_range) {
+            html += '<div style="text-align:center;font-size:11px;color:var(--primary);margin-top:8px;">추정 범위: ' + mr.probability_range.low.toFixed(0) + '% ~ ' + mr.probability_range.high.toFixed(0) + '%</div>';
+        }
+        html += '</div>';
+    }
+
+    // === 기본 정보 ===
+    html += '<div class="dp-section"><div class="dp-section-header"><i class="icon-info"></i><span>기본 정보</span></div><div class="dp-section-body">';
+    html += '<div class="dp-info-row"><div class="dp-info-label">소관기관</div><div class="dp-info-value">' + esc(s.organization) + '</div></div>';
+    if (s.executor) html += '<div class="dp-info-row"><div class="dp-info-label">수행기관</div><div class="dp-info-value">' + esc(s.executor) + '</div></div>';
+    html += '<div class="dp-info-row"><div class="dp-info-label">분야</div><div class="dp-info-value"><div class="dp-tag-list"><span class="dp-tag">' + esc(s.category) + '</span>' + (detailSubcat !== '기타' ? '<span class="dp-tag">' + esc(detailSubcat) + '</span>' : '') + '</div></div></div>';
+    html += '<div class="dp-info-row"><div class="dp-info-label">출처</div><div class="dp-info-value">' + (srcNames[s.source] || esc(s.source)) + '</div></div>';
+    html += '</div></div>';
+
+    // === 일정 정보 ===
+    html += '<div class="dp-section"><div class="dp-section-header"><i class="icon-calendar"></i><span>일정 정보</span></div><div class="dp-section-body">';
+    html += '<div class="dp-info-row"><div class="dp-info-label">접수기간</div><div class="dp-info-value" style="font-weight:600;">' + dateInfo + '</div></div>';
+    if (s.apply_end_date) {
+        const diff2 = Math.ceil((new Date(s.apply_end_date) - new Date()) / 86400000);
+        const dColor2 = diff2 <= 0 ? 'var(--error)' : diff2 <= 7 ? 'var(--error)' : 'var(--primary)';
+        html += '<div class="dp-info-row"><div class="dp-info-label">남은 기간</div><div class="dp-info-value" style="font-weight:700;color:' + dColor2 + ';">' + (diff2 <= 0 ? '마감' : 'D-' + diff2) + '</div></div>';
+    }
+    html += '<div class="dp-info-row"><div class="dp-info-label">등록일</div><div class="dp-info-value">' + (s.created_at || '-').slice(0, 10) + '</div></div>';
+    html += '</div></div>';
+
+    // === 지원 대상 및 조건 ===
+    if (s.target || s.region || s.business_type_required || s.industry_required || s.employee_range || s.revenue_range || s.business_age_range || s.region_required || s.special_conditions) {
+        html += '<div class="dp-section"><div class="dp-section-header"><i class="icon-users"></i><span>지원 대상 및 조건</span></div><div class="dp-section-body">';
+        if (s.target) {
+            const targets = s.target.split(',').map(function(t) { return t.trim(); }).filter(Boolean);
+            html += '<div style="margin-bottom:10px;"><div style="font-size:12px;color:var(--text-tertiary);font-weight:600;margin-bottom:6px;">지원대상</div>';
+            targets.forEach(function(t) {
+                html += '<div class="dp-bullet-item"><div class="dp-bullet-icon"><i class="icon-check"></i></div><div class="dp-bullet-text">' + esc(t) + '</div></div>';
+            });
+            html += '</div>';
+        }
+        const condRows = [];
+        if (s.region) condRows.push(['지역', s.region]);
+        if (s.business_type_required) condRows.push(['사업자유형', s.business_type_required]);
+        if (s.industry_required) condRows.push(['업종 조건', s.industry_required]);
+        if (s.employee_range) condRows.push(['종업원 수', s.employee_range]);
+        if (s.revenue_range) condRows.push(['매출 범위', s.revenue_range]);
+        if (s.business_age_range) condRows.push(['업력', s.business_age_range]);
+        if (s.region_required) condRows.push(['지역 제한', s.region_required]);
+        if (s.special_conditions) condRows.push(['특별 조건', s.special_conditions]);
+        if (condRows.length > 0) {
+            condRows.forEach(function(row) {
+                html += '<div class="dp-info-row"><div class="dp-info-label">' + row[0] + '</div><div class="dp-info-value">' + esc(row[1]) + '</div></div>';
+            });
+        }
+        html += '</div></div>';
+    }
+
+    // === 지원 내용 ===
+    if (s.support_amount || s.competition_rate || s.selection_count || s.application_count) {
+        html += '<div class="dp-section"><div class="dp-section-header"><i class="icon-banknote"></i><span>지원 내용</span></div><div class="dp-section-body">';
+        if (s.support_amount) html += '<div class="dp-info-row"><div class="dp-info-label">지원금액</div><div class="dp-info-value" style="font-weight:700;color:var(--primary);font-size:15px;">' + esc(s.support_amount) + '</div></div>';
+        if (s.competition_rate) html += '<div class="dp-info-row"><div class="dp-info-label">경쟁률</div><div class="dp-info-value">' + s.competition_rate + '</div></div>';
+        if (s.selection_count) html += '<div class="dp-info-row"><div class="dp-info-label">선정 인원</div><div class="dp-info-value">' + s.selection_count + '</div></div>';
+        if (s.application_count) html += '<div class="dp-info-row"><div class="dp-info-label">신청 건수</div><div class="dp-info-value">' + s.application_count + '</div></div>';
+        html += '</div></div>';
+    }
+
+    // === 상세 내용 (구조화) ===
+    const descText = [s.description, s.detail_content, s.hwp_content].filter(Boolean).join('\n\n');
+    if (descText) {
+        html += '<div class="dp-section"><div class="dp-section-header"><i class="icon-file-text"></i><span>상세 내용</span></div><div class="dp-section-body">';
+        const maxLen = 2000;
+        const trimmed = descText.length > maxLen ? descText.substring(0, maxLen) + '...' : descText;
+        const items = parseBullets(trimmed);
+        const hasSteps = items.some(function(i) { return i.type === 'step'; });
+
+        if (hasSteps) {
+            // 스텝이 있으면 타임라인 형태
+            let stepNum = 0;
+            items.forEach(function(item) {
+                if (item.type === 'step') {
+                    stepNum++;
+                    html += '<div class="dp-step"><div class="dp-step-num">' + stepNum + '</div><div class="dp-step-content">' + linkify(item.text) + '</div></div>';
+                } else if (item.type === 'note') {
+                    html += '<div class="dp-note"><i class="icon-alert-triangle"></i><span>' + linkify(item.text) + '</span></div>';
+                } else if (item.type === 'bullet') {
+                    html += '<div class="dp-bullet-item"><div class="dp-bullet-icon"><i class="icon-check"></i></div><div class="dp-bullet-text">' + linkify(item.text) + '</div></div>';
+                } else {
+                    html += '<div style="padding:4px 0;"><span class="dp-text-block">' + linkify(item.text) + '</span></div>';
+                }
+            });
+        } else {
+            // 불릿 또는 텍스트
+            items.forEach(function(item) {
+                if (item.type === 'bullet') {
+                    html += '<div class="dp-bullet-item"><div class="dp-bullet-icon"><i class="icon-check"></i></div><div class="dp-bullet-text">' + linkify(item.text) + '</div></div>';
+                } else if (item.type === 'note') {
+                    html += '<div class="dp-note"><i class="icon-alert-triangle"></i><span>' + linkify(item.text) + '</span></div>';
+                } else {
+                    html += '<div style="padding:4px 0;"><span class="dp-text-block">' + linkify(item.text) + '</span></div>';
+                }
+            });
+        }
+
+        if (descText.length > maxLen) {
+            html += '<div style="text-align:center;padding-top:8px;"><span style="font-size:12px;color:var(--text-tertiary);">원문에서 더 많은 내용을 확인하세요</span></div>';
+        }
+        html += '</div></div>';
+    }
+
+    // === 키워드 ===
+    if (s.eligibility_keywords) {
+        const keywords = s.eligibility_keywords.split(',').map(function(k) { return k.trim(); }).filter(Boolean);
+        if (keywords.length > 0) {
+            html += '<div class="dp-section"><div class="dp-section-header"><i class="icon-tag"></i><span>키워드</span></div><div class="dp-section-body"><div class="dp-tag-list">';
+            keywords.forEach(function(kw) {
+                html += '<span class="dp-tag">' + esc(kw) + '</span>';
+            });
+            html += '</div></div></div>';
+        }
+    }
+
+    // === 하단 CTA ===
+    html += '<div style="padding:8px 0 24px;">';
+    if (s.detail_url) {
+        html += '<a href="' + esc(s.detail_url) + '" target="_blank" rel="noopener" class="dp-cta"><i class="icon-external-link" style="font-size:18px;"></i> 공고 원문 보기</a>';
+        html += '<a href="' + esc(s.detail_url) + '" target="_blank" rel="noopener" class="dp-cta-outline"><i class="icon-download" style="font-size:16px;"></i> 첨부파일 확인</a>';
+    } else {
+        let searchUrl2 = '';
+        if (s.source === 'bizinfo') searchUrl2 = 'https://www.bizinfo.go.kr/web/lay1/bbs/S1T122C128/AS/74/view.do?pblancId=' + (s.external_id || '');
+        else if (s.source === 'kstartup') searchUrl2 = 'https://www.k-startup.go.kr/web/contents/bizpbanc-ongoing.do';
+        else if (s.source === 'smes') searchUrl2 = 'https://www.smes.go.kr/main/sportsBsnsPolicy';
+        else if (s.source === 'mss') searchUrl2 = 'https://www.mss.go.kr/site/smba/main.do';
+        if (searchUrl2) {
+            html += '<a href="' + searchUrl2 + '" target="_blank" rel="noopener" class="dp-cta"><i class="icon-external-link" style="font-size:18px;"></i> 출처 사이트에서 확인</a>';
+        }
+    }
+    html += '</div>';
+
+    document.getElementById('detailPageTitle').textContent = s.title || '공고 상세정보';
+    document.getElementById('detailPageContent').innerHTML = html;
+    document.getElementById('detailPage').classList.add('show');
+    document.getElementById('detailPage').scrollTop = 0;
+    // 모달 닫기
+    closeDetail();
+}
+
+function closeDetailPage() {
+    document.getElementById('detailPage').classList.remove('show');
 }
 
 // ===== Init =====
