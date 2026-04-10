@@ -1,0 +1,590 @@
+/* ============================================================================
+   iOS HIG Design System — Drop-in CSS Override
+   Source skill: ~/Documents/skills/mobile-ios-design/SKILL.md
+   Apply by adding <link rel="stylesheet" href="../_shared/ios-hig.css">
+   AFTER the existing <style>...</style> block in each file so cascade order
+   lets these rules override the originals.
+   ========================================================================== */
+
+/* -------- 1. iOS HIG Design Tokens (light + dark) -------------------------- */
+:root {
+  /* SF Pro system font stack (Apple system fonts) */
+  --ios-font: -apple-system, BlinkMacSystemFont, "SF Pro Text", "SF Pro Display",
+              "Pretendard Variable", "Pretendard", "Apple SD Gothic Neo",
+              system-ui, sans-serif;
+  --ios-font-mono: ui-monospace, SFMono-Regular, "SF Mono", Menlo, monospace;
+
+  /* iOS system colors — Light mode */
+  --ios-blue:        #007AFF;
+  --ios-blue-bg:     #E5F1FF;
+  --ios-blue-d:      #0051C7;
+  --ios-green:       #34C759;
+  --ios-green-bg:    #E5F8EA;
+  --ios-red:         #FF3B30;
+  --ios-red-bg:      #FFEBEA;
+  --ios-orange:      #FF9500;
+  --ios-orange-bg:   #FFF3E0;
+  --ios-yellow:      #FFCC00;
+  --ios-purple:      #AF52DE;
+  --ios-purple-bg:   #F5EAFB;
+  --ios-pink:        #FF2D55;
+  --ios-indigo:      #5856D6;
+  --ios-teal:        #30B0C7;
+  --ios-mint:        #00C7BE;
+
+  /* iOS labels */
+  --ios-label:       #1C1C1E;
+  --ios-label-2:     rgba(60, 60, 67, 0.60);
+  --ios-label-3:     rgba(60, 60, 67, 0.30);
+  --ios-label-4:     rgba(60, 60, 67, 0.18);
+
+  /* iOS backgrounds */
+  --ios-bg:          #F2F2F7;        /* systemGroupedBackground */
+  --ios-bg-2:        #FFFFFF;        /* secondarySystemGroupedBackground */
+  --ios-bg-3:        #F2F2F7;
+  --ios-surface:     #FFFFFF;        /* card */
+  --ios-elev:        #FFFFFF;
+
+  /* iOS fills */
+  --ios-fill:        rgba(120, 120, 128, 0.20);
+  --ios-fill-2:      rgba(120, 120, 128, 0.16);
+  --ios-fill-3:      rgba(118, 118, 128, 0.12);
+  --ios-fill-4:      rgba(116, 116, 128, 0.08);
+
+  /* iOS separators */
+  --ios-sep:         rgba(60, 60, 67, 0.14);
+  --ios-sep-opaque:  #C6C6C8;
+
+  /* iOS radii (HIG continuous corner radius approximations) */
+  --ios-r-xs: 8px;
+  --ios-r-sm: 10px;
+  --ios-r-md: 14px;
+  --ios-r-lg: 20px;
+  --ios-r-xl: 28px;
+  --ios-r-full: 9999px;
+
+  /* iOS shadows (HIG: subtle, layered, low opacity) */
+  --ios-shadow-1: 0 1px 2px rgba(0, 0, 0, 0.04), 0 0 0 0.5px rgba(0, 0, 0, 0.04);
+  --ios-shadow-2: 0 4px 16px rgba(0, 0, 0, 0.06), 0 0 0 0.5px rgba(0, 0, 0, 0.04);
+  --ios-shadow-3: 0 10px 30px rgba(0, 0, 0, 0.10), 0 0 0 0.5px rgba(0, 0, 0, 0.04);
+
+  /* iOS materials (blur + saturation) */
+  --ios-mat-ultra-thin: saturate(180%) blur(20px);
+  --ios-mat-thin:       saturate(180%) blur(24px);
+  --ios-mat-regular:    saturate(180%) blur(30px);
+  --ios-mat-thick:      saturate(180%) blur(40px);
+
+  /* iOS heights */
+  --ios-nav-h: 44px;
+  --ios-tab-h: 56px;
+  --ios-large-title-h: 96px;
+
+  /* ----- Compatibility: override SAVE compact variable convention ---------- */
+  /* These names are used by 7 files. Map them to iOS values. */
+  --p:   var(--ios-blue);
+  --p-l: var(--ios-blue-bg);
+  --p-d: var(--ios-blue-d);
+  --p2:  var(--ios-indigo);
+  --p2-l: rgba(88, 86, 214, 0.12);
+  --pr:  var(--ios-purple);
+  --pr-l: var(--ios-purple-bg);
+  --bg:  var(--ios-bg);
+  --sf:  var(--ios-surface);
+  --bd:  var(--ios-sep-opaque);
+  --bd-l: var(--ios-sep);
+  --tx:  var(--ios-label);
+  --tx2: var(--ios-label-2);
+  --tx3: var(--ios-label-3);
+  --ok:  var(--ios-green);
+  --ok-l: var(--ios-green-bg);
+  --wn:  var(--ios-orange);
+  --wn-l: var(--ios-orange-bg);
+  --er:  var(--ios-red);
+  --er-l: var(--ios-red-bg);
+  --r:   var(--ios-r-md);
+  --rs:  var(--ios-r-sm);
+  --rs-d: var(--ios-r-xs);
+  --rs-l: var(--ios-r-lg);
+  --rs2: var(--ios-r-md);
+  --sh:  var(--ios-shadow-1);
+  --hd:  var(--ios-nav-h);
+  --nav: var(--ios-tab-h);
+
+  /* Compatibility: override gov-subsidy verbose variable convention --------- */
+  --primary:         var(--ios-blue);
+  --primary-bg:      var(--ios-blue-bg);
+  --primary-light:   var(--ios-blue-bg);
+  --primary-lighter: rgba(0, 122, 255, 0.06);
+  --primary-border:  rgba(0, 122, 255, 0.20);
+  --primary-dark:    var(--ios-blue-d);
+  --bg:              var(--ios-bg);
+  --card-bg:         var(--ios-surface);
+  --border:          var(--ios-sep-opaque);
+  --border-light:    var(--ios-sep);
+  --text:            var(--ios-label);
+  --text-secondary:  var(--ios-label-2);
+  --text-tertiary:   var(--ios-label-3);
+  --heading:         var(--ios-label);
+  --success:         var(--ios-green);
+  --success-bg:      var(--ios-green-bg);
+  --warning:         var(--ios-orange);
+  --warning-bg:      var(--ios-orange-bg);
+  --error:           var(--ios-red);
+  --error-bg:        var(--ios-red-bg);
+  --radius:          var(--ios-r-md);
+  --radius-lg:       var(--ios-r-lg);
+  --radius-xl:       var(--ios-r-xl);
+  --shadow-xs:       var(--ios-shadow-1);
+  --shadow-sm:       var(--ios-shadow-1);
+  --shadow-md:       var(--ios-shadow-2);
+  --shadow-lg:       var(--ios-shadow-2);
+  --shadow-xl:       var(--ios-shadow-3);
+  --nav-height:      var(--ios-tab-h);
+  --safe-bottom:     env(safe-area-inset-bottom, 0px);
+}
+
+/* Dark mode (auto via media query) ----------------------------------------- */
+@media (prefers-color-scheme: dark) {
+  :root {
+    --ios-label:      #FFFFFF;
+    --ios-label-2:    rgba(235, 235, 245, 0.60);
+    --ios-label-3:    rgba(235, 235, 245, 0.30);
+    --ios-label-4:    rgba(235, 235, 245, 0.18);
+    --ios-bg:         #000000;
+    --ios-bg-2:       #1C1C1E;
+    --ios-bg-3:       #2C2C2E;
+    --ios-surface:    #1C1C1E;
+    --ios-elev:       #2C2C2E;
+    --ios-fill:       rgba(120, 120, 128, 0.36);
+    --ios-fill-2:     rgba(120, 120, 128, 0.32);
+    --ios-fill-3:     rgba(118, 118, 128, 0.24);
+    --ios-fill-4:     rgba(118, 118, 128, 0.18);
+    --ios-sep:        rgba(84, 84, 88, 0.65);
+    --ios-sep-opaque: #38383A;
+    --ios-blue:       #0A84FF;
+    --ios-blue-bg:    rgba(10, 132, 255, 0.18);
+    --ios-green:      #30D158;
+    --ios-green-bg:   rgba(48, 209, 88, 0.18);
+    --ios-red:        #FF453A;
+    --ios-red-bg:     rgba(255, 69, 58, 0.18);
+    --ios-orange:     #FF9F0A;
+    --ios-orange-bg:  rgba(255, 159, 10, 0.18);
+    --ios-purple:     #BF5AF2;
+    --ios-purple-bg:  rgba(191, 90, 242, 0.18);
+  }
+}
+
+/* -------- 2. Typography baseline (HIG type scale via Dynamic Type) -------- */
+html, body {
+  font-family: var(--ios-font);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
+  font-feature-settings: "ss01", "cv11";
+  letter-spacing: -0.01em;
+}
+body { background: var(--ios-bg); color: var(--ios-label); }
+
+/* HIG type scale (in px equivalents) */
+.ios-largeTitle  { font: 700 34px/1.2 var(--ios-font); letter-spacing: -0.02em; }
+.ios-title1      { font: 700 28px/1.22 var(--ios-font); letter-spacing: -0.02em; }
+.ios-title2      { font: 700 22px/1.25 var(--ios-font); letter-spacing: -0.02em; }
+.ios-title3      { font: 600 20px/1.3 var(--ios-font); letter-spacing: -0.015em; }
+.ios-headline    { font: 600 17px/1.4 var(--ios-font); letter-spacing: -0.01em; }
+.ios-body        { font: 400 17px/1.45 var(--ios-font); }
+.ios-callout     { font: 400 16px/1.4 var(--ios-font); }
+.ios-subheadline { font: 400 15px/1.4 var(--ios-font); }
+.ios-footnote    { font: 400 13px/1.4 var(--ios-font); }
+.ios-caption1    { font: 400 12px/1.4 var(--ios-font); }
+.ios-caption2    { font: 400 11px/1.4 var(--ios-font); }
+
+/* -------- 3. App shell (430px mobile container) ---------------------------- */
+#app, .app-shell, .desktop-wrapper {
+  background: var(--ios-bg);
+}
+
+/* -------- 4. Header (.hdr / .top-bar / .app-header / .detail-page-header) -- */
+.hdr,
+.top-bar,
+.app-header,
+.detail-page-header {
+  background: rgba(255, 255, 255, 0.82) !important;
+  -webkit-backdrop-filter: var(--ios-mat-thin);
+  backdrop-filter: var(--ios-mat-thin);
+  border-bottom: 0.5px solid var(--ios-sep) !important;
+  font-family: var(--ios-font);
+}
+@media (prefers-color-scheme: dark) {
+  .hdr, .top-bar, .app-header, .detail-page-header {
+    background: rgba(28, 28, 30, 0.82) !important;
+  }
+}
+.hdr-t,
+.top-bar-title,
+.detail-page-header-title {
+  font: 600 17px/1.2 var(--ios-font) !important;
+  letter-spacing: -0.01em;
+  color: var(--ios-label);
+}
+.hdr-btn,
+.top-bar-btn {
+  color: var(--ios-blue) !important;
+  background: transparent !important;
+  border-radius: var(--ios-r-sm) !important;
+}
+.hdr-btn:hover,
+.top-bar-btn:hover {
+  background: var(--ios-fill-4) !important;
+}
+
+/* -------- 5. Bottom tab bar (.bnav / .tab-bar / .bottom-nav) --------------- */
+.bnav,
+.tab-bar,
+.bottom-nav {
+  background: rgba(255, 255, 255, 0.82) !important;
+  -webkit-backdrop-filter: var(--ios-mat-regular);
+  backdrop-filter: var(--ios-mat-regular);
+  border-top: 0.5px solid var(--ios-sep) !important;
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+  font-family: var(--ios-font);
+}
+@media (prefers-color-scheme: dark) {
+  .bnav, .tab-bar, .bottom-nav {
+    background: rgba(28, 28, 30, 0.82) !important;
+  }
+}
+.bnav-i,
+.tab-item {
+  color: var(--ios-label-2) !important;
+  font: 500 10px/1.1 var(--ios-font) !important;
+  letter-spacing: 0;
+  transition: color 0.15s;
+}
+.bnav-i.on,
+.bnav-i.active,
+.tab-item.active,
+.tab-item.on {
+  color: var(--ios-blue) !important;
+}
+
+/* -------- 6. Cards (.cd / .stat-card / .summary-card / .section-card) ------ */
+.cd,
+.stat-card,
+.summary-card,
+.section-card,
+.kpi-card,
+.insight-card,
+.dp-stat-card,
+.match-card,
+.banner-card,
+.login-card,
+.hero-card,
+.review-card,
+.m-card {
+  background: var(--ios-surface) !important;
+  border-radius: var(--ios-r-md) !important;
+  box-shadow: var(--ios-shadow-1) !important;
+  border: 0.5px solid var(--ios-sep) !important;
+  font-family: var(--ios-font);
+}
+.cd-t,
+.section-title,
+.dash-t,
+.sec-t,
+.det-section-t,
+.detail-section-title,
+.dp-section-header,
+.modal-t {
+  font: 600 17px/1.3 var(--ios-font) !important;
+  letter-spacing: -0.01em;
+  color: var(--ios-label);
+}
+
+/* -------- 7. Buttons (.btn / .btn-p / .btn-o / .btn-g / .login-btn) -------- */
+.btn,
+.login-btn,
+.expert-btn,
+.dp-cta,
+.det-cta,
+.prog-cta,
+.hero-btn,
+.restart-btn {
+  font-family: var(--ios-font) !important;
+  font-weight: 600 !important;
+  letter-spacing: -0.01em !important;
+  border-radius: var(--ios-r-md) !important;
+  transition: transform 0.12s ease, opacity 0.15s ease, background 0.15s ease;
+  border: none !important;
+}
+.btn:active,
+.login-btn:active,
+.dp-cta:active {
+  transform: scale(0.97);
+  opacity: 0.85;
+}
+.btn-p,
+.btn-primary,
+.btn-b,
+.dp-cta,
+.det-cta,
+.prog-cta,
+.hero-btn,
+.login-btn,
+.restart-btn {
+  background: var(--ios-blue) !important;
+  color: #FFFFFF !important;
+}
+.btn-p:hover,
+.btn-primary:hover,
+.btn-b:hover,
+.dp-cta:hover,
+.login-btn:hover {
+  background: var(--ios-blue-d) !important;
+}
+.btn-o,
+.btn-outline,
+.dp-cta-outline {
+  background: transparent !important;
+  color: var(--ios-blue) !important;
+  border: 1.5px solid var(--ios-blue) !important;
+}
+.btn-g,
+.btn-sm.btn-g {
+  background: var(--ios-fill-3) !important;
+  color: var(--ios-label) !important;
+  border: none !important;
+}
+.btn-ok { background: var(--ios-green) !important; color: #fff !important; }
+.btn-rs { background: var(--ios-red)   !important; color: #fff !important; }
+
+/* -------- 8. Pills / chips / badges ---------------------------------------- */
+.bg, .badge, .chip, .tag, .ch, .filter-chip,
+.dp-tag, .det-chip, .pb-tag, .match-meta-tag, .kw-tag {
+  font-family: var(--ios-font) !important;
+  font-weight: 600 !important;
+  border-radius: var(--ios-r-full) !important;
+  font-size: 12px !important;
+  letter-spacing: -0.005em;
+}
+.bg-b, .bg-pr, .badge-blue, .tag-blue {
+  background: var(--ios-blue-bg) !important;
+  color: var(--ios-blue) !important;
+}
+.bg-g, .badge-green, .tag-green {
+  background: var(--ios-green-bg) !important;
+  color: var(--ios-green) !important;
+}
+.bg-y, .badge-yellow, .tag-orange {
+  background: var(--ios-orange-bg) !important;
+  color: var(--ios-orange) !important;
+}
+.bg-r, .badge-red, .tag-red {
+  background: var(--ios-red-bg) !important;
+  color: var(--ios-red) !important;
+}
+.bg-p, .badge-purple {
+  background: var(--ios-purple-bg) !important;
+  color: var(--ios-purple) !important;
+}
+.bg-x, .badge-gray {
+  background: var(--ios-fill-3) !important;
+  color: var(--ios-label-2) !important;
+}
+.chip-active, .filter-chip.active, .ch.on {
+  background: var(--ios-blue) !important;
+  color: #FFFFFF !important;
+  border-color: var(--ios-blue) !important;
+}
+.chip-inactive {
+  background: var(--ios-surface) !important;
+  color: var(--ios-label-2) !important;
+  border: 1px solid var(--ios-sep) !important;
+}
+
+/* -------- 9. Lists (.lg / .li / iOS grouped table view style) -------------- */
+.lg, .menu-li-l {
+  background: var(--ios-surface) !important;
+  border-radius: var(--ios-r-md) !important;
+  box-shadow: var(--ios-shadow-1) !important;
+  border: 0.5px solid var(--ios-sep) !important;
+  overflow: hidden;
+}
+.li, .menu-li, .ni, .notif-item, .subsidy-item, .pay-row, .ms-item, .cl-item {
+  background: var(--ios-surface) !important;
+  border-bottom: 0.5px solid var(--ios-sep) !important;
+  font-family: var(--ios-font);
+  font-size: 17px;
+  color: var(--ios-label);
+  transition: background 0.15s;
+}
+.li:last-child, .menu-li:last-child { border-bottom: none !important; }
+.li:active, .ni:active { background: var(--ios-fill-4) !important; }
+.li:hover { background: var(--ios-fill-4) !important; }
+
+/* -------- 10. Avatars ------------------------------------------------------- */
+.av, .prof-av, .expert-av, .login-logo {
+  border-radius: var(--ios-r-full) !important;
+  font-family: var(--ios-font);
+  font-weight: 600;
+}
+
+/* -------- 11. Forms (.fi / .fl / .fg / .fta / .fsl / .form-input) ---------- */
+.fi, .fta, .fsl, .form-input, .form-select, .search-input, .chat-input, .inp {
+  font-family: var(--ios-font) !important;
+  font-size: 17px !important;
+  border-radius: var(--ios-r-sm) !important;
+  border: 1px solid var(--ios-sep-opaque) !important;
+  background: var(--ios-surface) !important;
+  color: var(--ios-label) !important;
+  transition: border-color 0.15s, box-shadow 0.15s;
+}
+.fi:focus, .fta:focus, .fsl:focus, .form-input:focus, .search-input:focus {
+  border-color: var(--ios-blue) !important;
+  box-shadow: 0 0 0 3px rgba(0, 122, 255, 0.18) !important;
+  outline: none !important;
+}
+.fl, .form-label, .detail-label, .det-row-k, .info-k {
+  font: 600 13px/1.3 var(--ios-font) !important;
+  color: var(--ios-label-2) !important;
+  text-transform: none !important;
+  letter-spacing: 0 !important;
+}
+
+/* -------- 12. Bottom sheet / modal (.bs / .modal-sheet) -------------------- */
+.bs-ov, .modal-overlay {
+  background: rgba(0, 0, 0, 0.4) !important;
+  -webkit-backdrop-filter: blur(8px);
+  backdrop-filter: blur(8px);
+}
+.bs, .modal-sheet, .bs-section {
+  background: var(--ios-surface) !important;
+  border-radius: 16px 16px 0 0 !important;
+  font-family: var(--ios-font);
+}
+.bs-handle, .modal-handle, .modal-bar {
+  background: var(--ios-sep-opaque) !important;
+  width: 36px !important;
+  height: 5px !important;
+  border-radius: 3px !important;
+  margin: 8px auto !important;
+}
+
+/* -------- 13. Toast --------------------------------------------------------- */
+.toast {
+  background: rgba(28, 28, 30, 0.92) !important;
+  -webkit-backdrop-filter: blur(20px);
+  backdrop-filter: blur(20px);
+  color: #FFFFFF !important;
+  font-family: var(--ios-font) !important;
+  font-weight: 500 !important;
+  border-radius: var(--ios-r-md) !important;
+  box-shadow: var(--ios-shadow-3) !important;
+}
+
+/* -------- 14. Hero / banner ------------------------------------------------- */
+.hero, .dp-hero, .restart-hero, .hero-card, .login-screen {
+  background: linear-gradient(135deg, var(--ios-blue) 0%, var(--ios-indigo) 100%) !important;
+  font-family: var(--ios-font);
+  border-radius: 0 0 var(--ios-r-lg) var(--ios-r-lg);
+}
+.hero h2, .hero-t, .hero-title, .dp-hero-title, .restart-hero-t, .login-title {
+  font: 700 28px/1.2 var(--ios-font) !important;
+  letter-spacing: -0.02em;
+  color: #FFFFFF;
+}
+
+/* -------- 15. KPI / stat tiles --------------------------------------------- */
+.kpi-value, .stat-num, .stat-value, .sn, .pc-amount, .dp-stat-value,
+.det-amount-v, .sim-result-amount {
+  font: 700 28px/1.1 var(--ios-font) !important;
+  letter-spacing: -0.02em;
+  color: var(--ios-label);
+  font-variant-numeric: tabular-nums;
+}
+.kpi-label, .stat-label, .stat-l, .sl, .dp-stat-label, .det-amount-l {
+  font: 500 13px/1.3 var(--ios-font) !important;
+  color: var(--ios-label-2) !important;
+}
+
+/* -------- 16. Progress bars / meters --------------------------------------- */
+.progress-bar, .stat-bar, .stat-bar-track, .dp-match-bar-track, .mm-bar,
+.dash-prog, .pc-match-bar {
+  background: var(--ios-fill-3) !important;
+  border-radius: var(--ios-r-full) !important;
+  overflow: hidden;
+}
+.progress-fill, .stat-bar-fill, .dp-match-bar-fill, .mm-fill,
+.dash-prog-fill, .pc-match-fill {
+  background: linear-gradient(90deg, var(--ios-blue), var(--ios-indigo)) !important;
+  border-radius: var(--ios-r-full) !important;
+}
+
+/* -------- 17. Empty state --------------------------------------------------- */
+.ey, .empty, .empty-state {
+  color: var(--ios-label-3) !important;
+  font-family: var(--ios-font);
+}
+.ey h3 { font: 600 17px/1.3 var(--ios-font) !important; color: var(--ios-label); }
+
+/* -------- 18. Section header (.st) ----------------------------------------- */
+.st, .sec-hdr {
+  font: 600 13px/1.3 var(--ios-font) !important;
+  color: var(--ios-label-2) !important;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+/* -------- 19. Toggles (iOS switch look) ------------------------------------ */
+.toggle {
+  background: var(--ios-fill-3) !important;
+  border-radius: 16px !important;
+}
+.toggle.on {
+  background: var(--ios-green) !important;
+}
+.toggle::after {
+  background: #FFFFFF !important;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.15), 0 0 0 0.5px rgba(0, 0, 0, 0.04) !important;
+}
+
+/* -------- 20. Clock-in button (SAVE_HR_Job specific) ----------------------- */
+.clk-btn {
+  border-radius: var(--ios-r-full) !important;
+  font-family: var(--ios-font) !important;
+  font-weight: 700 !important;
+  border-width: 2px !important;
+  box-shadow: var(--ios-shadow-2);
+}
+.clk-in  { background: var(--ios-blue-bg)  !important; border-color: var(--ios-blue)  !important; color: var(--ios-blue)  !important; }
+.clk-out { background: var(--ios-red-bg)   !important; border-color: var(--ios-red)   !important; color: var(--ios-red)   !important; }
+.clk-time { font-variant-numeric: tabular-nums; letter-spacing: -0.02em !important; }
+
+/* -------- 21. Misc text utilities (HIG-compliant overrides) ---------------- */
+.t2 { color: var(--ios-label-2) !important; }
+.t3 { color: var(--ios-label-3) !important; }
+.tp { color: var(--ios-blue) !important; }
+.tok { color: var(--ios-green) !important; }
+.ter { color: var(--ios-red) !important; }
+.tw  { color: var(--ios-orange) !important; }
+
+/* -------- 22. iOS-style scrollbar hide ------------------------------------- */
+.ct::-webkit-scrollbar,
+.app-main::-webkit-scrollbar,
+.detail-page-content::-webkit-scrollbar { display: none; }
+
+/* -------- 23. Tap highlight & selection ------------------------------------ */
+* {
+  -webkit-tap-highlight-color: transparent;
+  -webkit-touch-callout: none;
+}
+input, textarea, select {
+  -webkit-touch-callout: default;
+  -webkit-user-select: text;
+}
+
+/* -------- 24. Focus ring (accessibility) ----------------------------------- */
+:focus-visible {
+  outline: 2px solid var(--ios-blue);
+  outline-offset: 2px;
+  border-radius: var(--ios-r-xs);
+}
