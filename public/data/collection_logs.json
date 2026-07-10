@@ -6,6 +6,105 @@
     "updated_count": 10,
     "status": "success",
     "error_message": null,
+    "collected_at": "2026-07-10 15:19:42"
+  },
+  {
+    "source": "ulsan",
+    "total_collected": 10,
+    "new_count": 0,
+    "updated_count": 10,
+    "status": "success",
+    "error_message": null,
+    "collected_at": "2026-07-10 15:19:38"
+  },
+  {
+    "source": "seoul",
+    "total_collected": 20,
+    "new_count": 0,
+    "updated_count": 20,
+    "status": "success",
+    "error_message": null,
+    "collected_at": "2026-07-10 15:19:33"
+  },
+  {
+    "source": "moj",
+    "total_collected": 30,
+    "new_count": 0,
+    "updated_count": 30,
+    "status": "success",
+    "error_message": null,
+    "collected_at": "2026-07-10 15:19:29"
+  },
+  {
+    "source": "mcst",
+    "total_collected": 30,
+    "new_count": 0,
+    "updated_count": 30,
+    "status": "success",
+    "error_message": null,
+    "collected_at": "2026-07-10 15:19:19"
+  },
+  {
+    "source": "molit",
+    "total_collected": 9,
+    "new_count": 0,
+    "updated_count": 9,
+    "status": "success",
+    "error_message": null,
+    "collected_at": "2026-07-10 15:19:16"
+  },
+  {
+    "source": "mof",
+    "total_collected": 5,
+    "new_count": 0,
+    "updated_count": 5,
+    "status": "success",
+    "error_message": null,
+    "collected_at": "2026-07-10 15:19:15"
+  },
+  {
+    "source": "kstartup",
+    "total_collected": 10,
+    "new_count": 0,
+    "updated_count": 10,
+    "status": "success",
+    "error_message": null,
+    "collected_at": "2026-07-10 15:19:11"
+  },
+  {
+    "source": "smes",
+    "total_collected": 20,
+    "new_count": 0,
+    "updated_count": 20,
+    "status": "success",
+    "error_message": null,
+    "collected_at": "2026-07-10 15:19:10"
+  },
+  {
+    "source": "mss",
+    "total_collected": 944,
+    "new_count": 0,
+    "updated_count": 944,
+    "status": "success",
+    "error_message": null,
+    "collected_at": "2026-07-10 15:19:08"
+  },
+  {
+    "source": "bizinfo",
+    "total_collected": 1050,
+    "new_count": 0,
+    "updated_count": 1050,
+    "status": "success",
+    "error_message": null,
+    "collected_at": "2026-07-10 15:17:05"
+  },
+  {
+    "source": "jeonbuk",
+    "total_collected": 10,
+    "new_count": 0,
+    "updated_count": 10,
+    "status": "success",
+    "error_message": null,
     "collected_at": "2026-04-07 17:21:43"
   },
   {
